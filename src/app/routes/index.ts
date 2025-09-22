@@ -7,6 +7,9 @@ import { newsletterRoutes } from "../modules/newsletter/newsletter.route";
 import { blogRoutes } from "../modules/blog/blog.route";
 import { galleryRoutes } from "../modules/gallery/gallery.route";
 import { brandRoutes } from "../modules/brand/brand.route";
+import { userRoutes } from "../modules/user/user.route";
+import { authRoutes } from "../modules/auth/auth.route";
+import { roleRoutes } from "../modules/role/role.route";
 
 const router = Router();
 
@@ -18,6 +21,9 @@ const routes = [
   blogRoutes,
   brandRoutes,
   galleryRoutes,
+  userRoutes,
+  authRoutes,
+  roleRoutes,
 ];
 
 routes.forEach((route) => {

@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
-import { TPreviousPasswords } from "../modules/user/user.interface";
 import moment from "moment";
 import config from "../config";
+import { IPreviousPasswords } from "../modules/user/user.interface";
 
 export const hashPassword = async (password: string) => {
   const hashedPassword = await bcrypt.hash(
@@ -20,7 +20,7 @@ export const compareHashPassword = async (
 
 export const checkCurrentPasswordToPreviousPassword = async (
   newPass: string,
-  previousPass: TPreviousPasswords[]
+  previousPass: IPreviousPasswords[]
 ) => {
   let match;
   for (const passObj of previousPass) {
@@ -36,7 +36,7 @@ export const checkCurrentPasswordToPreviousPassword = async (
 };
 
 export const getPreviousPasswords = async (
-  previousPass: TPreviousPasswords[]
+  previousPass: IPreviousPasswords[]
 ) => {
   const sortingLastPassword = previousPass.sort(
     (x, y) => new Date(x.createdAt).getTime() - new Date(y.createdAt).getTime()

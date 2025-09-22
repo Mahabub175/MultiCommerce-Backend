@@ -46,7 +46,7 @@ app.use("/api/v1", router);
 app.get("/api/v1", (req: Request, res: Response) => {
   res.send({
     success: true,
-    status: `${httpStatus.OK} Connected`,
+    status: httpStatus.OK,
     message: "This is the starting of all the routes in this server!",
   });
 });

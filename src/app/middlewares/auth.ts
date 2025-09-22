@@ -1,11 +1,10 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-import { TUserRole } from "./../modules/user/user.interface";
 import config from "../config";
 import { userModel } from "../modules/user/user.model";
 import httpStatus from "http-status";
 
-const auth = (...requiredRoles: TUserRole[]) => {
+const authGuard = (...requiredRoles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const authHeader = req.headers.authorization;
@@ -59,4 +58,4 @@ const auth = (...requiredRoles: TUserRole[]) => {
   };
 };
 
-export default auth;
+export default authGuard;

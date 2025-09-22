@@ -33,5 +33,9 @@ export interface IGlobalSetting {
   blogBanner: string;
   currency: string;
   ssl: boolean;
+  smsUrl: string;
+  smsToken: string;
+  useSms: boolean;
+  useEmail: boolean;
   status: boolean;
 }
