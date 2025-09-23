@@ -25,22 +25,18 @@ const categorySchema = new Schema<ICategory>(
     parentCategory: {
       type: Schema.Types.ObjectId,
       ref: "category",
-      default: null,
     },
     category: {
       type: Schema.Types.ObjectId,
       ref: "category",
-      default: null,
     },
     subCategory: {
       type: Schema.Types.ObjectId,
       ref: "category",
-      default: null,
     },
     subSubCategory: {
       type: Schema.Types.ObjectId,
       ref: "category",
-      default: null,
     },
     level: {
       type: String,
@@ -50,11 +46,9 @@ const categorySchema = new Schema<ICategory>(
     discountType: {
       type: String,
       enum: ["fixed", "percentage"],
-      default: null,
     },
     discountValue: {
       type: Number,
-      default: 0,
     },
     attachment: {
       type: String,

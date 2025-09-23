@@ -11,6 +11,8 @@ import { userRoutes } from "../modules/user/user.route";
 import { authRoutes } from "../modules/auth/auth.route";
 import { roleRoutes } from "../modules/role/role.route";
 import { categoryRoutes } from "../modules/category/category.route";
+import { attributeOptionRoutes } from "../modules/attributeOption/attributeOption.route";
+import { attributeRoutes } from "../modules/attribute/attribute.route";
 
 const router = Router();
 
@@ -26,6 +28,8 @@ const routes = [
   authRoutes,
   roleRoutes,
   categoryRoutes,
+  attributeOptionRoutes,
+  attributeRoutes,
 ];
 
 routes.forEach((route) => {

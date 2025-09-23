@@ -41,7 +41,7 @@ const getAllCategoryController = async (
 
     const searchText = req.query.searchText as string | undefined;
 
-    const searchFields = ["name", "slug"];
+    const searchFields = ["name", "slug", "level"];
 
     const result = await categoryServices.getAllCategoryService(
       pageNumber,

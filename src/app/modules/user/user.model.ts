@@ -37,21 +37,17 @@ const userSchema = new Schema<IUser>(
     },
     profileImage: {
       type: String,
-      default: null,
     },
     address: {
       type: String,
-      default: null,
     },
     credit: {
       type: Number,
-      default: 0,
       min: 0,
       set: (val: number) => parseInt(val.toString(), 10),
     },
     point: {
       type: Number,
-      default: 0,
       set: (val: number) => parseInt(val.toString(), 10),
     },
     number: {

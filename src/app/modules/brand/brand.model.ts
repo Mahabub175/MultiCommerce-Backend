@@ -3,8 +3,8 @@ import { IBrand } from "./brand.interface";
 
 const brandSchema = new Schema<IBrand>(
   {
-    name: { type: String },
-    attachment: { type: String, required: true },
+    name: { type: String, required: true },
+    attachment: { type: String },
     status: {
       type: Boolean,
       default: true,

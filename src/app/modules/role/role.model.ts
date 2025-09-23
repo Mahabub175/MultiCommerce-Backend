@@ -15,7 +15,6 @@ const roleSchema = new Schema<IRole>(
     },
     discountValue: {
       type: Number,
-      default: 0,
     },
     status: {
       type: Boolean,
