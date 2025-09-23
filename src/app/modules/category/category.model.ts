@@ -26,18 +26,24 @@ const categorySchema = new Schema<ICategory>(
       type: Schema.Types.ObjectId,
       ref: "category",
     },
-    category: {
-      type: Schema.Types.ObjectId,
-      ref: "category",
-    },
-    subCategory: {
-      type: Schema.Types.ObjectId,
-      ref: "category",
-    },
-    subSubCategory: {
-      type: Schema.Types.ObjectId,
-      ref: "category",
-    },
+    category: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "category",
+      },
+    ],
+    subCategory: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "category",
+      },
+    ],
+    subSubCategory: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "category",
+      },
+    ],
     level: {
       type: String,
       enum: Object.values(CategoryLevel),
