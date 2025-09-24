@@ -13,6 +13,7 @@ import { roleRoutes } from "../modules/role/role.route";
 import { categoryRoutes } from "../modules/category/category.route";
 import { attributeOptionRoutes } from "../modules/attributeOption/attributeOption.route";
 import { attributeRoutes } from "../modules/attribute/attribute.route";
+import { productRoutes } from "../modules/product/product.route";
 
 const router = Router();
 
@@ -30,6 +31,7 @@ const routes = [
   categoryRoutes,
   attributeOptionRoutes,
   attributeRoutes,
+  productRoutes,
 ];
 
 routes.forEach((route) => {

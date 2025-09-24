@@ -7,7 +7,9 @@ export const generateSlug = (input: string): string => {
     replacement: "-",
   });
 
-  return `${baseSlug}`;
+  const dateSuffix = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+
+  return `${baseSlug}-${dateSuffix}`;
 };
 
 export const productSlug = (name: string, sku: string) => {
@@ -16,4 +18,23 @@ export const productSlug = (name: string, sku: string) => {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
   return `${slug}-${sku}`;
+};
+
+export const generateSKU = (productName: string) => {
+  if (!productName) throw new Error("Product name is required");
+
+  const normalized = productName
+    .replace(/[^a-zA-Z0-9 ]/g, "")
+    .trim()
+    .toUpperCase();
+
+  const initials = normalized
+    .split(" ")
+    .slice(0, 3)
+    .map((word: string) => word[0])
+    .join("");
+
+  const randomId = Math.floor(1000 + Math.random() * 9000);
+
+  return `${initials}-${randomId}`;
 };
