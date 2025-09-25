@@ -14,6 +14,11 @@ import { categoryRoutes } from "../modules/category/category.route";
 import { attributeOptionRoutes } from "../modules/attributeOption/attributeOption.route";
 import { attributeRoutes } from "../modules/attribute/attribute.route";
 import { productRoutes } from "../modules/product/product.route";
+import { wishlistRoutes } from "../modules/wishlist/wishlist.route";
+import { cartRoutes } from "../modules/cart/cart.route";
+import { couponRoutes } from "../modules/coupon/coupon.route";
+import { giftCardRoutes } from "../modules/giftCard/giftCard.route";
+import { reviewRoutes } from "../modules/review/review.route";
 
 const router = Router();
 
@@ -32,6 +37,11 @@ const routes = [
   attributeOptionRoutes,
   attributeRoutes,
   productRoutes,
+  wishlistRoutes,
+  cartRoutes,
+  couponRoutes,
+  giftCardRoutes,
+  reviewRoutes,
 ];
 
 routes.forEach((route) => {
