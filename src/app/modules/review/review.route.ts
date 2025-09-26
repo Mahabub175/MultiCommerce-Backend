@@ -1,10 +1,12 @@
 import express from "express";
 import { reviewControllers } from "./review.controller";
+import { uploadService } from "../upload/upload";
 
 const router = express.Router();
 
 router.post(
   "/product/:productId/review/",
+  uploadService.single("attachment"),
   reviewControllers.addReviewToProductController
 );
 
@@ -22,6 +24,7 @@ router.get(
 
 router.patch(
   "/product/:productId/review/:reviewId/",
+  uploadService.single("attachment"),
   reviewControllers.updateProductReviewController
 );
 

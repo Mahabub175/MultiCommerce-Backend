@@ -68,6 +68,7 @@ const productSchema = new Schema<IProduct>(
     unit: { type: String },
     buyingPrice: { type: Number },
     offerPrice: { type: Number },
+    categoryDiscountPrice: { type: Number },
     stock: { type: Number },
     totalSold: { type: Number, default: 0 },
     isVariant: { type: Boolean, default: false },

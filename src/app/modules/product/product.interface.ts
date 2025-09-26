@@ -47,6 +47,7 @@ export interface IProduct extends Document {
   buyingPrice: number;
   sellingPrice: number;
   offerPrice: number;
+  categoryDiscountPrice: number;
   totalSold: number;
   stock: number;
   isVariant: boolean;

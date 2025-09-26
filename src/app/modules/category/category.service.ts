@@ -5,9 +5,10 @@ import { CategoryLevel, categoryModel } from "./category.model";
 import { formatResultImage } from "../../utils/formatResultImage";
 import fs from "fs";
 import path from "path";
+import { applyDiscountToCategoryProducts } from "../../utils/applyDiscountToCategoryProducts";
 
 // Create a category
-const createCategoryService = async (
+export const createCategoryService = async (
   categoryData: ICategory,
   filePath?: string
 ) => {
@@ -30,6 +31,7 @@ const createCategoryService = async (
     const parentCategories = Array.isArray(categoryData.category)
       ? categoryData.category
       : [categoryData.category];
+
     await Promise.all(
       parentCategories.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
@@ -46,6 +48,7 @@ const createCategoryService = async (
     const parentSubCategories = Array.isArray(categoryData.subCategory)
       ? categoryData.subCategory
       : [categoryData.subCategory];
+
     await Promise.all(
       parentSubCategories.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
@@ -53,6 +56,10 @@ const createCategoryService = async (
         })
       )
     );
+  }
+
+  if (categoryData.discountValue && categoryData.discountValue > 0) {
+    await applyDiscountToCategoryProducts(newCategory._id);
   }
 
   return newCategory;
@@ -116,7 +123,7 @@ const getSingleCategoryService = async (categoryId: string | number) => {
 };
 
 // Update single category
-const updateSingleCategoryService = async (
+export const updateSingleCategoryService = async (
   categoryId: string | number,
   categoryData: ICategory
 ) => {
@@ -147,6 +154,7 @@ const updateSingleCategoryService = async (
       { new: true, runValidators: true }
     )
     .exec();
+
   if (!updatedCategory) throw new Error("Category update failed");
 
   const updateHierarchy = async (
@@ -168,6 +176,7 @@ const updateSingleCategoryService = async (
     const parentsToRemove = oldParentArray.filter(
       (id) => !newParentArray.includes(id.toString())
     );
+
     await Promise.all(
       parentsToRemove.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
@@ -207,15 +216,26 @@ const updateSingleCategoryService = async (
     );
   }
 
+  const discountChanged =
+    categoryData.discountValue !== existingCategory.discountValue ||
+    categoryData.discountType !== existingCategory.discountType;
+
+  if (discountChanged && updatedCategory.discountValue > 0) {
+    await applyDiscountToCategoryProducts(updatedCategory._id.toString());
+  }
+
   return updatedCategory;
 };
 
 // Delete single category
-const deleteSingleCategoryService = async (categoryId: string | number) => {
+export const deleteSingleCategoryService = async (
+  categoryId: string | number
+) => {
   const queryId =
     typeof categoryId === "string"
       ? new mongoose.Types.ObjectId(categoryId)
       : categoryId;
+
   const category = await categoryModel.findById(queryId);
   if (!category) throw new Error("Category not found");
 
@@ -234,6 +254,7 @@ const deleteSingleCategoryService = async (categoryId: string | number) => {
   ) => {
     if (!parentIds) return;
     const parentArray = Array.isArray(parentIds) ? parentIds : [parentIds];
+
     await Promise.all(
       parentArray.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
@@ -243,18 +264,21 @@ const deleteSingleCategoryService = async (categoryId: string | number) => {
     );
   };
 
-  if (category.level === CategoryLevel.CATEGORY)
+  if (category.level === CategoryLevel.CATEGORY) {
     await removeFromParents("category", category.parentCategory);
-  if (category.level === CategoryLevel.SUB_CATEGORY)
+  }
+  if (category.level === CategoryLevel.SUB_CATEGORY) {
     await removeFromParents("subCategory", category.category);
-  if (category.level === CategoryLevel.SUB_SUB_CATEGORY)
+  }
+  if (category.level === CategoryLevel.SUB_SUB_CATEGORY) {
     await removeFromParents("subSubCategory", category.subCategory);
+  }
 
   return await categoryModel.findByIdAndDelete(queryId).exec();
 };
 
-// Delete many categories
-const deleteManyCategoriesService = async (
+// Delete Many Categories
+export const deleteManyCategoriesService = async (
   categoryIds: (string | number)[]
 ) => {
   const queryIds = categoryIds.map((id) =>
@@ -264,6 +288,28 @@ const deleteManyCategoriesService = async (
   );
 
   const categories = await categoryModel.find({ _id: { $in: queryIds } });
+
+  if (!categories || categories.length === 0) {
+    throw new Error("No categories found to delete");
+  }
+
+  const removeFromParents = async (
+    levelField: keyof ICategory,
+    parentIds: any,
+    childId: mongoose.Types.ObjectId
+  ) => {
+    if (!parentIds) return;
+    const parentArray = Array.isArray(parentIds) ? parentIds : [parentIds];
+
+    await Promise.all(
+      parentArray.map((id) =>
+        categoryModel.findByIdAndUpdate(id, {
+          $pull: { [levelField]: childId },
+        })
+      )
+    );
+  };
+
   for (const category of categories) {
     if (category.attachment) {
       const filePath = path.join(
@@ -272,6 +318,24 @@ const deleteManyCategoriesService = async (
         path.basename(category.attachment)
       );
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+
+    if (category.level === CategoryLevel.CATEGORY) {
+      await removeFromParents(
+        "category",
+        category.parentCategory,
+        category._id
+      );
+    }
+    if (category.level === CategoryLevel.SUB_CATEGORY) {
+      await removeFromParents("subCategory", category.category, category._id);
+    }
+    if (category.level === CategoryLevel.SUB_SUB_CATEGORY) {
+      await removeFromParents(
+        "subSubCategory",
+        category.subCategory,
+        category._id
+      );
     }
   }
 

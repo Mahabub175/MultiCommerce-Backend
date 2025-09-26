@@ -10,9 +10,16 @@ const addReviewToProductController = async (
     const { productId } = req.params;
     const data = req.body;
 
+    const filePath = req.file ? req.file.path : undefined;
+
+    const formData = {
+      ...data,
+      attachment: filePath,
+    };
+
     const result = await reviewServices.addReviewToProductService(
       productId,
-      data
+      formData
     );
 
     res.status(200).json({
@@ -118,10 +125,17 @@ const updateProductReviewController = async (
     const { productId, reviewId } = req.params;
     const data = req.body;
 
+    const filePath = req.file ? req.file.path : undefined;
+
+    const formData = {
+      ...data,
+      attachment: filePath,
+    };
+
     const result = await reviewServices.updateProductReviewService(
       productId,
       reviewId,
-      data
+      formData
     );
 
     res.status(200).json({
