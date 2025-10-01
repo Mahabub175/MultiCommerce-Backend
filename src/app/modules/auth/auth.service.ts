@@ -56,7 +56,7 @@ const loginUserService = async (userData: any) => {
     .findOne(query)
     .populate("role", "name")
     .select(
-      "_id name username email number password defaultPassword role status otp otpGeneratedAt"
+      "_id name userName email number password defaultPassword role status otp otpGeneratedAt"
     );
 
   if (!user) {

@@ -19,6 +19,12 @@ export interface IUser {
   otpGeneratedAt: string;
   defaultPassword: string;
   point: number;
+  city: string;
+  city2: string;
+  streetAddress1: string;
+  streetAddress2: string;
+  zipCode: string;
+  zipCode2: string;
   previousPasswords: IPreviousPasswords[];
   status: boolean;
 }

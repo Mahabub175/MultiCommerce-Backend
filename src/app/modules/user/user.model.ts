@@ -60,6 +60,24 @@ const userSchema = new Schema<IUser>(
       ref: "role",
       required: true,
     },
+    city: {
+      type: String,
+    },
+    zipCode: {
+      type: String,
+    },
+    streetAddress1: {
+      type: String,
+    },
+    streetAddress2: {
+      type: String,
+    },
+    city2: {
+      type: String,
+    },
+    zipCode2: {
+      type: String,
+    },
     otp: {
       type: String,
       required: false,
