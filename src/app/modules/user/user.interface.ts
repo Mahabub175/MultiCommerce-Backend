@@ -9,7 +9,8 @@ export interface IUser {
   userName: string;
   email: string;
   password: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   profileImage: string;
   address: string;
   credit: number;

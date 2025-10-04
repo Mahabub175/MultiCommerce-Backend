@@ -30,10 +30,13 @@ const userSchema = new Schema<IUser>(
       required: true,
       minlength: 6,
     },
-    name: {
+    firstName: {
       type: String,
       trim: true,
-      default: "User",
+    },
+    lastName: {
+      type: String,
+      trim: true,
     },
     profileImage: {
       type: String,
