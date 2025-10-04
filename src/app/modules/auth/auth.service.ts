@@ -8,7 +8,6 @@ import httpStatus from "http-status";
 import appError from "../../errors/appError";
 import mongoose from "mongoose";
 import { globalSettingModel } from "../globalSetting/globalSetting.model";
-import { IUser } from "../user/user.interface";
 
 const sendUserOtpService = async (number: string) => {
   const globalSetting = await globalSettingModel.findOne();
@@ -54,9 +53,9 @@ const loginUserService = async (userData: any) => {
 
   const user = await userModel
     .findOne(query)
-    .populate("role", "name")
+    .populate("role", "firstName", "lastName")
     .select(
-      "_id name userName email number password defaultPassword role status otp otpGeneratedAt"
+      "_id firstName lastName userName email number password defaultPassword role status otp otpGeneratedAt"
     );
 
   if (!user) {
@@ -132,7 +131,7 @@ const loginUserService = async (userData: any) => {
   return {
     user: {
       _id: user._id,
-      name: user.name,
+      name: user.firstName + " " + user.lastName,
       email: user.email,
       number: user.number,
       role: (user.role as any).name,
