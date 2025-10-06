@@ -53,7 +53,7 @@ const loginUserService = async (userData: any) => {
 
   const user = await userModel
     .findOne(query)
-    .populate("role", "firstName", "lastName")
+    .populate("role")
     .select(
       "_id firstName lastName userName email number password defaultPassword role status otp otpGeneratedAt"
     );
