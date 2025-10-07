@@ -10,6 +10,8 @@ router.post(
   giftCardControllers.createGiftCardController
 );
 
+router.post("/apply-gift-card", giftCardControllers.applyGiftCardController);
+
 router.get("/gift-card/", giftCardControllers.getAllGiftCardController);
 
 router.get(

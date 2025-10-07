@@ -149,6 +149,30 @@ const deleteSingleGiftCardController = async (
   }
 };
 
+const applyGiftCardController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId, code, orderAmount } = req.body;
+
+    const result = await giftCardServices.applyGiftCardService(
+      userId,
+      code,
+      orderAmount
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Gift card applied successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
 //Delete many GiftCard controller
 const deleteManyGiftCardController = async (
   req: Request,
@@ -184,6 +208,7 @@ export const giftCardControllers = {
   createGiftCardController,
   getAllGiftCardController,
   getSingleGiftCardController,
+  applyGiftCardController,
   getSingleCouponByCodeController,
   updateSingleGiftCardController,
   deleteSingleGiftCardController,

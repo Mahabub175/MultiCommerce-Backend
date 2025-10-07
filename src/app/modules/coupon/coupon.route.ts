@@ -10,6 +10,8 @@ router.post(
   couponControllers.createCouponController
 );
 
+router.post("/apply-coupon/", couponControllers.applyCouponController);
+
 router.get("/coupon/", couponControllers.getAllCouponController);
 
 router.get("/coupon/:couponId/", couponControllers.getSingleCouponController);

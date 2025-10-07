@@ -133,6 +133,25 @@ const updateSingleGiftCardService = async (
   return result;
 };
 
+const applyGiftCardService = async (
+  userId: string,
+  code: string,
+  orderAmount: number
+) => {
+  const giftCard = await giftCardModel.findOne({ code });
+  if (!giftCard) throw new Error("Invalid gift card code.");
+
+  const validation = giftCard.isValidForUser(userId);
+  if (!validation.valid) throw new Error(validation.reason);
+
+  const discount = Math.min(orderAmount, giftCard.amount);
+  const totalAfterDiscount = orderAmount - discount;
+
+  await giftCard.incrementUsage();
+
+  return { discount, totalAfterDiscount };
+};
+
 //Delete single GiftCard
 const deleteSingleGiftCardService = async (giftCardId: string | number) => {
   const queryId =
@@ -191,6 +210,7 @@ export const giftCardServices = {
   createGiftCardService,
   getAllGiftCardService,
   getSingleGiftCardService,
+  applyGiftCardService,
   getSingleGiftCardByCodeService,
   updateSingleGiftCardService,
   deleteSingleGiftCardService,

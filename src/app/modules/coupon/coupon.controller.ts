@@ -130,6 +130,30 @@ const updateSingleCouponController = async (
   }
 };
 
+export const applyCouponController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId, code, orderAmount } = req.body;
+
+    const result = await couponServices.applyCouponService(
+      userId,
+      code,
+      orderAmount
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Coupon applied successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
 //Delete single Coupon controller
 const deleteSingleCouponController = async (
   req: Request,
@@ -184,6 +208,7 @@ export const couponControllers = {
   getSingleCouponController,
   getSingleCouponByCodeController,
   updateSingleCouponController,
+  applyCouponController,
   deleteSingleCouponController,
   deleteManyCouponController,
 };

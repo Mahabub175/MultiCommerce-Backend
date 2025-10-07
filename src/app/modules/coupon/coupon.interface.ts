@@ -1,14 +1,26 @@
-import { Types } from "mongoose";
+import { Document, ObjectId } from "mongoose";
 
-export interface ICoupon {
+export interface ICoupon extends Document {
   name: string;
   code: string;
-  user: Types.ObjectId[];
-  count: number;
-  amount: string;
+  description?: string;
+  type: "fixed" | "percentage";
+  amount: number;
+  maxAmount?: number;
   minimumAmount: number;
-  expiredDate: string;
-  type: string;
-  attachment: string;
+  expiredDate: Date;
+  count: number;
+  maxUsageCount: number;
+  attachment?: string;
+  user?: ObjectId[];
   status: boolean;
+
+  isExpired(): boolean;
+  isMaxUsed(): boolean;
+  isValidForUser(
+    userId: string,
+    orderAmount: number
+  ): { valid: boolean; reason?: string };
+  calculateDiscount(orderAmount: number): number;
+  incrementUsage(): Promise<void>;
 }

@@ -98,10 +98,9 @@ const getSingleCouponByCodeService = async (couponCode: string) => {
 };
 
 //Update single coupon
-
-const updateSingleCouponService = async (
+export const updateSingleCouponService = async (
   couponId: string | number,
-  couponData: ICoupon
+  couponData: Partial<ICoupon>
 ) => {
   const queryId =
     typeof couponId === "string"
@@ -109,22 +108,26 @@ const updateSingleCouponService = async (
       : couponId;
 
   if (couponData.type === "percentage") {
-    const amount = parseFloat(couponData.amount);
-    if (isNaN(amount) || amount < 0 || amount > 100) {
+    if (
+      typeof couponData.amount !== "number" ||
+      couponData.amount < 0 ||
+      couponData.amount > 100
+    ) {
       throw new Error("Amount must be a valid percentage between 0 and 100.");
     }
-    couponData.amount = `${amount}%`;
   } else if (couponData.type === "fixed") {
-    const fixedAmount = parseFloat(couponData.amount);
-    if (isNaN(fixedAmount) || fixedAmount < 0) {
+    if (typeof couponData.amount !== "number" || couponData.amount < 0) {
       throw new Error("Amount must be a valid number.");
     }
-    couponData.amount = fixedAmount.toString();
   }
 
   const currentDate = moment();
   const expiredDate = moment(couponData.expiredDate).endOf("day");
-  if (couponData.count > 0 && expiredDate.isAfter(currentDate)) {
+
+  if (
+    (couponData.count ?? 0) < (couponData.maxUsageCount ?? 1) &&
+    expiredDate.isAfter(currentDate)
+  ) {
     couponData.status = true;
   } else {
     couponData.status = false;
@@ -159,6 +162,25 @@ const deleteSingleCouponService = async (couponId: string | number) => {
   }
 
   return result;
+};
+
+const applyCouponService = async (
+  userId: string,
+  code: string,
+  orderAmount: number
+) => {
+  const coupon = await couponModel.findOne({ code });
+  if (!coupon) throw new Error("Invalid coupon code.");
+
+  const validation = coupon.isValidForUser(userId, orderAmount);
+  if (!validation.valid) throw new Error(validation.reason);
+
+  const discount = coupon.calculateDiscount(orderAmount);
+  const totalAfterDiscount = Math.max(orderAmount - discount, 0);
+
+  await couponModel.updateOne({ _id: coupon._id }, { $inc: { usedCount: 1 } });
+
+  return { discount, totalAfterDiscount };
 };
 
 //Delete many coupon
@@ -205,6 +227,7 @@ export const couponServices = {
   getSingleCouponService,
   getSingleCouponByCodeService,
   updateSingleCouponService,
+  applyCouponService,
   deleteSingleCouponService,
   deleteManyCouponService,
 };
