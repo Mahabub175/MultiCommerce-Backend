@@ -110,12 +110,14 @@ const updateSingleGiftCardService = async (
       ? new mongoose.Types.ObjectId(giftCardId)
       : giftCardId;
 
-  const currentDate = moment();
-  const expiredDate = moment(giftCardData.expiredDate).endOf("day");
-  if (expiredDate.isAfter(currentDate)) {
-    giftCardData.status = true;
-  } else {
-    giftCardData.status = false;
+  if (giftCardData.status === undefined) {
+    const currentDate = moment();
+    const expiredDate = moment(giftCardData.expiredDate).endOf("day");
+    if (expiredDate.isAfter(currentDate)) {
+      giftCardData.status = true;
+    } else {
+      giftCardData.status = false;
+    }
   }
 
   const result = await giftCardModel

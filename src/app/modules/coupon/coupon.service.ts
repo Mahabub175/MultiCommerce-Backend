@@ -121,16 +121,18 @@ export const updateSingleCouponService = async (
     }
   }
 
-  const currentDate = moment();
-  const expiredDate = moment(couponData.expiredDate).endOf("day");
+  if (couponData.status === undefined) {
+    const currentDate = moment();
+    const expiredDate = moment(couponData.expiredDate).endOf("day");
 
-  if (
-    (couponData.count ?? 0) < (couponData.maxUsageCount ?? 1) &&
-    expiredDate.isAfter(currentDate)
-  ) {
-    couponData.status = true;
-  } else {
-    couponData.status = false;
+    if (
+      (couponData.count ?? 0) < (couponData.maxUsageCount ?? 1) &&
+      expiredDate.isAfter(currentDate)
+    ) {
+      couponData.status = true;
+    } else {
+      couponData.status = false;
+    }
   }
 
   const result = await couponModel
