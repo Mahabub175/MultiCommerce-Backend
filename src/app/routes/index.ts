@@ -19,6 +19,7 @@ import { cartRoutes } from "../modules/cart/cart.route";
 import { couponRoutes } from "../modules/coupon/coupon.route";
 import { giftCardRoutes } from "../modules/giftCard/giftCard.route";
 import { reviewRoutes } from "../modules/review/review.route";
+import { orderRoutes } from "../modules/order/order.route";
 
 const router = Router();
 
@@ -42,6 +43,7 @@ const routes = [
   couponRoutes,
   giftCardRoutes,
   reviewRoutes,
+  orderRoutes,
 ];
 
 routes.forEach((route) => {
