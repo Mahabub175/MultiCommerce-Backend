@@ -53,7 +53,10 @@ const orderSchema = new Schema<IOrder>(
       default: "pending",
     },
     note: { type: String },
-    status: { Boolean, default: true },
+    status: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );
