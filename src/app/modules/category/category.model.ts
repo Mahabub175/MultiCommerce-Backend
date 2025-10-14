@@ -14,50 +14,50 @@ const categorySchema = new Schema<ICategory>(
       type: String,
       required: true,
       trim: true,
-      unique: true,
     },
     slug: {
       type: String,
+      required: true,
       unique: true,
-      lowercase: true,
       trim: true,
     },
     parentCategory: {
       type: Schema.Types.ObjectId,
       ref: "category",
+      default: null,
     },
-    category: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "category",
-      },
-    ],
-    subCategory: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "category",
-      },
-    ],
-    subSubCategory: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "category",
-      },
-    ],
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: "category",
+      default: null,
+    },
+    subCategory: {
+      type: Schema.Types.ObjectId,
+      ref: "category",
+      default: null,
+    },
+    subSubCategory: {
+      type: Schema.Types.ObjectId,
+      ref: "category",
+      default: null,
+    },
     level: {
       type: String,
-      enum: Object.values(CategoryLevel),
-      default: CategoryLevel.PARENT_CATEGORY,
+      enum: ["parentCategory", "category", "subCategory", "subSubCategory"],
+      required: true,
     },
-    discountType: {
-      type: String,
-      enum: ["fixed", "percentage"],
-    },
-    discountValue: {
-      type: Number,
-    },
+    roles: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "role",
+      },
+    ],
     attachment: {
       type: String,
+    },
+    megaMenuStatus: {
+      type: Boolean,
+      default: false,
     },
     status: {
       type: Boolean,

@@ -8,8 +8,8 @@ export interface ICategory {
   subCategory?: Types.ObjectId | null;
   subSubCategory?: Types.ObjectId | null;
   level: "parentCategory" | "category" | "subCategory" | "subSubCategory";
-  discountType: "fixed" | "percentage";
-  discountValue: number;
+  roles: Types.ObjectId[];
   attachment: string;
+  megaMenuStatus: boolean;
   status: boolean;
 }
