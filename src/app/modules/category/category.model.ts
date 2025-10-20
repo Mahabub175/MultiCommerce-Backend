@@ -8,6 +8,19 @@ export enum CategoryLevel {
   SUB_SUB_CATEGORY = "subSubCategory",
 }
 
+const categoryRoleDiscountSchema = new Schema(
+  {
+    role: { type: Schema.Types.ObjectId, ref: "role", required: true },
+    discountType: {
+      type: String,
+      enum: ["fixed", "percentage"],
+      required: true,
+    },
+    discountValue: { type: Number, required: true },
+  },
+  { _id: false }
+);
+
 const categorySchema = new Schema<ICategory>(
   {
     name: {
@@ -52,6 +65,16 @@ const categorySchema = new Schema<ICategory>(
         ref: "role",
       },
     ],
+    roleDiscounts: {
+      type: [categoryRoleDiscountSchema],
+      default: [],
+    },
+    discountType: {
+      type: String,
+      enum: ["fixed", "percentage"],
+      required: true,
+    },
+    discountValue: { type: Number, required: true },
     attachment: {
       type: String,
     },

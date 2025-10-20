@@ -30,6 +30,13 @@ export interface IRoleDiscount {
   discountedPrice: number;
 }
 
+export interface ICategoryDiscount {
+  category: Types.ObjectId;
+  discountType: "fixed" | "percentage";
+  discountValue: number;
+  discountedPrice?: number;
+}
+
 export interface IProduct extends Document {
   name: string;
   slug: string;
@@ -59,6 +66,7 @@ export interface IProduct extends Document {
   };
   reviews: IReview[];
   roleDiscounts: IRoleDiscount[];
+  categoryDiscounts: ICategoryDiscount[];
   isAvailable: boolean;
   isFeatured: boolean;
   isOnSale: boolean;

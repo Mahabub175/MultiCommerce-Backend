@@ -1,6 +1,13 @@
 import { Types } from "mongoose";
 
+export interface ICategoryRoleDiscount {
+  role: Types.ObjectId;
+  discountType: "fixed" | "percentage";
+  discountValue: number;
+}
+
 export interface ICategory {
+  _id?: Types.ObjectId;
   name: string;
   slug: string;
   parentCategory?: Types.ObjectId | null;
@@ -8,8 +15,13 @@ export interface ICategory {
   subCategory?: Types.ObjectId | null;
   subSubCategory?: Types.ObjectId | null;
   level: "parentCategory" | "category" | "subCategory" | "subSubCategory";
-  roles: Types.ObjectId[];
-  attachment: string;
-  megaMenuStatus: boolean;
-  status: boolean;
+  roles?: Types.ObjectId[];
+  roleDiscounts?: ICategoryRoleDiscount[];
+  discountType: "fixed" | "percentage";
+  discountValue: number;
+  attachment?: string;
+  megaMenuStatus?: boolean;
+  status?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

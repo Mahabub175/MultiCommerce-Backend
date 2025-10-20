@@ -2,12 +2,27 @@ import mongoose from "mongoose";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import { IRole } from "./role.interface";
 import { roleModel } from "./role.model";
+import { productModel } from "../product/product.model";
 
 //Create a role into database
-const createRoleService = async (roleData: IRole, filePath?: string) => {
+export const createRoleService = async (roleData: IRole, filePath?: string) => {
   const dataToSave = { ...roleData, filePath };
-  const result = await roleModel.create(dataToSave);
-  return result;
+
+  const newRole = await roleModel.create(dataToSave);
+
+  const roleDiscountObject = {
+    role: newRole._id,
+    discountType: newRole.discountType,
+    discountValue: newRole.discountValue,
+    discountedPrice: 0, // will be recalculated in product pre-save hook
+  };
+
+  await productModel.updateMany(
+    {},
+    { $addToSet: { roleDiscounts: roleDiscountObject } }
+  );
+
+  return newRole;
 };
 
 // Get all role with optional pagination
@@ -55,14 +70,14 @@ const getSingleRoleService = async (roleId: number | string) => {
 };
 
 //Update single role
-const updateSingleRoleService = async (
+export const updateSingleRoleService = async (
   roleId: string | number,
   roleData: IRole
 ) => {
   const queryId =
     typeof roleId === "string" ? new mongoose.Types.ObjectId(roleId) : roleId;
 
-  const result = await roleModel
+  const updatedRole = await roleModel
     .findByIdAndUpdate(
       queryId,
       { $set: roleData },
@@ -70,11 +85,31 @@ const updateSingleRoleService = async (
     )
     .exec();
 
-  if (!result) {
+  if (!updatedRole) {
     throw new Error("Role not found");
   }
 
-  return result;
+  await productModel.updateMany(
+    { "roleDiscounts.role": updatedRole._id },
+    {
+      $set: {
+        "roleDiscounts.$[elem].discountType": updatedRole.discountType,
+        "roleDiscounts.$[elem].discountValue": updatedRole.discountValue,
+      },
+    },
+    {
+      arrayFilters: [{ "elem.role": updatedRole._id }],
+    }
+  );
+
+  const affectedProducts = await productModel.find({
+    "roleDiscounts.role": updatedRole._id,
+  });
+  for (const product of affectedProducts) {
+    await product.save();
+  }
+
+  return updatedRole;
 };
 
 //Delete single role

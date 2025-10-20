@@ -5,8 +5,8 @@ import { CategoryLevel, categoryModel } from "./category.model";
 import { formatResultImage } from "../../utils/formatResultImage";
 import fs from "fs";
 import path from "path";
-import { applyDiscountToCategoryProducts } from "../../utils/applyDiscountToCategoryProducts";
 import { updateMegaMenuStatus } from "../../utils/updateMegaMenuStatus";
+import { applyCategoryDiscountToProducts } from "../../utils/applyDiscountToCategoryProducts";
 
 // Create a category
 export const createCategoryService = async (
@@ -59,8 +59,12 @@ export const createCategoryService = async (
     );
   }
 
-  if (categoryData.roles && categoryData.roles.length > 0) {
-    await applyDiscountToCategoryProducts(newCategory._id);
+  if (categoryData.discountType && categoryData.discountValue) {
+    await applyCategoryDiscountToProducts(
+      newCategory._id.toString(),
+      categoryData.discountType,
+      categoryData.discountValue
+    );
   }
 
   if (newCategory.megaMenuStatus) {
@@ -221,18 +225,18 @@ export const updateSingleCategoryService = async (
     );
   }
 
-  const rolesChanged =
-    JSON.stringify(categoryData.roles || []) !==
-    JSON.stringify(existingCategory.roles || []);
-
-  if (rolesChanged && updatedCategory.roles.length > 0) {
-    await applyDiscountToCategoryProducts(updatedCategory._id.toString());
+  if (categoryData.discountType && categoryData.discountValue) {
+    await applyCategoryDiscountToProducts(
+      updatedCategory._id.toString(),
+      updatedCategory.discountType,
+      updatedCategory.discountValue
+    );
   }
 
   if (categoryData.megaMenuStatus !== existingCategory.megaMenuStatus) {
     await updateMegaMenuStatus(
       updatedCategory._id.toString(),
-      categoryData.megaMenuStatus
+      categoryData.megaMenuStatus as boolean
     );
   }
 
