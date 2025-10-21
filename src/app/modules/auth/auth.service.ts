@@ -9,7 +9,7 @@ import appError from "../../errors/appError";
 import mongoose from "mongoose";
 import { globalSettingModel } from "../globalSetting/globalSetting.model";
 
-const sendUserOtpService = async (number: string) => {
+const sendUserOtpService = async (phoneNumber: string) => {
   const globalSetting = await globalSettingModel.findOne();
 
   if (!globalSetting || !globalSetting.useSms) {
@@ -28,7 +28,7 @@ const sendUserOtpService = async (number: string) => {
   const message = `Your OTP is ${generatedOtp}`;
 
   try {
-    await sendSMS(number, message);
+    await sendSMS(phoneNumber, message);
 
     return {
       otp: createToken(
@@ -45,7 +45,7 @@ const sendUserOtpService = async (number: string) => {
 const loginUserService = async (userData: any) => {
   const query = {
     $or: [
-      { number: userData.id },
+      { phoneNumber: userData.id },
       { email: userData.id },
       { userName: userData.id },
     ],
@@ -55,7 +55,7 @@ const loginUserService = async (userData: any) => {
     .findOne(query)
     .populate("role")
     .select(
-      "_id firstName lastName userName email number password defaultPassword role status otp otpGeneratedAt"
+      "_id firstName lastName userName email phoneNumber password defaultPassword role status otp otpGeneratedAt"
     );
 
   if (!user) {
@@ -121,7 +121,7 @@ const loginUserService = async (userData: any) => {
 
   const jwtPayload = {
     userId: user._id,
-    number: user.number,
+    phoneNumber: user.phoneNumber,
     role: (user.role as any).name,
     exp: expirationTime,
   };
@@ -133,7 +133,7 @@ const loginUserService = async (userData: any) => {
       _id: user._id,
       name: user.firstName + " " + user.lastName,
       email: user.email,
-      number: user.number,
+      phoneNumber: user.phoneNumber,
       role: (user.role as any).name,
     },
     token,
@@ -225,8 +225,8 @@ const changeUserPasswordService = async (
   }
 };
 
-const forgotUserPasswordService = async (userNumber: string) => {
-  const query = { number: userNumber };
+const forgotUserPasswordService = async (userPhoneNumber: string) => {
+  const query = { phoneNumber: userPhoneNumber };
   const user = await userModel.findOne(query);
 
   if (!user) {
@@ -247,12 +247,12 @@ const forgotUserPasswordService = async (userNumber: string) => {
     generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
     await userModel.findOneAndUpdate(
-      { number: userNumber },
+      { phoneNumber: userPhoneNumber },
       { otp: generatedOtp, otpGeneratedAt: new Date() }
     );
 
     const message = `Your OTP is ${generatedOtp}`;
-    await sendSMS(userNumber, message);
+    await sendSMS(userPhoneNumber, message);
   } else {
     generatedOtp = "0000";
   }
@@ -267,11 +267,11 @@ const forgotUserPasswordService = async (userNumber: string) => {
 };
 
 const resetUserPasswordService = async (payload: {
-  number: string;
+  phoneNumber: string;
   newPassword: string;
   otp: string;
 }) => {
-  const query = { number: payload.number };
+  const query = { phoneNumber: payload.phoneNumber };
 
   const user = await userModel.findOne(query);
 
@@ -307,7 +307,7 @@ const resetUserPasswordService = async (payload: {
   const newHashedPassword = await hashPassword(payload.newPassword);
 
   await userModel.findOneAndUpdate(
-    { number: payload.number },
+    { phoneNumber: payload.phoneNumber },
     {
       password: newHashedPassword,
       $unset: { otp: 1, otpGeneratedAt: 1 },

@@ -13,7 +13,23 @@ export const createCategoryService = async (
   categoryData: ICategory,
   filePath?: string
 ) => {
-  const dataToSave = { ...categoryData, attachment: filePath };
+  let level: CategoryLevel;
+
+  if (categoryData.subCategory) {
+    level = CategoryLevel.SUB_SUB_CATEGORY;
+  } else if (categoryData.category) {
+    level = CategoryLevel.SUB_CATEGORY;
+  } else if (categoryData.parentCategory) {
+    level = CategoryLevel.CATEGORY;
+  } else {
+    level = CategoryLevel.PARENT_CATEGORY;
+  }
+
+  const dataToSave = {
+    ...categoryData,
+    attachment: filePath,
+    level,
+  };
   const newCategory = await categoryModel.create(dataToSave);
 
   if (
@@ -144,6 +160,17 @@ export const updateSingleCategoryService = async (
   const existingCategory = await categoryModel.findById(queryId);
   if (!existingCategory) throw new Error("Category not found");
 
+  let level: CategoryLevel;
+  if (categoryData.subCategory) {
+    level = CategoryLevel.SUB_SUB_CATEGORY;
+  } else if (categoryData.category) {
+    level = CategoryLevel.SUB_CATEGORY;
+  } else if (categoryData.parentCategory) {
+    level = CategoryLevel.CATEGORY;
+  } else {
+    level = CategoryLevel.PARENT_CATEGORY;
+  }
+
   if (
     categoryData.attachment &&
     existingCategory.attachment !== categoryData.attachment
@@ -159,7 +186,12 @@ export const updateSingleCategoryService = async (
   const updatedCategory = await categoryModel
     .findByIdAndUpdate(
       queryId,
-      { $set: categoryData },
+      {
+        $set: {
+          ...categoryData,
+          level,
+        },
+      },
       { new: true, runValidators: true }
     )
     .exec();
@@ -203,21 +235,21 @@ export const updateSingleCategoryService = async (
     );
   };
 
-  if (updatedCategory.level === CategoryLevel.CATEGORY) {
+  if (level === CategoryLevel.CATEGORY) {
     await updateHierarchy(
       "category",
       existingCategory.parentCategory,
       updatedCategory.parentCategory
     );
   }
-  if (updatedCategory.level === CategoryLevel.SUB_CATEGORY) {
+  if (level === CategoryLevel.SUB_CATEGORY) {
     await updateHierarchy(
       "subCategory",
       existingCategory.category,
       updatedCategory.category
     );
   }
-  if (updatedCategory.level === CategoryLevel.SUB_SUB_CATEGORY) {
+  if (level === CategoryLevel.SUB_SUB_CATEGORY) {
     await updateHierarchy(
       "subSubCategory",
       existingCategory.subCategory,

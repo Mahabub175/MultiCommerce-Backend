@@ -53,7 +53,7 @@ const userSchema = new Schema<IUser>(
       type: Number,
       set: (val: number) => parseInt(val.toString(), 10),
     },
-    number: {
+    phoneNumber: {
       type: String,
       required: true,
       unique: true,
@@ -96,7 +96,7 @@ const userSchema = new Schema<IUser>(
       type: String,
       trim: true,
       default: function () {
-        return this.number;
+        return this.phoneNumber;
       },
     },
     previousPasswords: [previousPasswordSchema],

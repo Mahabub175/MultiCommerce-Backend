@@ -16,6 +16,7 @@ const categoryRoleDiscountSchema = new Schema(
       enum: ["fixed", "percentage"],
       required: true,
     },
+    minimumQuantity: { type: Number, required: true },
     discountValue: { type: Number, required: true },
   },
   { _id: false }
@@ -59,12 +60,6 @@ const categorySchema = new Schema<ICategory>(
       enum: ["parentCategory", "category", "subCategory", "subSubCategory"],
       required: true,
     },
-    roles: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "role",
-      },
-    ],
     roleDiscounts: {
       type: [categoryRoleDiscountSchema],
       default: [],
@@ -75,6 +70,7 @@ const categorySchema = new Schema<ICategory>(
       required: true,
     },
     discountValue: { type: Number, required: true },
+    minimumQuantity: { type: Number, required: true },
     attachment: {
       type: String,
     },

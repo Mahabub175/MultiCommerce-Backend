@@ -15,8 +15,8 @@ export interface ICategory {
   subCategory?: Types.ObjectId | null;
   subSubCategory?: Types.ObjectId | null;
   level: "parentCategory" | "category" | "subCategory" | "subSubCategory";
-  roles?: Types.ObjectId[];
   roleDiscounts?: ICategoryRoleDiscount[];
+  minimumQuantity: number;
   discountType: "fixed" | "percentage";
   discountValue: number;
   attachment?: string;

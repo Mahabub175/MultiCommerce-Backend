@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { categoryServices } from "./category.service";
+import { generateSlug } from "../../utils/generateSlug";
 
 const createCategoryController = async (
   req: Request,
@@ -8,11 +9,13 @@ const createCategoryController = async (
 ) => {
   try {
     const data = req.body;
-
     const filePath = req.file ? req.file.path : undefined;
+
+    const slug = generateSlug(data.name);
 
     const formData = {
       ...data,
+      slug,
       attachment: filePath,
     };
 
@@ -89,8 +92,11 @@ const updateSingleCategoryController = async (
     const data = req.body;
     const filePath = req.file ? req.file.path : undefined;
 
+    const slug = generateSlug(data.name);
+
     const categoryData = {
       ...data,
+      slug,
       attachment: filePath,
     };
 

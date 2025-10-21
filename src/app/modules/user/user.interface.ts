@@ -14,7 +14,7 @@ export interface IUser {
   profileImage: string;
   address: string;
   credit: number;
-  number: string;
+  phoneNumber: string;
   role: Types.ObjectId;
   otp: number | string;
   otpGeneratedAt: string;

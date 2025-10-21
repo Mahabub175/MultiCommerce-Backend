@@ -7,8 +7,8 @@ const sendUserOtpController = async (
   next: NextFunction
 ) => {
   try {
-    const { number } = req.body;
-    const result = await authServices.sendUserOtpService(number);
+    const { phoneNumber } = req.body;
+    const result = await authServices.sendUserOtpService(phoneNumber);
     res.status(200).json({
       success: true,
       message: "OTP sent successfully",
@@ -65,8 +65,8 @@ const forgotUserPasswordController = async (
   next: NextFunction
 ) => {
   try {
-    const { number } = req.body;
-    const result = await authServices.forgotUserPasswordService(number);
+    const { phoneNumber } = req.body;
+    const result = await authServices.forgotUserPasswordService(phoneNumber);
     res.status(200).json({
       success: true,
       message: "OTP sent for password reset",
