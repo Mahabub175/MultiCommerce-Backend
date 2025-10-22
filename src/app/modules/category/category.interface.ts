@@ -4,10 +4,11 @@ export interface ICategoryRoleDiscount {
   role: Types.ObjectId;
   discountType: "fixed" | "percentage";
   discountValue: number;
+  minimumQuantity: number;
 }
 
 export interface ICategory {
-  _id?: Types.ObjectId;
+  _id: Types.ObjectId;
   name: string;
   slug: string;
   parentCategory?: Types.ObjectId | null;
@@ -21,7 +22,5 @@ export interface ICategory {
   discountValue: number;
   attachment?: string;
   megaMenuStatus?: boolean;
-  status?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  status: boolean;
 }
