@@ -16,8 +16,8 @@ const categoryRoleDiscountSchema = new Schema(
       enum: ["fixed", "percentage"],
       required: true,
     },
-    minimumQuantity: { type: Number, required: true },
-    discountValue: { type: Number, required: true },
+    minimumQuantity: { type: Number },
+    discountValue: { type: Number},
   },
   { _id: false }
 );
@@ -31,7 +31,6 @@ const categorySchema = new Schema<ICategory>(
     },
     slug: {
       type: String,
-      required: true,
       unique: true,
       trim: true,
     },
@@ -67,16 +66,15 @@ const categorySchema = new Schema<ICategory>(
     discountType: {
       type: String,
       enum: ["fixed", "percentage"],
-      required: true,
     },
-    discountValue: { type: Number, required: true },
-    minimumQuantity: { type: Number, required: true },
+    discountValue: { type: Number },
+    minimumQuantity: { type: Number },
     attachment: {
       type: String,
     },
     megaMenuStatus: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     status: {
       type: Boolean,
