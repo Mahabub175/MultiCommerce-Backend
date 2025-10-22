@@ -61,7 +61,7 @@ const userSchema = new Schema<IUser>(
     role: {
       type: Schema.Types.ObjectId,
       ref: "role",
-      required: true,
+      default: "68f8f81ac62829cfb4813889",
     },
     city: {
       type: String,
