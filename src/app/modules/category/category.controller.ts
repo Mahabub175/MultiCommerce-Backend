@@ -10,8 +10,8 @@ const createCategoryController = async (
   try {
     const data = req.body;
     const filePath = req.file ? req.file.path : undefined;
-
-    const slug = generateSlug(data.name);
+    
+    const slug = data.slug ? data.slug : generateSlug(data.name);
 
     const formData = {
       ...data,
@@ -30,6 +30,7 @@ const createCategoryController = async (
     next(error);
   }
 };
+
 
 const getAllCategoryController = async (
   req: Request,
@@ -92,7 +93,7 @@ const updateSingleCategoryController = async (
     const data = req.body;
     const filePath = req.file ? req.file.path : undefined;
 
-    const slug = generateSlug(data.name);
+    const slug = data.slug ? data.slug : generateSlug(data.name);
 
     const categoryData = {
       ...data,
