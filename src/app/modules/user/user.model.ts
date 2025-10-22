@@ -110,21 +110,17 @@ const userSchema = new Schema<IUser>(
 
 userSchema.pre("save", async function (next) {
   if (!this.userName) {
-    let baseName =
+    const baseName =
       this.firstName?.toLowerCase() ||
       this.lastName?.toLowerCase() ||
       (this.email ? this.email.split("@")[0] : "user");
 
     let uniqueName = baseName;
-    let counter = 1;
-
-    const existingUser = await userModel.findOne({ userName: uniqueName });
-
+    let existingUser = await userModel.findOne({ userName: uniqueName });
+    
     while (existingUser) {
       uniqueName = `${baseName}${Math.floor(Math.random() * 1000)}`;
-      const check = await userModel.findOne({ userName: uniqueName });
-      if (!check) break;
-      counter++;
+      existingUser = await userModel.findOne({ userName: uniqueName });
     }
 
     this.userName = uniqueName;
