@@ -108,10 +108,11 @@ const userSchema = new Schema<IUser>(
 
 userSchema.pre("save", async function (next) {
   if (!this.userName) {
-    const baseName =
-      this.firstName?.toLowerCase() ||
-      this.lastName?.toLowerCase() ||
-      (this.email ? this.email.split("@")[0] : "user");
+    const first = this.firstName ? this.firstName.toLowerCase() : "";
+    const last = this.lastName ? this.lastName.toLowerCase() : "";
+    const phoneDigits = this.phoneNumber ? this.phoneNumber.slice(0, 2) : "00";
+
+    const baseName = `${first}${last}${phoneDigits}` || "user";
 
     let uniqueName = baseName;
     let existingUser = await userModel.findOne({ userName: uniqueName });
