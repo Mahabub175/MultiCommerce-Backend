@@ -26,6 +26,7 @@ const categorySchema = new Schema<ICategory>(
   {
     name: {
       type: String,
+      unique: true,
       required: true,
       trim: true,
     },
