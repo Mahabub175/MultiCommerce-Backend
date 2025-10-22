@@ -21,7 +21,6 @@ const userSchema = new Schema<IUser>(
     },
     email: {
       type: String,
-      unique: true,
       lowercase: true,
       trim: true,
     },
@@ -56,7 +55,6 @@ const userSchema = new Schema<IUser>(
     phoneNumber: {
       type: String,
       required: true,
-      unique: true,
     },
     role: {
       type: Schema.Types.ObjectId,
