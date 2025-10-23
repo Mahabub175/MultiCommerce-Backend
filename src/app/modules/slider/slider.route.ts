@@ -6,7 +6,10 @@ const router = express.Router();
 
 router.post(
   "/slider/",
-  uploadService.single("attachment"),
+  uploadService.fields([
+    { name: "attachment", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
   sliderControllers.createSliderController
 );
 
@@ -16,7 +19,10 @@ router.get("/slider/:sliderId/", sliderControllers.getSingleSliderController);
 
 router.patch(
   "/slider/:sliderId/",
-  uploadService.single("attachment"),
+  uploadService.fields([
+    { name: "attachment", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
   sliderControllers.updateSingleSliderController
 );
 

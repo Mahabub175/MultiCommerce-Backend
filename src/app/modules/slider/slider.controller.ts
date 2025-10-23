@@ -9,11 +9,17 @@ const createSliderController = async (
   try {
     const data = req.body;
 
-    const filePath = req.file ? req.file.path : undefined;
+    const files = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+
+    const attachmentPath = files?.attachment?.[0]?.path;
+    const videoPath = files?.video?.[0]?.path;
 
     const formData = {
       ...data,
-      attachment: filePath,
+      attachment: attachmentPath,
+      video: videoPath,
     };
 
     const result = await sliderServices.createSliderService(formData);
@@ -88,11 +94,18 @@ const updateSingleSliderController = async (
   try {
     const { sliderId } = req.params;
     const data = req.body;
-    const filePath = req.file ? req.file.path : undefined;
+
+    const files = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+
+    const attachmentPath = files?.attachment?.[0]?.path;
+    const videoPath = files?.video?.[0]?.path;
 
     const sliderData = {
       ...data,
-      attachment: filePath,
+      attachment: attachmentPath,
+      video: videoPath,
     };
 
     const result = await sliderServices.updateSingleSliderService(

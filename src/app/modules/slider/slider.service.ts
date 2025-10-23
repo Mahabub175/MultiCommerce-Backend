@@ -7,8 +7,12 @@ import path from "path";
 import fs from "fs";
 
 //Create a Slider into database
-const createSliderService = async (sliderData: ISlider, filePath?: string) => {
-  const dataToSave = { ...sliderData, filePath };
+const createSliderService = async (
+  sliderData: ISlider,
+  filePath?: string,
+  videoPath?: string
+) => {
+  const dataToSave = { ...sliderData, filePath, videoPath };
   const result = await sliderModel.create(dataToSave);
   return result;
 };
@@ -42,6 +46,7 @@ const getAllSliderService = async (
     results = await sliderModel.find().sort({ createdAt: -1 }).exec();
 
     results = formatResultImage(results, "attachment");
+    results = formatResultImage(results, "video");
 
     return {
       results,
