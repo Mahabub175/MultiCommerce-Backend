@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import { IUser } from "./user.interface";
+import { roleModel } from "../role/role.model";
 
 const previousPasswordSchema = new Schema({
   password: {
@@ -23,6 +24,7 @@ const userSchema = new Schema<IUser>(
       type: String,
       lowercase: true,
       trim: true,
+      unique: true,
     },
     password: {
       type: String,
@@ -32,10 +34,12 @@ const userSchema = new Schema<IUser>(
     firstName: {
       type: String,
       trim: true,
+      required: true,
     },
     lastName: {
       type: String,
       trim: true,
+      required: true,
     },
     profileImage: {
       type: String,
@@ -55,11 +59,11 @@ const userSchema = new Schema<IUser>(
     phoneNumber: {
       type: String,
       required: true,
+      unique: true,
     },
     role: {
       type: Schema.Types.ObjectId,
       ref: "role",
-      default: "68f8f81ac62829cfb4813889",
     },
     city: {
       type: String,
@@ -116,13 +120,20 @@ userSchema.pre("save", async function (next) {
 
     let uniqueName = baseName;
     let existingUser = await userModel.findOne({ userName: uniqueName });
-    
+
     while (existingUser) {
-      uniqueName = `${baseName}${Math.floor(Math.random() * 1000)}`;
+      uniqueName = `${baseName}${Math.floor(Math.random() * 10)}`;
       existingUser = await userModel.findOne({ userName: uniqueName });
     }
 
     this.userName = uniqueName;
+  }
+
+  if (!this.role) {
+    const defaultRole = await roleModel.findOne({ name: "user" });
+    if (defaultRole) {
+      this.role = defaultRole._id;
+    }
   }
 
   next();
