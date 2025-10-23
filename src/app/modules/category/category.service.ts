@@ -156,17 +156,15 @@ export const updateSingleCategoryService = async (
       "uploads",
       path.basename(existingCategory.attachment || "")
     );
-    if (fs.existsSync(prevFile)) fs.unlinkSync(prevFile);
+    if (fs.existsSync(prevFile)) {
+      fs.unlinkSync(prevFile);
+    }
   }
 
   const updatedCategory = await categoryModel
     .findByIdAndUpdate(
       queryId,
-      {
-        $set: {
-          ...categoryData,
-        },
-      },
+      { $set: { ...categoryData } },
       { new: true, runValidators: true }
     )
     .exec();
@@ -180,35 +178,39 @@ export const updateSingleCategoryService = async (
   ) => {
     const oldParentArray = oldParents
       ? Array.isArray(oldParents)
-        ? oldParents
-        : [oldParents]
+        ? oldParents.map((id) => id.toString())
+        : [oldParents.toString()]
       : [];
+
     const newParentArray = newParents
       ? Array.isArray(newParents)
-        ? newParents
-        : [newParents]
+        ? newParents.map((id) => id.toString())
+        : [newParents.toString()]
       : [];
 
     const parentsToRemove = oldParentArray.filter(
-      (id) => !newParentArray.includes(id.toString())
+      (id) => !newParentArray.includes(id)
     );
 
-    await Promise.all(
-      parentsToRemove.map((id) =>
+    const parentsToAdd = newParentArray.filter(
+      (id) => !oldParentArray.includes(id)
+    );
+
+    await Promise.all([
+      ...parentsToRemove.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
           $pull: { [levelField]: updatedCategory._id },
         })
-      )
-    );
-
-    await Promise.all(
-      newParentArray.map((id) =>
+      ),
+      ...parentsToAdd.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
           $addToSet: { [levelField]: updatedCategory._id },
         })
-      )
-    );
+      ),
+    ]);
   };
+
+  const level = updatedCategory.level;
 
   if (level === CategoryLevel.CATEGORY) {
     await updateHierarchy(
@@ -216,15 +218,13 @@ export const updateSingleCategoryService = async (
       existingCategory.parentCategory,
       updatedCategory.parentCategory
     );
-  }
-  if (level === CategoryLevel.SUB_CATEGORY) {
+  } else if (level === CategoryLevel.SUB_CATEGORY) {
     await updateHierarchy(
       "subCategory",
       existingCategory.category,
       updatedCategory.category
     );
-  }
-  if (level === CategoryLevel.SUB_SUB_CATEGORY) {
+  } else if (level === CategoryLevel.SUB_SUB_CATEGORY) {
     await updateHierarchy(
       "subSubCategory",
       existingCategory.subCategory,
@@ -240,7 +240,10 @@ export const updateSingleCategoryService = async (
     );
   }
 
-  if (categoryData.megaMenuStatus !== existingCategory.megaMenuStatus) {
+  if (
+    typeof categoryData.megaMenuStatus !== "undefined" &&
+    categoryData.megaMenuStatus !== existingCategory.megaMenuStatus
+  ) {
     await updateMegaMenuStatus(
       updatedCategory._id.toString(),
       categoryData.megaMenuStatus as boolean

@@ -14,7 +14,7 @@ export const createRoleService = async (roleData: IRole, filePath?: string) => {
     role: newRole._id,
     discountType: newRole.discountType,
     discountValue: newRole.discountValue,
-    discountedPrice: 0, // will be recalculated in product pre-save hook
+    discountedPrice: 0,
   };
 
   await productModel.updateMany(
