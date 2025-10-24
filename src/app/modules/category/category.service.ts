@@ -54,11 +54,11 @@ export const createCategoryService = async (
 
   if (
     categoryData.level === CategoryLevel.SUB_SUB_CATEGORY &&
-    categoryData.subcategories
+    categoryData.subCategories
   ) {
-    const parentSubCategories = Array.isArray(categoryData.subcategories)
-      ? categoryData.subcategories
-      : [categoryData.subcategories];
+    const parentSubCategories = Array.isArray(categoryData.subCategories)
+      ? categoryData.subCategories
+      : [categoryData.subCategories];
 
     await Promise.all(
       parentSubCategories.map((id) =>
@@ -241,15 +241,15 @@ export const updateSingleCategoryService = async (
     );
   } else if (level === CategoryLevel.SUB_CATEGORY) {
     await updateHierarchy(
-      "subcategories",
+      "subCategories",
       existingCategory.categories,
       updatedCategory.categories
     );
   } else if (level === CategoryLevel.SUB_SUB_CATEGORY) {
     await updateHierarchy(
       "subSubCategories",
-      existingCategory.subcategories,
-      updatedCategory.subcategories
+      existingCategory.subCategories,
+      updatedCategory.subCategories
     );
   }
 
@@ -314,10 +314,10 @@ export const deleteSingleCategoryService = async (
     await removeFromParents("categories", category.parentCategory);
   }
   if (category.level === CategoryLevel.SUB_CATEGORY) {
-    await removeFromParents("subcategories", category.categories);
+    await removeFromParents("subCategories", category.categories);
   }
   if (category.level === CategoryLevel.SUB_SUB_CATEGORY) {
-    await removeFromParents("subSubCategories", category.subcategories);
+    await removeFromParents("subSubCategories", category.subCategories);
   }
 
   return await categoryModel.findByIdAndDelete(queryId).exec();
@@ -373,7 +373,7 @@ export const deleteManyCategoriesService = async (
     }
     if (category.level === CategoryLevel.SUB_CATEGORY) {
       await removeFromParents(
-        "subcategories",
+        "subCategories",
         category.categories,
         category._id
       );
@@ -381,7 +381,7 @@ export const deleteManyCategoriesService = async (
     if (category.level === CategoryLevel.SUB_SUB_CATEGORY) {
       await removeFromParents(
         "subSubCategories",
-        category.subcategories,
+        category.subCategories,
         category._id
       );
     }

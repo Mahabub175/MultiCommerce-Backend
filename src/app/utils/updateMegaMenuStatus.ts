@@ -1,25 +1,29 @@
+import { Types } from "mongoose";
 import { categoryModel } from "../modules/category/category.model";
 
 export const updateMegaMenuStatus = async (
   categoryId: string,
   status: boolean
-): Promise<void> => {
-  await categoryModel.updateOne(
-    { _id: categoryId },
+) => {
+  const categories = await categoryModel.aggregate([
+    {
+      $match: { _id: new Types.ObjectId(categoryId) },
+    },
+    {
+      $graphLookup: {
+        from: "categories",
+        startWith: "$_id",
+        connectFromField: "children",
+        connectToField: "_id",
+        as: "descendants",
+      },
+    },
+  ]);
+
+  const descendantIds = categories[0]?.descendants.map((c: any) => c._id) || [];
+
+  await categoryModel.updateMany(
+    { _id: { $in: [categoryId, ...descendantIds] } },
     { megaMenuStatus: status }
   );
-
-  const childCategories = await categoryModel.find({
-    $or: [
-      { parentCategory: categoryId },
-      { categories: categoryId },
-      { subcategories: categoryId },
-      { subSubCategories: categoryId },
-      { children: categoryId },
-    ],
-  });
-
-  for (const child of childCategories) {
-    await updateMegaMenuStatus(child._id.toString(), status);
-  }
 };

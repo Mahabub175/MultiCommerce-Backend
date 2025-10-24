@@ -13,7 +13,7 @@ export interface ICategory {
   slug: string;
   parentCategory?: Types.ObjectId | null;
   categories?: Types.ObjectId[] | null;
-  subcategories?: Types.ObjectId[] | null;
+  subCategories?: Types.ObjectId[] | null;
   subSubCategories?: Types.ObjectId[];
   level: "parentCategory" | "category" | "subCategory" | "subSubCategory";
   children?: ICategory[];

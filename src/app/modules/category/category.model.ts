@@ -41,7 +41,7 @@ const categorySchema = new Schema<ICategory>(
       default: null,
     },
     categories: [{ type: Schema.Types.ObjectId, ref: "category" }],
-    subcategories: [{ type: Schema.Types.ObjectId, ref: "category" }],
+    subCategories: [{ type: Schema.Types.ObjectId, ref: "category" }],
     subSubCategories: [{ type: Schema.Types.ObjectId, ref: "category" }],
     level: {
       type: String,
@@ -72,7 +72,6 @@ const categorySchema = new Schema<ICategory>(
     },
     sortingOrder: {
       type: Number,
-      unique: true,
     },
   },
   { timestamps: true }
