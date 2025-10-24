@@ -17,6 +17,7 @@ export const createCategoryService = async (
     ...categoryData,
     attachment: filePath,
   };
+
   const newCategory = await categoryModel.create(dataToSave);
 
   if (
@@ -24,22 +25,28 @@ export const createCategoryService = async (
     categoryData.parentCategory
   ) {
     await categoryModel.findByIdAndUpdate(categoryData.parentCategory, {
-      $addToSet: { category: newCategory._id },
+      $addToSet: {
+        categories: newCategory._id,
+        children: newCategory._id,
+      },
     });
   }
 
   if (
     categoryData.level === CategoryLevel.SUB_CATEGORY &&
-    categoryData.category
+    categoryData.categories
   ) {
-    const parentCategories = Array.isArray(categoryData.category)
-      ? categoryData.category
-      : [categoryData.category];
+    const parentCategories = Array.isArray(categoryData.categories)
+      ? categoryData.categories
+      : [categoryData.categories];
 
     await Promise.all(
       parentCategories.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
-          $addToSet: { subCategory: newCategory._id },
+          $addToSet: {
+            subcategories: newCategory._id,
+            children: newCategory._id,
+          },
         })
       )
     );
@@ -47,16 +54,19 @@ export const createCategoryService = async (
 
   if (
     categoryData.level === CategoryLevel.SUB_SUB_CATEGORY &&
-    categoryData.subCategory
+    categoryData.subcategories
   ) {
-    const parentSubCategories = Array.isArray(categoryData.subCategory)
-      ? categoryData.subCategory
-      : [categoryData.subCategory];
+    const parentSubCategories = Array.isArray(categoryData.subcategories)
+      ? categoryData.subcategories
+      : [categoryData.subcategories];
 
     await Promise.all(
       parentSubCategories.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
-          $addToSet: { subSubCategory: newCategory._id },
+          $addToSet: {
+            subSubCategories: newCategory._id,
+            children: newCategory._id,
+          },
         })
       )
     );
@@ -82,14 +92,18 @@ const getAllCategoryService = async (
   page?: number,
   limit?: number,
   searchText?: string,
-  searchFields?: string[]
+  searchFields?: string[],
+  sortOrder: "asc" | "desc" = "asc"
 ) => {
+  const sortDirection = sortOrder === "asc" ? 1 : -1;
+
   const query = categoryModel
     .find()
     .populate("parentCategory", "name")
-    .populate("category", "name")
-    .populate("subCategory", "name")
-    .populate("subSubCategory", "name");
+    .populate("categories", "name")
+    .populate("subCategories", "name")
+    .populate("subSubCategories", "name")
+    .sort({ sortingOrder: sortDirection });
 
   if (page && limit) {
     const result = await paginateAndSort(
@@ -99,13 +113,15 @@ const getAllCategoryService = async (
       searchText,
       searchFields
     );
+
     result.results = formatResultImage<ICategory>(
       result.results,
       "attachment"
     ) as ICategory[];
+
     return result;
   } else {
-    const results = await query.sort({ createdAt: -1 }).exec();
+    const results = await query.exec();
     return { results: formatResultImage(results, "attachment") };
   }
 };
@@ -119,9 +135,9 @@ const getSingleCategoryService = async (categoryId: string | number) => {
   const category = await categoryModel
     .findById(queryId)
     .populate("parentCategory", "name")
-    .populate("category", "name")
-    .populate("subCategory", "name")
-    .populate("subSubCategory", "name")
+    .populate("categories", "name")
+    .populate("subCategories", "name")
+    .populate("subSubCategories", "name")
     .exec();
 
   if (!category) throw new Error("Category not found");
@@ -191,7 +207,6 @@ export const updateSingleCategoryService = async (
     const parentsToRemove = oldParentArray.filter(
       (id) => !newParentArray.includes(id)
     );
-
     const parentsToAdd = newParentArray.filter(
       (id) => !oldParentArray.includes(id)
     );
@@ -199,12 +214,18 @@ export const updateSingleCategoryService = async (
     await Promise.all([
       ...parentsToRemove.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
-          $pull: { [levelField]: updatedCategory._id },
+          $pull: {
+            [levelField]: updatedCategory._id,
+            children: updatedCategory._id,
+          },
         })
       ),
       ...parentsToAdd.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
-          $addToSet: { [levelField]: updatedCategory._id },
+          $addToSet: {
+            [levelField]: updatedCategory._id,
+            children: updatedCategory._id,
+          },
         })
       ),
     ]);
@@ -214,21 +235,21 @@ export const updateSingleCategoryService = async (
 
   if (level === CategoryLevel.CATEGORY) {
     await updateHierarchy(
-      "category",
+      "categories",
       existingCategory.parentCategory,
       updatedCategory.parentCategory
     );
   } else if (level === CategoryLevel.SUB_CATEGORY) {
     await updateHierarchy(
-      "subCategory",
-      existingCategory.category,
-      updatedCategory.category
+      "subcategories",
+      existingCategory.categories,
+      updatedCategory.categories
     );
   } else if (level === CategoryLevel.SUB_SUB_CATEGORY) {
     await updateHierarchy(
-      "subSubCategory",
-      existingCategory.subCategory,
-      updatedCategory.subCategory
+      "subSubCategories",
+      existingCategory.subcategories,
+      updatedCategory.subcategories
     );
   }
 
@@ -280,24 +301,23 @@ export const deleteSingleCategoryService = async (
   ) => {
     if (!parentIds) return;
     const parentArray = Array.isArray(parentIds) ? parentIds : [parentIds];
-
     await Promise.all(
       parentArray.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
-          $pull: { [levelField]: category._id },
+          $pull: { [levelField]: category._id, children: category._id },
         })
       )
     );
   };
 
   if (category.level === CategoryLevel.CATEGORY) {
-    await removeFromParents("category", category.parentCategory);
+    await removeFromParents("categories", category.parentCategory);
   }
   if (category.level === CategoryLevel.SUB_CATEGORY) {
-    await removeFromParents("subCategory", category.category);
+    await removeFromParents("subcategories", category.categories);
   }
   if (category.level === CategoryLevel.SUB_SUB_CATEGORY) {
-    await removeFromParents("subSubCategory", category.subCategory);
+    await removeFromParents("subSubCategories", category.subcategories);
   }
 
   return await categoryModel.findByIdAndDelete(queryId).exec();
@@ -314,7 +334,6 @@ export const deleteManyCategoriesService = async (
   );
 
   const categories = await categoryModel.find({ _id: { $in: queryIds } });
-
   if (!categories || categories.length === 0) {
     throw new Error("No categories found to delete");
   }
@@ -326,11 +345,10 @@ export const deleteManyCategoriesService = async (
   ) => {
     if (!parentIds) return;
     const parentArray = Array.isArray(parentIds) ? parentIds : [parentIds];
-
     await Promise.all(
       parentArray.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
-          $pull: { [levelField]: childId },
+          $pull: { [levelField]: childId, children: childId },
         })
       )
     );
@@ -348,18 +366,22 @@ export const deleteManyCategoriesService = async (
 
     if (category.level === CategoryLevel.CATEGORY) {
       await removeFromParents(
-        "category",
+        "categories",
         category.parentCategory,
         category._id
       );
     }
     if (category.level === CategoryLevel.SUB_CATEGORY) {
-      await removeFromParents("subCategory", category.category, category._id);
+      await removeFromParents(
+        "subcategories",
+        category.categories,
+        category._id
+      );
     }
     if (category.level === CategoryLevel.SUB_SUB_CATEGORY) {
       await removeFromParents(
-        "subSubCategory",
-        category.subCategory,
+        "subSubCategories",
+        category.subcategories,
         category._id
       );
     }

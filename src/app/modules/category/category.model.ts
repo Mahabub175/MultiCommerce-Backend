@@ -40,26 +40,15 @@ const categorySchema = new Schema<ICategory>(
       ref: "category",
       default: null,
     },
-    category: {
-      type: Schema.Types.ObjectId,
-      ref: "category",
-      default: null,
-    },
-    subCategory: {
-      type: Schema.Types.ObjectId,
-      ref: "category",
-      default: null,
-    },
-    subSubCategory: {
-      type: Schema.Types.ObjectId,
-      ref: "category",
-      default: null,
-    },
+    categories: [{ type: Schema.Types.ObjectId, ref: "category" }],
+    subcategories: [{ type: Schema.Types.ObjectId, ref: "category" }],
+    subSubCategories: [{ type: Schema.Types.ObjectId, ref: "category" }],
     level: {
       type: String,
-      enum: ["parentCategory", "category", "subCategory", "subSubCategory"],
-      default: "parentCategory",
+      enum: Object.values(CategoryLevel),
+      default: CategoryLevel.PARENT_CATEGORY,
     },
+    children: [{ type: Schema.Types.ObjectId, ref: "category" }],
     roleDiscounts: {
       type: [categoryRoleDiscountSchema],
       default: [],
@@ -81,8 +70,22 @@ const categorySchema = new Schema<ICategory>(
       type: Boolean,
       default: true,
     },
+    sortingOrder: {
+      type: Number,
+      unique: true,
+    },
   },
   { timestamps: true }
 );
+
+categorySchema.pre("save", async function (next) {
+  if (this.isNew && !this.sortingOrder) {
+    const lastCategory = await categoryModel
+      .findOne()
+      .sort({ sortingOrder: -1 });
+    this.sortingOrder = lastCategory ? lastCategory.sortingOrder + 1 : 1;
+  }
+  next();
+});
 
 export const categoryModel = model<ICategory>("category", categorySchema);

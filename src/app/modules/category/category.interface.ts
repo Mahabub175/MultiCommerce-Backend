@@ -12,15 +12,17 @@ export interface ICategory {
   name: string;
   slug: string;
   parentCategory?: Types.ObjectId | null;
-  category?: Types.ObjectId | null;
-  subCategory?: Types.ObjectId | null;
-  subSubCategory?: Types.ObjectId | null;
+  categories?: Types.ObjectId[] | null;
+  subcategories?: Types.ObjectId[] | null;
+  subSubCategories?: Types.ObjectId[];
   level: "parentCategory" | "category" | "subCategory" | "subSubCategory";
+  children?: ICategory[];
   roleDiscounts?: ICategoryRoleDiscount[];
   minimumQuantity: number;
   discountType: "fixed" | "percentage";
   discountValue: number;
   attachment?: string;
   megaMenuStatus?: boolean;
+  sortingOrder: number;
   status: boolean;
 }

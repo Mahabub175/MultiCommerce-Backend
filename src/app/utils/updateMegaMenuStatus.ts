@@ -3,7 +3,7 @@ import { categoryModel } from "../modules/category/category.model";
 export const updateMegaMenuStatus = async (
   categoryId: string,
   status: boolean
-) => {
+): Promise<void> => {
   await categoryModel.updateOne(
     { _id: categoryId },
     { megaMenuStatus: status }
@@ -12,9 +12,10 @@ export const updateMegaMenuStatus = async (
   const childCategories = await categoryModel.find({
     $or: [
       { parentCategory: categoryId },
-      { category: categoryId },
-      { subCategory: categoryId },
-      { subSubCategory: categoryId },
+      { categories: categoryId },
+      { subcategories: categoryId },
+      { subSubCategories: categoryId },
+      { children: categoryId },
     ],
   });
 

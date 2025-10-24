@@ -10,7 +10,7 @@ const createCategoryController = async (
   try {
     const data = req.body;
     const filePath = req.file ? req.file.path : undefined;
-    
+
     const slug = data.slug ? data.slug : generateSlug(data.name);
 
     const formData = {
@@ -31,7 +31,6 @@ const createCategoryController = async (
   }
 };
 
-
 const getAllCategoryController = async (
   req: Request,
   res: Response,
@@ -47,11 +46,14 @@ const getAllCategoryController = async (
 
     const searchFields = ["name", "slug", "level"];
 
+    const sortOrder = req.query.sortOrder as "asc" | "desc" | undefined;
+
     const result = await categoryServices.getAllCategoryService(
       pageNumber,
       pageSize,
       searchText,
-      searchFields
+      searchFields,
+      sortOrder
     );
 
     res.status(200).json({
