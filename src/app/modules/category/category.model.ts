@@ -17,7 +17,7 @@ const categoryRoleDiscountSchema = new Schema(
       required: true,
     },
     minimumQuantity: { type: Number },
-    discountValue: { type: Number},
+    discountValue: { type: Number },
   },
   { _id: false }
 );
@@ -58,7 +58,7 @@ const categorySchema = new Schema<ICategory>(
     level: {
       type: String,
       enum: ["parentCategory", "category", "subCategory", "subSubCategory"],
-      required: true,
+      default: "parentCategory",
     },
     roleDiscounts: {
       type: [categoryRoleDiscountSchema],
