@@ -5,6 +5,7 @@ const sliderSchema = new Schema<ISlider>(
   {
     name: { type: String },
     buttonText: { type: String },
+    bannerLink: { type: String },
     promotionalBanner: { type: Boolean, default: false },
     attachment: { type: String },
     video: { type: String },

@@ -3,6 +3,7 @@ export interface ISlider {
   video: string;
   name: string;
   buttonText: string;
+  bannerLink: string;
   promotionalBanner: boolean;
   status: boolean;
 }
