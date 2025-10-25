@@ -85,6 +85,23 @@ const getSingleCategoryController = async (
   }
 };
 
+const getNestedCategoriesController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const result = await categoryServices.getNestedCategoriesService();
+    res.status(200).json({
+      success: true,
+      message: "Nested Category Fetched Successfully!",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
 const updateSingleCategoryController = async (
   req: Request,
   res: Response,
@@ -172,6 +189,7 @@ export const categoryControllers = {
   createCategoryController,
   getAllCategoryController,
   getSingleCategoryController,
+  getNestedCategoriesController,
   updateSingleCategoryController,
   deleteSingleCategoryController,
   deleteManyCategoriesController,

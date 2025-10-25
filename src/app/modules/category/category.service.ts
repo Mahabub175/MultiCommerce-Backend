@@ -80,10 +80,6 @@ export const createCategoryService = async (
     );
   }
 
-  if (newCategory.megaMenuStatus) {
-    await updateMegaMenuStatus(newCategory._id.toString(), true);
-  }
-
   return newCategory;
 };
 
@@ -148,6 +144,111 @@ const getSingleCategoryService = async (categoryId: string | number) => {
     ) as string;
 
   return category;
+};
+
+const getNestedCategoriesService = async () => {
+  const allCategories = await categoryModel
+    .find()
+    .select(
+      "_id name slug level parentCategory children megaMenuStatus sortingOrder status"
+    )
+    .lean();
+
+  const map = new Map<string, any>();
+  allCategories.forEach((cat) =>
+    map.set(cat._id.toString(), {
+      ...cat,
+      categories: [],
+      subCategories: [],
+      subSubCategories: [],
+    })
+  );
+
+  const buildTree = (cat: any, visited = new Set()) => {
+    if (visited.has(cat._id.toString())) return null;
+    visited.add(cat._id.toString());
+
+    const children: any[] = [];
+
+    allCategories.forEach((c) => {
+      if (
+        c.parentCategory &&
+        c.parentCategory.toString() === cat._id.toString()
+      ) {
+        const child = buildTree(map.get(c._id.toString()), visited);
+        if (child) children.push(child);
+      }
+    });
+
+    if (cat.children?.length) {
+      cat.children.forEach((childId: any) => {
+        if (map.has(childId.toString())) {
+          const child = buildTree(map.get(childId.toString()), visited);
+          if (child) children.push(child);
+        }
+      });
+    }
+
+    const uniqueChildren = Array.from(
+      new Map(children.map((c) => [c._id.toString(), c])).values()
+    );
+
+    if (cat.level === "parentCategory") {
+      cat.categories = uniqueChildren;
+    } else if (cat.level === "category") {
+      cat.subCategories = uniqueChildren;
+    } else if (cat.level === "subCategory") {
+      cat.subSubCategories = uniqueChildren;
+    }
+
+    delete cat.children;
+    delete cat.parentCategory;
+
+    if (!cat.categories?.length) delete cat.categories;
+    if (!cat.subCategories?.length) delete cat.subCategories;
+    if (!cat.subSubCategories?.length) delete cat.subSubCategories;
+
+    return {
+      _id: cat._id,
+      name: cat.name,
+      slug: cat.slug,
+      level: cat.level,
+      megaMenuStatus: cat.megaMenuStatus ?? false,
+      status: cat.status ?? true,
+      sortingOrder: cat.sortingOrder ?? 1,
+      ...(cat.categories ? { categories: cat.categories } : {}),
+      ...(cat.subCategories ? { subCategories: cat.subCategories } : {}),
+      ...(cat.subSubCategories
+        ? { subSubCategories: cat.subSubCategories }
+        : {}),
+    };
+  };
+
+  const allChildIds = new Set(
+    allCategories
+      .filter((cat) => cat.parentCategory)
+      .map((cat) => cat._id.toString())
+  );
+
+  allCategories.forEach((cat) => {
+    if (cat.children?.length) {
+      cat.children.forEach((childId: any) =>
+        allChildIds.add(childId.toString())
+      );
+    }
+  });
+
+  const roots = allCategories.filter(
+    (cat) =>
+      (!cat.parentCategory || cat.parentCategory === null) &&
+      !allChildIds.has(cat._id.toString())
+  );
+
+  const nested = roots
+    .map((root) => buildTree(map.get(root._id.toString())))
+    .filter(Boolean);
+
+  return nested;
 };
 
 // Update single category
@@ -394,6 +495,7 @@ export const categoryServices = {
   createCategoryService,
   getAllCategoryService,
   getSingleCategoryService,
+  getNestedCategoriesService,
   updateSingleCategoryService,
   deleteSingleCategoryService,
   deleteManyCategoriesService,

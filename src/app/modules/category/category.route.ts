@@ -17,6 +17,11 @@ router.get(
   categoryControllers.getSingleCategoryController
 );
 
+router.get(
+  "/category/nested/all/",
+  categoryControllers.getNestedCategoriesController
+);
+
 router.patch(
   "/category/:categoryId/",
   uploadService.single("attachment"),
