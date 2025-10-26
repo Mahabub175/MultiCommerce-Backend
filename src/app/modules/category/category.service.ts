@@ -13,7 +13,7 @@ import {
 import { customRoleModel } from "../customRole/customRole.model";
 
 // Create a category
-export const createCategoryService = async (
+const createCategoryService = async (
   categoryData: ICategory,
   filePath?: string
 ) => {
@@ -34,71 +34,112 @@ export const createCategoryService = async (
 
   dataToSave.roleDiscounts = roleDiscounts;
 
-  const newCategory = await categoryModel.create(dataToSave);
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  if (
-    categoryData.level === CategoryLevel.CATEGORY &&
-    categoryData.parentCategory
-  ) {
-    await categoryModel.findByIdAndUpdate(categoryData.parentCategory, {
-      $addToSet: {
-        categories: newCategory._id,
-        children: newCategory._id,
-      },
-    });
-  }
+  try {
+    let newCategoryOrder = dataToSave.sortingOrder ?? 0;
 
-  if (
-    categoryData.level === CategoryLevel.SUB_CATEGORY &&
-    categoryData.categories
-  ) {
-    const parentCategories = Array.isArray(categoryData.categories)
-      ? categoryData.categories
-      : [categoryData.categories];
+    if (newCategoryOrder > 0) {
+      await categoryModel.updateMany(
+        { sortingOrder: { $gte: newCategoryOrder } },
+        { $inc: { sortingOrder: 1 } },
+        { session }
+      );
+    } else {
+      const lastCategory = await categoryModel
+        .findOne()
+        .sort({ sortingOrder: -1 })
+        .session(session);
+      newCategoryOrder = lastCategory ? lastCategory.sortingOrder + 1 : 1;
+    }
 
-    await Promise.all(
-      parentCategories.map((id) =>
-        categoryModel.findByIdAndUpdate(id, {
+    dataToSave.sortingOrder = newCategoryOrder;
+
+    const newCategory = await categoryModel.create([dataToSave], { session });
+    const createdCategory = newCategory[0];
+
+    if (
+      categoryData.level === CategoryLevel.CATEGORY &&
+      categoryData.parentCategory
+    ) {
+      await categoryModel.findByIdAndUpdate(
+        categoryData.parentCategory,
+        {
           $addToSet: {
-            subCategories: newCategory._id,
-            children: newCategory._id,
+            categories: createdCategory._id,
+            children: createdCategory._id,
           },
-        })
-      )
-    );
+        },
+        { session }
+      );
+    }
+
+    if (
+      categoryData.level === CategoryLevel.SUB_CATEGORY &&
+      categoryData.categories
+    ) {
+      const parentCategories = Array.isArray(categoryData.categories)
+        ? categoryData.categories
+        : [categoryData.categories];
+      await Promise.all(
+        parentCategories.map((id) =>
+          categoryModel.findByIdAndUpdate(
+            id,
+            {
+              $addToSet: {
+                subCategories: createdCategory._id,
+                children: createdCategory._id,
+              },
+            },
+            { session }
+          )
+        )
+      );
+    }
+
+    if (
+      categoryData.level === CategoryLevel.SUB_SUB_CATEGORY &&
+      categoryData.subCategories
+    ) {
+      const parentSubCategories = Array.isArray(categoryData.subCategories)
+        ? categoryData.subCategories
+        : [categoryData.subCategories];
+      await Promise.all(
+        parentSubCategories.map((id) =>
+          categoryModel.findByIdAndUpdate(
+            id,
+            {
+              $addToSet: {
+                subSubCategories: createdCategory._id,
+                children: createdCategory._id,
+              },
+            },
+            { session }
+          )
+        )
+      );
+    }
+
+    if (categoryData.discountType && categoryData.discountValue) {
+      await applyCategoryDiscountToProducts(
+        createdCategory._id.toString(),
+        categoryData.discountType,
+        categoryData.discountValue
+      );
+    }
+
+    await applyRoleDiscountsToProducts(createdCategory._id.toString());
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return createdCategory;
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
   }
-
-  if (
-    categoryData.level === CategoryLevel.SUB_SUB_CATEGORY &&
-    categoryData.subCategories
-  ) {
-    const parentSubCategories = Array.isArray(categoryData.subCategories)
-      ? categoryData.subCategories
-      : [categoryData.subCategories];
-
-    await Promise.all(
-      parentSubCategories.map((id) =>
-        categoryModel.findByIdAndUpdate(id, {
-          $addToSet: {
-            subSubCategories: newCategory._id,
-            children: newCategory._id,
-          },
-        })
-      )
-    );
-  }
-
-  if (categoryData.discountType && categoryData.discountValue) {
-    await applyCategoryDiscountToProducts(
-      newCategory._id.toString(),
-      categoryData.discountType,
-      categoryData.discountValue
-    );
-  }
-
-  await applyRoleDiscountsToProducts(newCategory._id.toString());
-
-  return newCategory;
 };
 
 // Get all categories
@@ -117,6 +158,7 @@ const getAllCategoryService = async (
     .populate("categories", "name")
     .populate("subCategories", "name")
     .populate("subSubCategories", "name")
+    .populate("roleDiscounts.role")
     .sort({ sortingOrder: sortDirection });
 
   if (page && limit) {
@@ -152,6 +194,7 @@ const getSingleCategoryService = async (categoryId: string | number) => {
     .populate("categories", "name")
     .populate("subCategories", "name")
     .populate("subSubCategories", "name")
+    .populate("roleDiscounts.role")
     .exec();
 
   if (!category) throw new Error("Category not found");

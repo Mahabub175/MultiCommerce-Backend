@@ -10,11 +10,10 @@ export enum CategoryLevel {
 
 const categoryRoleDiscountSchema = new Schema(
   {
-    role: { type: Schema.Types.ObjectId, ref: "role", required: true },
+    role: { type: Schema.Types.ObjectId, ref: "customRole" },
     discountType: {
       type: String,
       enum: ["fixed", "percentage"],
-      required: true,
     },
     minimumQuantity: { type: Number },
     discountValue: { type: Number },
