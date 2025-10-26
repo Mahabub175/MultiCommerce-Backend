@@ -6,7 +6,10 @@ import { formatResultImage } from "../../utils/formatResultImage";
 import fs from "fs";
 import path from "path";
 import { updateMegaMenuStatus } from "../../utils/updateMegaMenuStatus";
-import { applyCategoryDiscountToProducts } from "../../utils/applyDiscountToCategoryProducts";
+import {
+  applyCategoryDiscountToProducts,
+  applyRoleDiscountsToProducts,
+} from "../../utils/applyDiscountToCategoryProducts";
 
 // Create a category
 export const createCategoryService = async (
@@ -79,6 +82,8 @@ export const createCategoryService = async (
       categoryData.discountValue
     );
   }
+
+  await applyRoleDiscountsToProducts(newCategory._id.toString());
 
   return newCategory;
 };
@@ -371,6 +376,8 @@ export const updateSingleCategoryService = async (
       categoryData.megaMenuStatus as boolean
     );
   }
+
+  await applyRoleDiscountsToProducts(updatedCategory._id.toString());
 
   return updatedCategory;
 };
