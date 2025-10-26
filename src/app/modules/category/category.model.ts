@@ -18,6 +18,10 @@ const categoryRoleDiscountSchema = new Schema(
     },
     minimumQuantity: { type: Number },
     discountValue: { type: Number },
+    status: {
+      type: Boolean,
+      default: true,
+    },
   },
   { _id: false }
 );
