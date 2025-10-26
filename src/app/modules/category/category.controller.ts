@@ -135,6 +135,30 @@ const updateSingleCategoryController = async (
   }
 };
 
+const updateCategoryOrderController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { categoryId } = req.params;
+    const data = req.body;
+
+    const result = await categoryServices.updateCategoryOrderService(
+      categoryId,
+      data.sortingOrder
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Category Order Updated Successfully!",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
 const deleteSingleCategoryController = async (
   req: Request,
   res: Response,
@@ -191,6 +215,7 @@ export const categoryControllers = {
   getSingleCategoryController,
   getNestedCategoriesController,
   updateSingleCategoryController,
+  updateCategoryOrderController,
   deleteSingleCategoryController,
   deleteManyCategoriesController,
 };

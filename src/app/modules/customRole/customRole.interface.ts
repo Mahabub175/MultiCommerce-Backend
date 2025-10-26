@@ -1,4 +1,4 @@
-export interface IRole {
+export interface ICustomRole {
   name: string;
   discountType: "fixed" | "percentage";
   discountValue: number;

@@ -28,6 +28,11 @@ router.patch(
   categoryControllers.updateSingleCategoryController
 );
 
+router.patch(
+  "/category/order/:categoryId/",
+  categoryControllers.updateCategoryOrderController
+);
+
 router.delete(
   "/category/:categoryId/",
   categoryControllers.deleteSingleCategoryController

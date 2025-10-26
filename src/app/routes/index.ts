@@ -9,7 +9,6 @@ import { galleryRoutes } from "../modules/gallery/gallery.route";
 import { brandRoutes } from "../modules/brand/brand.route";
 import { userRoutes } from "../modules/user/user.route";
 import { authRoutes } from "../modules/auth/auth.route";
-import { roleRoutes } from "../modules/role/role.route";
 import { categoryRoutes } from "../modules/category/category.route";
 import { attributeOptionRoutes } from "../modules/attributeOption/attributeOption.route";
 import { attributeRoutes } from "../modules/attribute/attribute.route";
@@ -20,6 +19,8 @@ import { couponRoutes } from "../modules/coupon/coupon.route";
 import { giftCardRoutes } from "../modules/giftCard/giftCard.route";
 import { reviewRoutes } from "../modules/review/review.route";
 import { orderRoutes } from "../modules/order/order.route";
+import { managementRoleRoutes } from "../modules/managementRole/role.route";
+import { customRoleRoutes } from "../modules/customRole/customRole.route";
 
 const router = Router();
 
@@ -33,7 +34,8 @@ const routes = [
   galleryRoutes,
   userRoutes,
   authRoutes,
-  roleRoutes,
+  customRoleRoutes,
+  managementRoleRoutes,
   categoryRoutes,
   attributeOptionRoutes,
   attributeRoutes,

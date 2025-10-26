@@ -10,6 +10,7 @@ import {
   applyCategoryDiscountToProducts,
   applyRoleDiscountsToProducts,
 } from "../../utils/applyDiscountToCategoryProducts";
+import { customRoleModel } from "../customRole/customRole.model";
 
 // Create a category
 export const createCategoryService = async (
@@ -20,6 +21,18 @@ export const createCategoryService = async (
     ...categoryData,
     attachment: filePath,
   };
+
+  const allCustomRoles = await customRoleModel.find({ status: true });
+
+  const roleDiscounts = allCustomRoles.map((role) => ({
+    role: role._id,
+    discountType: role.discountType,
+    discountValue: role.discountValue,
+    minimumQuantity: role.minimumQuantity,
+    status: true,
+  }));
+
+  dataToSave.roleDiscounts = roleDiscounts;
 
   const newCategory = await categoryModel.create(dataToSave);
 
@@ -47,7 +60,7 @@ export const createCategoryService = async (
       parentCategories.map((id) =>
         categoryModel.findByIdAndUpdate(id, {
           $addToSet: {
-            subcategories: newCategory._id,
+            subCategories: newCategory._id,
             children: newCategory._id,
           },
         })
@@ -382,6 +395,53 @@ export const updateSingleCategoryService = async (
   return updatedCategory;
 };
 
+const updateCategoryOrderService = async (
+  categoryId: string,
+  newOrder: number
+) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const category = await categoryModel.findById(categoryId).session(session);
+    if (!category) throw new Error("Category not found");
+
+    const oldOrder = category.sortingOrder;
+
+    if (oldOrder === newOrder) {
+      await session.commitTransaction();
+      session.endSession();
+      return category;
+    }
+
+    const increment = oldOrder < newOrder ? -1 : 1;
+    const rangeQuery =
+      oldOrder < newOrder
+        ? { $gt: oldOrder, $lte: newOrder }
+        : { $lt: oldOrder, $gte: newOrder };
+
+    await categoryModel.updateMany(
+      { _id: { $ne: category._id }, sortingOrder: rangeQuery },
+      { $inc: { sortingOrder: increment } },
+      { session }
+    );
+
+    await categoryModel.updateOne(
+      { _id: category._id },
+      { $set: { sortingOrder: newOrder } },
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+    return await categoryModel.findById(category._id);
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
+  }
+};
+
 // Delete single category
 export const deleteSingleCategoryService = async (
   categoryId: string | number
@@ -504,6 +564,7 @@ export const categoryServices = {
   getSingleCategoryService,
   getNestedCategoriesService,
   updateSingleCategoryService,
+  updateCategoryOrderService,
   deleteSingleCategoryService,
   deleteManyCategoriesService,
 };

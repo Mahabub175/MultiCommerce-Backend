@@ -40,28 +40,32 @@ export const applyRoleDiscountsToProducts = async (categoryId: string) => {
     const inactiveRoleIds = inactiveRoleDiscounts.map(
       (r) => new mongoose.Types.ObjectId(r.role)
     );
-
     await productModel.updateMany(
       { category: categoryId },
-      { $pull: { roleDiscounts: { role: { $in: inactiveRoleIds } } } }
+      { $pull: { categoryRoleDiscounts: { role: { $in: inactiveRoleIds } } } }
     );
   }
 
   if (activeRoleDiscounts.length > 0) {
-    for (const discount of activeRoleDiscounts) {
-      await productModel.updateMany(
-        { category: categoryId },
-        {
-          $addToSet: {
-            roleDiscounts: {
-              role: discount.role,
-              discountType: discount.discountType,
-              discountValue: discount.discountValue,
-              minimumQuantity: discount.minimumQuantity,
-            },
+    await productModel.updateMany(
+      { category: categoryId },
+      {
+        $addToSet: {
+          categoryRoleDiscounts: {
+            $each: activeRoleDiscounts.map((d) => ({
+              role: d.role,
+              discountType: d.discountType,
+              discountValue: d.discountValue,
+              minimumQuantity: d.minimumQuantity,
+            })),
           },
-        }
-      );
-    }
+        },
+      }
+    );
+  }
+
+  const products = await productModel.find({ category: categoryId });
+  for (const product of products) {
+    await product.save();
   }
 };

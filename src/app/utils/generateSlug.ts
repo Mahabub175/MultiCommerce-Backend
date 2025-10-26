@@ -7,9 +7,7 @@ export const generateSlug = (input: string): string => {
     replacement: "-",
   });
 
-  const dateSuffix = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-
-  return `${baseSlug}-${dateSuffix}`;
+  return `${baseSlug}`;
 };
 
 export const productSlug = (name: string, sku: string) => {

@@ -1,7 +1,7 @@
 import { Schema, model } from "mongoose";
-import { IRole } from "./role.interface";
+import { ICustomRole } from "./customRole.interface";
 
-const roleSchema = new Schema<IRole>(
+const customRoleSchema = new Schema<ICustomRole>(
   {
     name: {
       type: String,
@@ -28,4 +28,7 @@ const roleSchema = new Schema<IRole>(
   { timestamps: true }
 );
 
-export const roleModel = model<IRole>("role", roleSchema);
+export const customRoleModel = model<ICustomRole>(
+  "customRole",
+  customRoleSchema
+);

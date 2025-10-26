@@ -23,11 +23,20 @@ export interface IReview {
   attachment: string[];
 }
 
-export interface IRoleDiscount {
+export interface IGlobalRoleDiscount {
   role: Types.ObjectId;
   discountType: "fixed" | "percentage";
   discountValue: number;
   discountedPrice: number;
+  minimumQuantity: number;
+}
+
+export interface ICategoryRoleDiscount {
+  role: Types.ObjectId;
+  discountType: "fixed" | "percentage";
+  discountValue: number;
+  discountedPrice: number;
+  minimumQuantity: number;
 }
 
 export interface ICategoryDiscount {
@@ -35,6 +44,7 @@ export interface ICategoryDiscount {
   discountType: "fixed" | "percentage";
   discountValue: number;
   discountedPrice?: number;
+  minimumQuantity: number;
 }
 
 export interface IProduct extends Document {
@@ -65,7 +75,8 @@ export interface IProduct extends Document {
     count: number;
   };
   reviews: IReview[];
-  roleDiscounts: IRoleDiscount[];
+  globalRoleDiscounts: IGlobalRoleDiscount[];
+  categoryRoleDiscounts: ICategoryRoleDiscount[];
   categoryDiscounts: ICategoryDiscount[];
   isAvailable: boolean;
   isFeatured: boolean;

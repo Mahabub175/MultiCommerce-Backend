@@ -3,7 +3,8 @@ import {
   IProduct,
   IReview,
   IVariant,
-  IRoleDiscount,
+  IGlobalRoleDiscount,
+  ICategoryRoleDiscount,
   ICategoryDiscount,
 } from "./product.interface";
 
@@ -37,7 +38,7 @@ const reviewSchema = new Schema<IReview>(
   { timestamps: true }
 );
 
-const roleDiscountSchema = new Schema<IRoleDiscount>(
+const globalRoleDiscountSchema = new Schema<IGlobalRoleDiscount>(
   {
     role: { type: Schema.Types.ObjectId, ref: "role" },
     discountType: {
@@ -47,6 +48,22 @@ const roleDiscountSchema = new Schema<IRoleDiscount>(
     },
     discountValue: { type: Number, required: true },
     discountedPrice: { type: Number },
+    minimumQuantity: { type: Number },
+  },
+  { _id: false }
+);
+
+const categoryRoleDiscountSchema = new Schema<ICategoryRoleDiscount>(
+  {
+    role: { type: Schema.Types.ObjectId, ref: "role" },
+    discountType: {
+      type: String,
+      enum: ["fixed", "percentage"],
+      required: true,
+    },
+    discountValue: { type: Number, required: true },
+    discountedPrice: { type: Number },
+    minimumQuantity: { type: Number },
   },
   { _id: false }
 );
@@ -61,6 +78,7 @@ const categoryDiscountSchema = new Schema<ICategoryDiscount>(
     },
     discountValue: { type: Number, required: true },
     discountedPrice: { type: Number },
+    minimumQuantity: { type: Number },
   },
   { _id: false }
 );
@@ -94,7 +112,8 @@ const productSchema = new Schema<IProduct>(
       count: { type: Number, default: 0 },
     },
     reviews: { type: [reviewSchema], default: [] },
-    roleDiscounts: { type: [roleDiscountSchema], default: [] },
+    globalRoleDiscounts: { type: [globalRoleDiscountSchema], default: [] },
+    categoryRoleDiscounts: { type: [categoryRoleDiscountSchema], default: [] },
     categoryDiscounts: { type: [categoryDiscountSchema], default: [] },
     isFeatured: { type: Boolean, default: false },
     isOnSale: { type: Boolean, default: false },
@@ -109,8 +128,9 @@ const productSchema = new Schema<IProduct>(
 
 productSchema.pre("save", function (next) {
   const product = this as IProduct;
-
   if (!product.sellingPrice) return next();
+
+  const { sellingPrice } = product;
 
   const calculateDiscountedPrice = (
     basePrice: number,
@@ -118,43 +138,42 @@ productSchema.pre("save", function (next) {
     discountValue: number
   ): number => {
     let finalPrice = basePrice;
-
     if (discountType === "fixed") {
       finalPrice = basePrice - discountValue;
     } else if (discountType === "percentage") {
       finalPrice = basePrice - (basePrice * discountValue) / 100;
     }
-
     return Math.max(finalPrice, 0);
   };
 
-  if (
-    Array.isArray(product.roleDiscounts) &&
-    product.roleDiscounts.length > 0
-  ) {
-    product.roleDiscounts = product.roleDiscounts.map((discount) => ({
+  const applyDiscountCalculation = <
+    T extends {
+      discountType: any;
+      discountValue: number;
+      discountedPrice?: number;
+    }
+  >(
+    discounts: T[] = []
+  ): T[] => {
+    return discounts.map((discount) => ({
       ...discount,
       discountedPrice: calculateDiscountedPrice(
-        product.sellingPrice!,
+        sellingPrice,
         discount.discountType,
         discount.discountValue
       ),
     }));
-  }
+  };
 
-  if (
-    Array.isArray(product.categoryDiscounts) &&
-    product.categoryDiscounts.length > 0
-  ) {
-    product.categoryDiscounts = product.categoryDiscounts.map((discount) => ({
-      ...discount,
-      discountedPrice: calculateDiscountedPrice(
-        product.sellingPrice!,
-        discount.discountType,
-        discount.discountValue
-      ),
-    }));
-  }
+  product.globalRoleDiscounts = applyDiscountCalculation(
+    product.globalRoleDiscounts
+  );
+  product.categoryRoleDiscounts = applyDiscountCalculation(
+    product.categoryRoleDiscounts
+  );
+  product.categoryDiscounts = applyDiscountCalculation(
+    product.categoryDiscounts
+  );
 
   next();
 });

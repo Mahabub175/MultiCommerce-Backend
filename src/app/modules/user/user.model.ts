@@ -1,6 +1,6 @@
 import { Schema, model } from "mongoose";
 import { IUser } from "./user.interface";
-import { roleModel } from "../role/role.model";
+import { customRoleModel } from "../customRole/customRole.model";
 
 const previousPasswordSchema = new Schema({
   password: {
@@ -130,7 +130,7 @@ userSchema.pre("save", async function (next) {
   }
 
   if (!this.role) {
-    const defaultRole = await roleModel.findOne({ name: "user" });
+    const defaultRole = await customRoleModel.findOne({ name: "user" });
     if (defaultRole) {
       this.role = defaultRole._id;
     }
