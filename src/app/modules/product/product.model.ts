@@ -112,34 +112,48 @@ productSchema.pre("save", function (next) {
 
   if (!product.sellingPrice) return next();
 
-  if (product.roleDiscounts && product.roleDiscounts.length > 0) {
-    product.roleDiscounts = product.roleDiscounts.map((discount) => {
-      let finalPrice = product.sellingPrice;
-      if (discount.discountType === "fixed") {
-        finalPrice = product.sellingPrice - discount.discountValue;
-      } else if (discount.discountType === "percentage") {
-        finalPrice =
-          product.sellingPrice -
-          (product.sellingPrice * discount.discountValue) / 100;
-      }
-      discount.discountedPrice = Math.max(finalPrice, 0);
-      return discount;
-    });
+  const calculateDiscountedPrice = (
+    basePrice: number,
+    discountType: "fixed" | "percentage",
+    discountValue: number
+  ): number => {
+    let finalPrice = basePrice;
+
+    if (discountType === "fixed") {
+      finalPrice = basePrice - discountValue;
+    } else if (discountType === "percentage") {
+      finalPrice = basePrice - (basePrice * discountValue) / 100;
+    }
+
+    return Math.max(finalPrice, 0);
+  };
+
+  if (
+    Array.isArray(product.roleDiscounts) &&
+    product.roleDiscounts.length > 0
+  ) {
+    product.roleDiscounts = product.roleDiscounts.map((discount) => ({
+      ...discount,
+      discountedPrice: calculateDiscountedPrice(
+        product.sellingPrice!,
+        discount.discountType,
+        discount.discountValue
+      ),
+    }));
   }
 
-  if (product.categoryDiscounts && product.categoryDiscounts.length > 0) {
-    product.categoryDiscounts = product.categoryDiscounts.map((discount) => {
-      let finalPrice = product.sellingPrice;
-      if (discount.discountType === "fixed") {
-        finalPrice = product.sellingPrice - discount.discountValue;
-      } else if (discount.discountType === "percentage") {
-        finalPrice =
-          product.sellingPrice -
-          (product.sellingPrice * discount.discountValue) / 100;
-      }
-      discount.discountedPrice = Math.max(finalPrice, 0);
-      return discount;
-    });
+  if (
+    Array.isArray(product.categoryDiscounts) &&
+    product.categoryDiscounts.length > 0
+  ) {
+    product.categoryDiscounts = product.categoryDiscounts.map((discount) => ({
+      ...discount,
+      discountedPrice: calculateDiscountedPrice(
+        product.sellingPrice!,
+        discount.discountType,
+        discount.discountValue
+      ),
+    }));
   }
 
   next();
