@@ -5,6 +5,7 @@ export interface ICategoryRoleDiscount {
   discountType: "fixed" | "percentage";
   discountValue: number;
   minimumQuantity: number;
+  status: boolean;
 }
 
 export interface ICategory {
