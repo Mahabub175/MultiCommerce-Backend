@@ -1,4 +1,4 @@
-import { model, Schema, Types } from "mongoose";
+import { model, Schema } from "mongoose";
 import { IAttribute } from "./attribute.interface";
 
 const attributeSchema = new Schema<IAttribute>(
@@ -6,9 +6,8 @@ const attributeSchema = new Schema<IAttribute>(
     name: { type: String, required: true, unique: true, trim: true },
     options: [
       {
-        type: Types.ObjectId,
-        ref: "attributeOption",
-        required: true,
+        name: { type: String, required: true, trim: true },
+        label: { type: String, required: true, trim: true },
       },
     ],
     status: {

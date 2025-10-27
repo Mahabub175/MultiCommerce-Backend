@@ -13,15 +13,10 @@ import {
 import { customRoleModel } from "../customRole/customRole.model";
 
 // Create a category
-const createCategoryService = async (
-  categoryData: ICategory,
-  filePath?: string
-) => {
+const createCategoryService = async (categoryData: ICategory) => {
   const dataToSave = {
     ...categoryData,
-    attachment: filePath,
   };
-
   const allCustomRoles = await customRoleModel.find({ status: true });
 
   const roleDiscounts = allCustomRoles.map((role) => ({

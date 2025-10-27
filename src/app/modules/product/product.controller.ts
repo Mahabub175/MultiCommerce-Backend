@@ -10,15 +10,15 @@ const createProductController = async (
   try {
     const files = req.files as Express.Multer.File[];
 
-    const mainImage = files.find(
+    const mainImage = files?.find(
       (file) => file.fieldname === "mainImage"
     )?.path;
 
     const images = files
-      .filter((file) => file.fieldname.startsWith("images"))
+      ?.filter((file) => file.fieldname.startsWith("images"))
       .map((file) => file.path);
 
-    const video = files.find((file) => file.fieldname === "video")?.path;
+    const video = files?.find((file) => file.fieldname === "video")?.path;
 
     const variants = [];
     if (req.body.variants) {

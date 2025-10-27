@@ -5,9 +5,15 @@ export interface IAttribute {
   options: string[];
 }
 
+export interface IVariantAttributeCombination {
+  attributeName: string;
+  optionName: string;
+  optionLabel: string;
+}
+
 export interface IVariant {
   sku: string;
-  attributeCombination: Types.ObjectId[];
+  attributeCombination: IVariantAttributeCombination[];
   buyingPrice: number;
   sellingPrice: number;
   offerPrice: number;

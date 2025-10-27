@@ -2,26 +2,10 @@ import mongoose from "mongoose";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import { IAttribute } from "./attribute.interface";
 import { attributeModel } from "./attribute.model";
-import { attributeOptionModel } from "../attributeOption/attributeOption.model";
 
 //Create a Attribute into database
 const createAttributeService = async (attributeData: IAttribute) => {
   const attributeResult = await attributeModel.create(attributeData);
-
-  if (
-    Array.isArray(attributeData.options) &&
-    attributeData.options.length > 0
-  ) {
-    await Promise.all(
-      attributeData.options.map(async (optionId) => {
-        await attributeOptionModel.findByIdAndUpdate(
-          optionId,
-          { attribute: attributeResult._id },
-          { new: true, upsert: false }
-        );
-      })
-    );
-  }
 
   return attributeResult;
 };
@@ -36,7 +20,7 @@ const getAllAttributeService = async (
   let results;
 
   if (page && limit) {
-    const query = attributeModel.find().populate("options");
+    const query = attributeModel.find();
     const result = await paginateAndSort(
       query,
       page,
@@ -47,11 +31,7 @@ const getAllAttributeService = async (
 
     return result;
   } else {
-    results = await attributeModel
-      .find()
-      .populate("options")
-      .sort({ createdAt: -1 })
-      .exec();
+    results = await attributeModel.find().sort({ createdAt: -1 }).exec();
 
     return {
       results,
@@ -67,10 +47,7 @@ const getSingleAttributeService = async (AttributeId: number | string) => {
       : AttributeId;
 
   // Find the Attribute by ID
-  const result = await attributeModel
-    .findById(queryId)
-    .populate("options")
-    .exec();
+  const result = await attributeModel.findById(queryId).exec();
   if (!result) {
     throw new Error("Attribute not found");
   }
@@ -98,21 +75,6 @@ const updateSingleAttributeService = async (
 
   if (!result) {
     throw new Error("Attribute not found");
-  }
-
-  if (
-    Array.isArray(attributeData.options) &&
-    attributeData.options.length > 0
-  ) {
-    await Promise.all(
-      attributeData.options.map(async (optionId) => {
-        await attributeOptionModel.findByIdAndUpdate(
-          optionId,
-          { attribute: result._id },
-          { new: true, upsert: false }
-        );
-      })
-    );
   }
 
   return result;

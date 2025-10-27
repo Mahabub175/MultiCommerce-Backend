@@ -13,9 +13,9 @@ const variantSchema = new Schema<IVariant>({
   sku: { type: String, required: true },
   attributeCombination: [
     {
-      type: Types.ObjectId,
-      ref: "attributeOption",
-      required: true,
+      attributeName: { type: String, required: true, trim: true },
+      optionName: { type: String, required: true, trim: true },
+      optionLabel: { type: String, required: true, trim: true },
     },
   ],
   sellingPrice: { type: Number },
@@ -45,9 +45,8 @@ const globalRoleDiscountSchema = new Schema<IGlobalRoleDiscount>(
     discountType: {
       type: String,
       enum: ["fixed", "percentage"],
-      required: true,
     },
-    discountValue: { type: Number, required: true },
+    discountValue: { type: Number },
     discountedPrice: { type: Number },
     minimumQuantity: { type: Number },
   },
@@ -60,9 +59,8 @@ const productRoleDiscountSchema = new Schema<IProductRoleDiscount>(
     discountType: {
       type: String,
       enum: ["fixed", "percentage"],
-      required: true,
     },
-    discountValue: { type: Number, required: true },
+    discountValue: { type: Number },
     discountedPrice: { type: Number },
     minimumQuantity: { type: Number },
   },
@@ -75,9 +73,8 @@ const categoryRoleDiscountSchema = new Schema<ICategoryRoleDiscount>(
     discountType: {
       type: String,
       enum: ["fixed", "percentage"],
-      required: true,
     },
-    discountValue: { type: Number, required: true },
+    discountValue: { type: Number },
     discountedPrice: { type: Number },
     minimumQuantity: { type: Number },
   },
@@ -86,13 +83,12 @@ const categoryRoleDiscountSchema = new Schema<ICategoryRoleDiscount>(
 
 const categoryDiscountSchema = new Schema<ICategoryDiscount>(
   {
-    category: { type: Schema.Types.ObjectId, ref: "category", required: true },
+    category: { type: Schema.Types.ObjectId, ref: "category" },
     discountType: {
       type: String,
       enum: ["fixed", "percentage"],
-      required: true,
     },
-    discountValue: { type: Number, required: true },
+    discountValue: { type: Number },
     discountedPrice: { type: Number },
     minimumQuantity: { type: Number },
   },
@@ -134,7 +130,7 @@ const productSchema = new Schema<IProduct>(
     categoryDiscounts: { type: [categoryDiscountSchema], default: [] },
     isFeatured: { type: Boolean, default: false },
     isOnSale: { type: Boolean, default: false },
-    isAvailable: { type: Boolean, default: false },
+    isAvailable: { type: Boolean, default: true },
     isBestSeller: { type: Boolean, default: false },
     isTopRated: { type: Boolean, default: false },
     isRecent: { type: Boolean, default: false },

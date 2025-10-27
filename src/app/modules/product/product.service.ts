@@ -13,10 +13,7 @@ import {
 import { deleteFileSync } from "../../utils/deleteFilesFromStorage";
 import { customRoleModel } from "../customRole/customRole.model";
 
-const createProductService = async (
-  productData: IProduct,
-  filePath?: string
-) => {
+const createProductService = async (productData: IProduct) => {
   const slug = productSlug(productData.name, productData.sku);
 
   const totalStock =
@@ -53,7 +50,6 @@ const createProductService = async (
   const dataToSave: any = {
     ...productData,
     slug,
-    filePath,
     stock: totalStock,
     productRoleDiscounts: [
       ...(productData.productRoleDiscounts || []),
@@ -147,14 +143,9 @@ const getAllProductService = async (
       .populate("category")
       .populate("brand")
       .populate("reviews.user")
-      .populate({
-        path: "variants.attributeCombination",
-        model: "attributeOption",
-        populate: {
-          path: "attribute",
-          model: "attribute",
-        },
-      });
+      .populate("globalRoleDiscounts.role")
+      .populate("productRoleDiscounts.role")
+      .populate("categoryRoleDiscounts.role");
 
     return await paginateAndSort(query, page, limit, searchText, searchFields);
   } else {
@@ -163,14 +154,10 @@ const getAllProductService = async (
       .populate("category")
       .populate("brand")
       .populate("reviews.user")
-      .populate({
-        path: "variants.attributeCombination",
-        model: "attributeOption",
-        populate: {
-          path: "attribute",
-          model: "attribute",
-        },
-      })
+      .populate("globalRoleDiscounts.role")
+      .populate("productRoleDiscounts.role")
+      .populate("categoryRoleDiscounts.role")
+      .lean()
       .sort({ createdAt: -1 })
       .exec();
 
@@ -189,18 +176,10 @@ const getSingleProductService = async (productId: number | string) => {
     .populate("category")
     .populate("brand")
     .populate("reviews.user")
-    .populate({
-      path: "variants.attributeCombination",
-      model: "attributeOption",
-      populate: {
-        path: "attribute",
-        model: "attribute",
-        populate: {
-          path: "options",
-          model: "attributeOption",
-        },
-      },
-    })
+    .populate("globalRoleDiscounts.role")
+    .populate("productRoleDiscounts.role")
+    .populate("categoryRoleDiscounts.role")
+    .lean()
     .exec();
 
   if (!result) {
@@ -221,18 +200,6 @@ const getSingleProductBySkuService = async (sku: string | number) => {
   const result = await productModel
     .findOne({ $or: [{ sku }, { "variants.sku": sku }] })
     .select("name _id variants sku")
-    .populate({
-      path: "variants.attributeCombination",
-      model: "attributeOption",
-      populate: {
-        path: "attribute",
-        model: "attribute",
-        populate: {
-          path: "options",
-          model: "attributeOption",
-        },
-      },
-    })
     .exec();
 
   if (!result) {
@@ -267,14 +234,10 @@ const getSingleProductBySlugService = async (productSlug: string) => {
     .populate("category")
     .populate("brand")
     .populate("reviews.user")
-    .populate({
-      path: "variants.attributeCombination",
-      model: "attributeOption",
-      populate: {
-        path: "attribute",
-        model: "attribute",
-      },
-    })
+    .populate("globalRoleDiscounts.role")
+    .populate("productRoleDiscounts.role")
+    .populate("categoryRoleDiscounts.role")
+    .lean()
     .exec();
 
   if (!result) {
