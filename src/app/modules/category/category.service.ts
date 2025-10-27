@@ -264,6 +264,10 @@ const getNestedCategoriesService = async () => {
       new Map(children.map((c: any) => [c._id.toString(), c])).values()
     );
 
+    uniqueChildren.sort(
+      (a, b) => (a.sortingOrder ?? 0) - (b.sortingOrder ?? 0)
+    );
+
     if (cat.level === "parentCategory") cat.categories = uniqueChildren;
     else if (cat.level === "category") cat.subCategories = uniqueChildren;
     else if (cat.level === "subCategory") cat.subSubCategories = uniqueChildren;
