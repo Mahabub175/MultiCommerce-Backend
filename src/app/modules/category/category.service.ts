@@ -211,60 +211,69 @@ const getNestedCategoriesService = async () => {
     .lean();
 
   const map = new Map<string, any>();
-  allCategories.forEach((cat) =>
-    map.set(cat._id.toString(), {
-      ...cat,
-      categories: [],
-      subCategories: [],
-      subSubCategories: [],
-    })
-  );
+  const childIds = new Set<string>();
 
-  const buildTree = (cat: any, visited = new Set()) => {
+  allCategories.forEach((cat) => {
+    map.set(cat._id.toString(), { ...cat });
+    if (cat.parentCategory) childIds.add(cat._id.toString());
+    if (cat.children?.length) {
+      cat.children.forEach((childId: any) => childIds.add(childId.toString()));
+    }
+  });
+
+  const buildTree = (cat: any, parentStatus = true, visited = new Set()) => {
     if (visited.has(cat._id.toString())) return null;
     visited.add(cat._id.toString());
 
-    const children: any[] = [];
+    if (!parentStatus || cat.status === false) return null;
 
+    let children: any[] = [];
     allCategories.forEach((c) => {
-      if (
-        c.parentCategory &&
-        c.parentCategory.toString() === cat._id.toString()
-      ) {
-        const child = buildTree(map.get(c._id.toString()), visited);
-        if (child) children.push(child);
+      if (c.parentCategory?.toString() === cat._id.toString()) {
+        const child = buildTree(c, cat.status, visited);
+        if (child) {
+          if (Array.isArray(child)) {
+            children.push(...child);
+          } else {
+            children.push(child);
+          }
+        }
       }
     });
 
     if (cat.children?.length) {
       cat.children.forEach((childId: any) => {
         if (map.has(childId.toString())) {
-          const child = buildTree(map.get(childId.toString()), visited);
-          if (child) children.push(child);
+          const child = buildTree(
+            map.get(childId.toString()),
+            cat.status,
+            visited
+          );
+          if (child) {
+            if (Array.isArray(child)) {
+              children.push(...child);
+            } else {
+              children.push(child);
+            }
+          }
         }
       });
     }
 
     const uniqueChildren = Array.from(
-      new Map(children.map((c) => [c._id.toString(), c])).values()
+      new Map(children.map((c: any) => [c._id.toString(), c])).values()
     );
 
-    if (cat.level === "parentCategory") {
-      cat.categories = uniqueChildren;
-    } else if (cat.level === "category") {
-      cat.subCategories = uniqueChildren;
-    } else if (cat.level === "subCategory") {
-      cat.subSubCategories = uniqueChildren;
-    }
+    if (cat.level === "parentCategory") cat.categories = uniqueChildren;
+    else if (cat.level === "category") cat.subCategories = uniqueChildren;
+    else if (cat.level === "subCategory") cat.subSubCategories = uniqueChildren;
 
-    delete cat.children;
-    delete cat.parentCategory;
+    const hasSubmenu =
+      (cat.categories?.length ?? 0) > 0 ||
+      (cat.subCategories?.length ?? 0) > 0 ||
+      (cat.subSubCategories?.length ?? 0) > 0;
 
-    if (!cat.categories?.length) delete cat.categories;
-    if (!cat.subCategories?.length) delete cat.subCategories;
-    if (!cat.subSubCategories?.length) delete cat.subSubCategories;
-
-    return {
+    const node = {
       _id: cat._id,
       name: cat.name,
       slug: cat.slug,
@@ -272,37 +281,35 @@ const getNestedCategoriesService = async () => {
       megaMenuStatus: cat.megaMenuStatus ?? false,
       status: cat.status ?? true,
       sortingOrder: cat.sortingOrder ?? 1,
-      ...(cat.categories ? { categories: cat.categories } : {}),
-      ...(cat.subCategories ? { subCategories: cat.subCategories } : {}),
-      ...(cat.subSubCategories
+      hasSubmenu,
+      ...(cat.categories?.length ? { categories: cat.categories } : {}),
+      ...(cat.subCategories?.length
+        ? { subCategories: cat.subCategories }
+        : {}),
+      ...(cat.subSubCategories?.length
         ? { subSubCategories: cat.subSubCategories }
         : {}),
     };
+
+    if (cat.megaMenuStatus === false) {
+      return uniqueChildren.length ? uniqueChildren : null;
+    }
+
+    return node;
   };
 
-  const allChildIds = new Set(
-    allCategories
-      .filter((cat) => cat.parentCategory)
-      .map((cat) => cat._id.toString())
+  const rootCategories = allCategories.filter(
+    (cat) => !childIds.has(cat._id.toString())
   );
 
-  allCategories.forEach((cat) => {
-    if (cat.children?.length) {
-      cat.children.forEach((childId: any) =>
-        allChildIds.add(childId.toString())
-      );
+  const nested: any[] = [];
+  rootCategories.forEach((root) => {
+    const tree = buildTree(root);
+    if (tree) {
+      if (Array.isArray(tree)) nested.push(...tree);
+      else nested.push(tree);
     }
   });
-
-  const roots = allCategories.filter(
-    (cat) =>
-      (!cat.parentCategory || cat.parentCategory === null) &&
-      !allChildIds.has(cat._id.toString())
-  );
-
-  const nested = roots
-    .map((root) => buildTree(map.get(root._id.toString())))
-    .filter(Boolean);
 
   return nested;
 };
