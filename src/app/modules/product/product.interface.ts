@@ -39,6 +39,14 @@ export interface ICategoryRoleDiscount {
   minimumQuantity: number;
 }
 
+export interface IProductRoleDiscount {
+  role: Types.ObjectId;
+  discountType: "fixed" | "percentage";
+  discountValue: number;
+  discountedPrice: number;
+  minimumQuantity: number;
+}
+
 export interface ICategoryDiscount {
   category: Types.ObjectId;
   discountType: "fixed" | "percentage";
@@ -77,6 +85,7 @@ export interface IProduct extends Document {
   reviews: IReview[];
   globalRoleDiscounts: IGlobalRoleDiscount[];
   categoryRoleDiscounts: ICategoryRoleDiscount[];
+  productRoleDiscounts: IProductRoleDiscount[];
   categoryDiscounts: ICategoryDiscount[];
   isAvailable: boolean;
   isFeatured: boolean;

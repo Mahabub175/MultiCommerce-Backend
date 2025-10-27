@@ -19,7 +19,7 @@ import { couponRoutes } from "../modules/coupon/coupon.route";
 import { giftCardRoutes } from "../modules/giftCard/giftCard.route";
 import { reviewRoutes } from "../modules/review/review.route";
 import { orderRoutes } from "../modules/order/order.route";
-import { managementRoleRoutes } from "../modules/managementRole/role.route";
+import { managementRoleRoutes } from "../modules/managementRole/managementRole.route";
 import { customRoleRoutes } from "../modules/customRole/customRole.route";
 
 const router = Router();

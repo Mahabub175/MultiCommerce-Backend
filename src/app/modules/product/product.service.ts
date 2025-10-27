@@ -11,6 +11,7 @@ import {
   findOrCreateCategory,
 } from "../../utils/findOrCreateItems";
 import { deleteFileSync } from "../../utils/deleteFilesFromStorage";
+import { customRoleModel } from "../customRole/customRole.model";
 
 const createProductService = async (
   productData: IProduct,
@@ -26,9 +27,47 @@ const createProductService = async (
         )
       : productData.stock || 0;
 
-  const dataToSave = { ...productData, slug, filePath, stock: totalStock };
+  const activeRoles = await customRoleModel.find({ status: true });
 
-  return await productModel.create(dataToSave);
+  const existingProductRoleIds = new Set(
+    (productData.productRoleDiscounts || []).map((r) => r.role.toString())
+  );
+  const existingGlobalRoleIds = new Set(
+    (productData.globalRoleDiscounts || []).map((r) => r.role.toString())
+  );
+
+  const newRoleDiscounts = activeRoles.map((role) => ({
+    role: role._id,
+    discountType: role.discountType,
+    discountValue: role.discountValue,
+    minimumQuantity: role.minimumQuantity || 1,
+  }));
+
+  const filteredProductRoleDiscounts = newRoleDiscounts.filter(
+    (discount) => !existingProductRoleIds.has(discount.role.toString())
+  );
+  const filteredGlobalRoleDiscounts = newRoleDiscounts.filter(
+    (discount) => !existingGlobalRoleIds.has(discount.role.toString())
+  );
+
+  const dataToSave: any = {
+    ...productData,
+    slug,
+    filePath,
+    stock: totalStock,
+    productRoleDiscounts: [
+      ...(productData.productRoleDiscounts || []),
+      ...filteredProductRoleDiscounts,
+    ],
+    globalRoleDiscounts: [
+      ...(productData.globalRoleDiscounts || []),
+      ...filteredGlobalRoleDiscounts,
+    ],
+  };
+
+  const newProduct = await productModel.create(dataToSave);
+
+  return newProduct;
 };
 
 const createProductByFileService = async (filePath?: any) => {
@@ -294,30 +333,35 @@ const updateSingleProductService = async (
     };
   }
 
-  if (productData.roleDiscounts && productData.roleDiscounts.length > 0) {
-    const updatedRoleDiscounts = productData.roleDiscounts.map((discount) => {
-      let discountedPrice = productData.sellingPrice;
+  if (
+    productData.productRoleDiscounts &&
+    productData.productRoleDiscounts.length > 0
+  ) {
+    const updatedRoleDiscounts = productData.productRoleDiscounts.map(
+      (discount) => {
+        let discountedPrice = productData.sellingPrice;
 
-      if (discount.discountType === "fixed") {
-        discountedPrice = Math.max(
-          0,
-          productData.sellingPrice - discount.discountValue
-        );
-      } else if (discount.discountType === "percentage") {
-        discountedPrice = Math.max(
-          0,
-          productData.sellingPrice -
-            (productData.sellingPrice * discount.discountValue) / 100
-        );
+        if (discount.discountType === "fixed") {
+          discountedPrice = Math.max(
+            0,
+            productData.sellingPrice - discount.discountValue
+          );
+        } else if (discount.discountType === "percentage") {
+          discountedPrice = Math.max(
+            0,
+            productData.sellingPrice -
+              (productData.sellingPrice * discount.discountValue) / 100
+          );
+        }
+
+        return {
+          ...discount,
+          discountedPrice,
+        };
       }
+    );
 
-      return {
-        ...discount,
-        discountedPrice,
-      };
-    });
-
-    dataToUpdate.roleDiscounts = updatedRoleDiscounts;
+    dataToUpdate.productRoleDiscounts = updatedRoleDiscounts;
   }
 
   const result = await productModel

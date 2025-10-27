@@ -6,6 +6,7 @@ import {
   IGlobalRoleDiscount,
   ICategoryRoleDiscount,
   ICategoryDiscount,
+  IProductRoleDiscount,
 } from "./product.interface";
 
 const variantSchema = new Schema<IVariant>({
@@ -40,7 +41,22 @@ const reviewSchema = new Schema<IReview>(
 
 const globalRoleDiscountSchema = new Schema<IGlobalRoleDiscount>(
   {
-    role: { type: Schema.Types.ObjectId, ref: "role" },
+    role: { type: Schema.Types.ObjectId, ref: "customRole" },
+    discountType: {
+      type: String,
+      enum: ["fixed", "percentage"],
+      required: true,
+    },
+    discountValue: { type: Number, required: true },
+    discountedPrice: { type: Number },
+    minimumQuantity: { type: Number },
+  },
+  { _id: false }
+);
+
+const productRoleDiscountSchema = new Schema<IProductRoleDiscount>(
+  {
+    role: { type: Schema.Types.ObjectId, ref: "customRole" },
     discountType: {
       type: String,
       enum: ["fixed", "percentage"],
@@ -55,7 +71,7 @@ const globalRoleDiscountSchema = new Schema<IGlobalRoleDiscount>(
 
 const categoryRoleDiscountSchema = new Schema<ICategoryRoleDiscount>(
   {
-    role: { type: Schema.Types.ObjectId, ref: "role" },
+    role: { type: Schema.Types.ObjectId, ref: "customRole" },
     discountType: {
       type: String,
       enum: ["fixed", "percentage"],
@@ -114,6 +130,7 @@ const productSchema = new Schema<IProduct>(
     reviews: { type: [reviewSchema], default: [] },
     globalRoleDiscounts: { type: [globalRoleDiscountSchema], default: [] },
     categoryRoleDiscounts: { type: [categoryRoleDiscountSchema], default: [] },
+    productRoleDiscounts: { type: [productRoleDiscountSchema], default: [] },
     categoryDiscounts: { type: [categoryDiscountSchema], default: [] },
     isFeatured: { type: Boolean, default: false },
     isOnSale: { type: Boolean, default: false },
@@ -170,6 +187,9 @@ productSchema.pre("save", function (next) {
   );
   product.categoryRoleDiscounts = applyDiscountCalculation(
     product.categoryRoleDiscounts
+  );
+  product.productRoleDiscounts = applyDiscountCalculation(
+    product.productRoleDiscounts
   );
   product.categoryDiscounts = applyDiscountCalculation(
     product.categoryDiscounts

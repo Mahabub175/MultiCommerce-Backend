@@ -35,6 +35,15 @@ export const createCustomRoleService = async (
       }
     );
 
+    await productModel.updateMany(
+      { "productRoleDiscounts.role": { $ne: newCustomRole._id } },
+      {
+        $push: {
+          productRoleDiscounts: roleDiscount,
+        },
+      }
+    );
+
     await categoryModel.updateMany(
       { "roleDiscounts.role": { $ne: newCustomRole._id } },
       {
@@ -95,7 +104,7 @@ const getSingleCustomRoleService = async (customRoleId: number | string) => {
 };
 
 //Update single customRole
-export const updateSingleCustomRoleService = async (
+const updateSingleCustomRoleService = async (
   customRoleId: string | number,
   customRoleData: ICustomRole
 ) => {
@@ -105,10 +114,7 @@ export const updateSingleCustomRoleService = async (
       : customRoleId;
 
   const existingRole = await customRoleModel.findById(queryId);
-
-  if (!existingRole) {
-    throw new Error("Custom role not found");
-  }
+  if (!existingRole) throw new Error("Custom role not found");
 
   const updatedCustomRole = await customRoleModel
     .findByIdAndUpdate(
@@ -118,44 +124,59 @@ export const updateSingleCustomRoleService = async (
     )
     .exec();
 
-  if (!updatedCustomRole) {
-    throw new Error("Failed to update custom role");
-  }
+  if (!updatedCustomRole) throw new Error("Failed to update custom role");
 
   const discountData = {
     role: updatedCustomRole._id,
     discountType: updatedCustomRole.discountType,
     discountValue: updatedCustomRole.discountValue,
-    minimumQuantity: updatedCustomRole.minimumQuantity,
+    minimumQuantity: updatedCustomRole.minimumQuantity || 1,
+    status: updatedCustomRole.status,
   };
 
   if (updatedCustomRole.status === false) {
-    await productModel.updateMany(
-      {},
-      { $pull: { roleDiscounts: { role: updatedCustomRole._id } } }
-    );
+    await Promise.all([
+      productModel.updateMany(
+        {},
+        { $pull: { roleDiscounts: { role: updatedCustomRole._id } } }
+      ),
+      categoryModel.updateMany(
+        {},
+        { $pull: { roleDiscounts: { role: updatedCustomRole._id } } }
+      ),
+    ]);
   } else {
-    await productModel.updateMany(
-      {
-        "roleDiscounts.role": updatedCustomRole._id,
-      },
-      {
-        $set: {
-          "roleDiscounts.$.discountType": discountData.discountType,
-          "roleDiscounts.$.discountValue": discountData.discountValue,
-          "roleDiscounts.$.minimumQuantity": discountData.minimumQuantity,
-        },
-      }
-    );
+    await Promise.all([
+      productModel.updateMany(
+        { "roleDiscounts.role": updatedCustomRole._id },
+        {
+          $set: {
+            "roleDiscounts.$.discountType": discountData.discountType,
+            "roleDiscounts.$.discountValue": discountData.discountValue,
+            "roleDiscounts.$.minimumQuantity": discountData.minimumQuantity,
+          },
+        }
+      ),
+      productModel.updateMany(
+        { "roleDiscounts.role": { $ne: updatedCustomRole._id } },
+        { $push: { roleDiscounts: discountData } }
+      ),
 
-    await productModel.updateMany(
-      {
-        "roleDiscounts.role": { $ne: updatedCustomRole._id },
-      },
-      {
-        $push: { roleDiscounts: discountData },
-      }
-    );
+      categoryModel.updateMany(
+        { "roleDiscounts.role": updatedCustomRole._id },
+        {
+          $set: {
+            "roleDiscounts.$.discountType": discountData.discountType,
+            "roleDiscounts.$.discountValue": discountData.discountValue,
+            "roleDiscounts.$.minimumQuantity": discountData.minimumQuantity,
+          },
+        }
+      ),
+      categoryModel.updateMany(
+        { "roleDiscounts.role": { $ne: updatedCustomRole._id } },
+        { $push: { roleDiscounts: discountData } }
+      ),
+    ]);
   }
 
   return updatedCustomRole;
@@ -168,13 +189,31 @@ const deleteSingleCustomRoleService = async (customRoleId: string | number) => {
       ? new mongoose.Types.ObjectId(customRoleId)
       : customRoleId;
 
-  const result = await customRoleModel.findByIdAndDelete(queryId).exec();
+  const deletedRole = await customRoleModel.findByIdAndDelete(queryId).exec();
 
-  if (!result) {
-    throw new Error("CustomRole not found");
+  if (!deletedRole) {
+    throw new Error("Custom role not found");
   }
 
-  return result;
+  await Promise.all([
+    productModel.updateMany(
+      {},
+      {
+        $pull: {
+          productRoleDiscounts: { role: deletedRole._id },
+          globalRoleDiscounts: { role: deletedRole._id },
+        },
+      }
+    ),
+    categoryModel.updateMany(
+      {},
+      {
+        $pull: { roleDiscounts: { role: deletedRole._id } },
+      }
+    ),
+  ]);
+
+  return deletedRole;
 };
 
 //Delete many customRole
@@ -194,6 +233,28 @@ const deleteManyCustomRoleService = async (
   const result = await customRoleModel
     .deleteMany({ _id: { $in: queryIds } })
     .exec();
+
+  if (result.deletedCount > 0) {
+    await Promise.all([
+      productModel.updateMany(
+        {},
+        {
+          $pull: {
+            roleDiscounts: { role: { $in: queryIds } },
+            globalRoleDiscounts: { role: { $in: queryIds } },
+          },
+        }
+      ),
+      categoryModel.updateMany(
+        {},
+        {
+          $pull: {
+            roleDiscounts: { role: { $in: queryIds } },
+          },
+        }
+      ),
+    ]);
+  }
 
   return result;
 };
