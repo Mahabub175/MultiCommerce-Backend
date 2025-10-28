@@ -53,9 +53,9 @@ const loginUserService = async (userData: any) => {
 
   const user = await userModel
     .findOne(query)
-    .populate("customRole")
+    .populate("role")
     .select(
-      "_id firstName lastName userName email phoneNumber password defaultPassword customRole status otp otpGeneratedAt"
+      "_id firstName lastName userName email phoneNumber password defaultPassword role status otp otpGeneratedAt"
     );
 
   if (!user) {
@@ -134,7 +134,10 @@ const loginUserService = async (userData: any) => {
       name: user.firstName + " " + user.lastName,
       email: user.email,
       phoneNumber: user.phoneNumber,
-      role: (user.role as any).name,
+      role: {
+        _id: (user.role as any)._id,
+        name: (user.role as any).name,
+      },
     },
     token,
   };
