@@ -14,7 +14,9 @@ import { deleteFileSync } from "../../utils/deleteFilesFromStorage";
 import { customRoleModel } from "../customRole/customRole.model";
 
 const createProductService = async (productData: IProduct) => {
-  const slug = productSlug(productData.name, productData.sku);
+  const slug = productData.slug
+    ? productData.slug
+    : productSlug(productData.name, productData.sku);
 
   const totalStock =
     productData.isVariant && Array.isArray(productData.variants)
@@ -256,7 +258,9 @@ const updateSingleProductService = async (
       ? new mongoose.Types.ObjectId(productId)
       : productId;
 
-  const slug = productSlug(productData.name, productData.sku);
+  const slug = productData?.slug
+    ? productData.slug
+    : productSlug(productData.name, productData.sku);
 
   let totalStock = productData.stock;
 

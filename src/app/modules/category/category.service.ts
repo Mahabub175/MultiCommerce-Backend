@@ -429,16 +429,6 @@ export const updateSingleCategoryService = async (
     );
   }
 
-  if (
-    typeof categoryData.megaMenuStatus !== "undefined" &&
-    categoryData.megaMenuStatus !== existingCategory.megaMenuStatus
-  ) {
-    await updateMegaMenuStatus(
-      updatedCategory._id.toString(),
-      categoryData.megaMenuStatus as boolean
-    );
-  }
-
   await applyRoleDiscountsToProducts(updatedCategory._id.toString());
 
   return updatedCategory;
