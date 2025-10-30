@@ -23,6 +23,7 @@ export interface IPaymentInfo {
 }
 
 export interface IOrder {
+  orderId: string;
   user: Types.ObjectId;
   items: IOrderItem[];
   shippingAddress: IShippingAddress;

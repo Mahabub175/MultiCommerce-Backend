@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, Model } from "mongoose";
 import { IOrder } from "./order.interface";
 
 const orderItemSchema = new Schema({
@@ -39,6 +39,7 @@ const paymentInfoSchema = new Schema(
 
 const orderSchema = new Schema<IOrder>(
   {
+    orderId: { type: String, required: true, unique: true },
     user: { type: Schema.Types.ObjectId, ref: "user", required: true },
     items: { type: [orderItemSchema], required: true },
     shippingAddress: { type: shippingAddressSchema, required: true },
@@ -53,12 +54,34 @@ const orderSchema = new Schema<IOrder>(
       default: "pending",
     },
     note: { type: String },
-    status: {
-      type: Boolean,
-      default: true,
-    },
+    status: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
+
+orderSchema.pre("save", async function (next) {
+  if (!this.isNew) return next();
+
+  try {
+    const OrderModel = this.constructor as Model<IOrder>;
+
+    const lastOrder = await OrderModel.findOne({}, { orderId: 1 })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    let newOrderNumber = 1;
+
+    if (lastOrder?.orderId) {
+      const lastNum = parseInt(lastOrder.orderId.split("-")[1] || "0", 10);
+      newOrderNumber = lastNum + 1;
+    }
+
+    this.orderId = `ORD-${newOrderNumber.toString().padStart(5, "0")}`;
+
+    next();
+  } catch (error) {
+    next(error as any);
+  }
+});
 
 export const orderModel = model<IOrder>("order", orderSchema);
