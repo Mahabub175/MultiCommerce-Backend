@@ -22,7 +22,7 @@ const getAllUserService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = userModel.find().select("-password").populate("role");
     const result = await paginateAndSort(
       query,

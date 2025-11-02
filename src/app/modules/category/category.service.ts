@@ -156,7 +156,7 @@ const getAllCategoryService = async (
     .populate("roleDiscounts.role")
     .sort({ sortingOrder: sortDirection });
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const result = await paginateAndSort(
       query,
       page,

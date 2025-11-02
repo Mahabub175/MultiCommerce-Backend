@@ -14,7 +14,7 @@ const getAllShippingSlotsService = async (
   searchText?: string,
   searchFields?: string[]
 ) => {
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = shippingSlotModel.find();
     const result = await paginateAndSort(
       query,
@@ -98,7 +98,7 @@ const getAllShippingOrdersService = async (
   searchText?: string,
   searchFields?: string[]
 ) => {
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = shippingOrderModel
       .find()
       .populate("order")

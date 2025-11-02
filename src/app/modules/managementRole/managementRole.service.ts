@@ -24,7 +24,7 @@ const getAllManagementRoleService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = managementRoleModel.find();
 
     const result = await paginateAndSort(

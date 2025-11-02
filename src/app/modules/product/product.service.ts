@@ -139,7 +139,7 @@ const getAllProductService = async (
   searchText?: string,
   searchFields?: string[]
 ) => {
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = productModel
       .find()
       .populate("category")

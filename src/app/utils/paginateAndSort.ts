@@ -6,13 +6,17 @@ export const applyFilters = (
   fields: string[]
 ) => {
   if (searchText) {
-    const regexPattern = new RegExp(searchText, "i");
+    if (searchText.toLowerCase().includes("status")) {
+      query = query.where({ status: true });
+    } else {
+      const regexPattern = new RegExp(searchText, "i");
 
-    const searchConditions = fields.map((field) => ({
-      [field]: regexPattern,
-    }));
+      const searchConditions = fields.map((field) => ({
+        [field]: regexPattern,
+      }));
 
-    query = query.where({ $or: searchConditions });
+      query = query.where({ $or: searchConditions });
+    }
   }
 
   return query;
@@ -21,7 +25,7 @@ export const applyFilters = (
 export const paginateAndSort = async <T>(
   query: Query<T[], T>,
   page: number = 1,
-  limit: number = 10,
+  limit: number = 1000,
   searchText: string = "",
   fields: string[] = []
 ) => {

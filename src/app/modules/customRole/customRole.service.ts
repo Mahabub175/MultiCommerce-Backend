@@ -66,7 +66,7 @@ const getAllCustomRoleService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = customRoleModel.find();
 
     const result = await paginateAndSort(

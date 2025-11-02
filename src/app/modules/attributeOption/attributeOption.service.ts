@@ -25,7 +25,7 @@ const getAllAttributeOptionService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = attributeOptionModel.find();
     const result = await paginateAndSort(
       query,

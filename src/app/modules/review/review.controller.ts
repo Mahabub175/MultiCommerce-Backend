@@ -40,8 +40,8 @@ const getAllReviewsController = async (
   try {
     const { page, limit } = req.query;
 
-    const pageNumber = page ? parseInt(page as string, 10) : undefined;
-    const pageSize = limit ? parseInt(limit as string, 10) : undefined;
+    const pageNumber = page ? parseInt(page as string, 1) : undefined;
+    const pageSize = limit ? parseInt(limit as string, 100) : undefined;
 
     const searchText = req.query.searchText as string | undefined;
 
@@ -73,8 +73,8 @@ const getReviewsByUserController = async (
     const { page, limit } = req.query;
     const { userId } = req.params;
 
-    const pageNumber = page ? parseInt(page as string, 10) : undefined;
-    const pageSize = limit ? parseInt(limit as string, 10) : undefined;
+    const pageNumber = page ? parseInt(page as string, 1) : undefined;
+    const pageSize = limit ? parseInt(limit as string, 100) : undefined;
 
     const searchText = req.query.searchText as string | undefined;
 

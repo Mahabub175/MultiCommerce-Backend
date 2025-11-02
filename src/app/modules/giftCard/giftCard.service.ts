@@ -25,7 +25,7 @@ const getAllGiftCardService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = giftCardModel.find().populate("user");
 
     const result = await paginateAndSort(

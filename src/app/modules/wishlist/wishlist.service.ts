@@ -38,7 +38,7 @@ const getAllWishlistService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = wishlistModel.find().populate("product").populate("user");
 
     const result = await paginateAndSort(

@@ -22,7 +22,7 @@ const getAllCouponService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = couponModel.find().populate("user");
 
     const result = await paginateAndSort(

@@ -25,7 +25,7 @@ const getAllGalleryService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = galleryModel.find();
     const result = await paginateAndSort(
       query,

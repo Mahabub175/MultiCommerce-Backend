@@ -22,7 +22,7 @@ const getAllBrandService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = brandModel.find();
     const result = await paginateAndSort(
       query,

@@ -22,7 +22,7 @@ const getAllNewsletterService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = newsletterModel.find();
 
     const result = await paginateAndSort(

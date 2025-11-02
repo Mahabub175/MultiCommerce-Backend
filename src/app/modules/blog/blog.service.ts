@@ -24,7 +24,7 @@ const getAllBlogService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = blogModel.find();
     const result = await paginateAndSort(
       query,

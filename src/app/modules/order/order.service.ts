@@ -18,7 +18,7 @@ const getAllOrderService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = orderModel
       .find()
       .populate("user", "name email")

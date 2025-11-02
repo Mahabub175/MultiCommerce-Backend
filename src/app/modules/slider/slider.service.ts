@@ -26,7 +26,7 @@ const getAllSliderService = async (
 ) => {
   let results;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const query = sliderModel.find();
     const result = await paginateAndSort(
       query,

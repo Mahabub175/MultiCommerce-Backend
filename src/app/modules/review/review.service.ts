@@ -39,7 +39,7 @@ const getAllReviewsService = async (
 
   let results: any;
 
-  if (page && limit) {
+  if (page || limit || searchText) {
     const paginatedResults = await paginateAndSort(
       query,
       page,
@@ -74,7 +74,7 @@ const getReviewsByUserService = async (
       "reviews.user reviews._id reviews.comment reviews.rating reviews.attachment _id name slug"
     );
   let results: any;
-  if (page && limit) {
+  if (page || limit || searchText) {
     const results = await paginateAndSort(
       query,
       page,
