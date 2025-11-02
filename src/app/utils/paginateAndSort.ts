@@ -25,7 +25,7 @@ export const applyFilters = (
 export const paginateAndSort = async <T>(
   query: Query<T[], T>,
   page: number = 1,
-  limit: number = 1000,
+  limit: number = 1000000,
   searchText: string = "",
   fields: string[] = []
 ) => {
