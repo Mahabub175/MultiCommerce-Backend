@@ -107,12 +107,12 @@ const productSchema = new Schema<IProduct>(
     category: { type: Schema.Types.ObjectId, ref: "category", required: true },
     productModel: { type: String },
     images: { type: [String] },
-    sellingPrice: { type: Number },
     weight: { type: Number },
     purchasePoint: { type: Number },
     unit: { type: String },
     buyingPrice: { type: Number },
-    offerPrice: { type: Number },
+    regularPrice: { type: Number },
+    salePrice: { type: Number },
     stock: { type: Number },
     totalSold: { type: Number, default: 0 },
     isVariant: { type: Boolean, default: false },
@@ -140,9 +140,9 @@ const productSchema = new Schema<IProduct>(
 
 productSchema.pre("save", function (next) {
   const product = this as IProduct;
-  if (!product.sellingPrice) return next();
+  if (!product.regularPrice) return next();
 
-  const { sellingPrice } = product;
+  const { regularPrice: sellingPrice } = product;
 
   const calculateDiscountedPrice = (
     basePrice: number,

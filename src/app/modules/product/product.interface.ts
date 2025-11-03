@@ -76,8 +76,8 @@ export interface IProduct extends Document {
   images: string[];
   video: string;
   buyingPrice: number;
-  sellingPrice: number;
-  offerPrice: number;
+  regularPrice: number;
+  salePrice: number;
   totalSold: number;
   stock: number;
   isVariant: boolean;
