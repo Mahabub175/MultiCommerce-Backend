@@ -149,7 +149,29 @@ const getAllProductService = async (
       .populate("productRoleDiscounts.role")
       .populate("categoryRoleDiscounts.role");
 
-    return await paginateAndSort(query, page, limit, searchText, searchFields);
+    const paginated = await paginateAndSort(
+      query,
+      page,
+      limit,
+      searchText,
+      searchFields
+    );
+
+    paginated.results = paginated.results.map((product: any) => {
+      if (typeof product.mainImage === "string") {
+        product.mainImage = formatResultImage(product.mainImage) as string;
+      }
+
+      if (Array.isArray(product.images)) {
+        product.images = product.images.map((img: string) =>
+          typeof img === "string" ? (formatResultImage(img) as string) : img
+        );
+      }
+
+      return product;
+    });
+
+    return paginated;
   } else {
     const results = await productModel
       .find()
@@ -163,7 +185,21 @@ const getAllProductService = async (
       .sort({ createdAt: -1 })
       .exec();
 
-    return { results };
+    const formattedResults = results.map((product) => {
+      if (typeof product.mainImage === "string") {
+        product.mainImage = formatResultImage(product.mainImage) as string;
+      }
+
+      if (Array.isArray(product.images)) {
+        product.images = product.images.map((img) =>
+          typeof img === "string" ? (formatResultImage(img) as string) : img
+        );
+      }
+
+      return product;
+    });
+
+    return { results: formattedResults };
   }
 };
 
@@ -189,10 +225,15 @@ const getSingleProductService = async (productId: number | string) => {
   }
 
   if (typeof result.mainImage === "string") {
-    const formattedAttachment = formatResultImage<IProduct>(result.mainImage);
-    if (typeof formattedAttachment === "string") {
-      result.mainImage = formattedAttachment;
-    }
+    result.mainImage = formatResultImage<IProduct>(result.mainImage) as string;
+  }
+
+  if (Array.isArray(result.images)) {
+    result.images = result.images.map((img) =>
+      typeof img === "string"
+        ? (formatResultImage<IProduct>(img) as string)
+        : img
+    );
   }
 
   return result;
