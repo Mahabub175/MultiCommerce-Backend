@@ -16,6 +16,7 @@ export interface IUser {
   credit: number;
   phoneNumber: string;
   role: Types.ObjectId;
+  roleModel: string;
   otp: number | string;
   otpGeneratedAt: string;
   defaultPassword: string;

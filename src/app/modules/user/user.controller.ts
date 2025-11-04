@@ -48,6 +48,7 @@ const getAllUserController = async (
     const searchFields = ["name", "email", "number", "address"];
 
     const result = await userServices.getAllUserService(
+      req.user as any,
       pageNumber,
       pageSize,
       searchText,
@@ -84,7 +85,7 @@ const getSingleUserController = async (
 };
 
 //Update single user controller
-const updateSingleUserController = async (
+export const updateSingleUserController = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -99,7 +100,11 @@ const updateSingleUserController = async (
       profileImage: filePath,
     };
 
-    const result = await userServices.updateSingleUserService(userId, userData);
+    const result = await userServices.updateSingleUserService(
+      userId,
+      userData,
+      req.user as any
+    );
 
     res.status(200).json({
       success: true,

@@ -5,7 +5,6 @@ import { CategoryLevel, categoryModel } from "./category.model";
 import { formatResultImage } from "../../utils/formatResultImage";
 import fs from "fs";
 import path from "path";
-import { updateMegaMenuStatus } from "../../utils/updateMegaMenuStatus";
 import {
   applyCategoryDiscountToProducts,
   applyRoleDiscountsToProducts,

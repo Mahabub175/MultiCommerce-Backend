@@ -347,18 +347,18 @@ const updateSingleProductService = async (
   ) {
     const updatedRoleDiscounts = productData.productRoleDiscounts.map(
       (discount) => {
-        let discountedPrice = productData.sellingPrice;
+        let discountedPrice = productData.regularPrice;
 
         if (discount.discountType === "fixed") {
           discountedPrice = Math.max(
             0,
-            productData.sellingPrice - discount.discountValue
+            productData.regularPrice - discount.discountValue
           );
         } else if (discount.discountType === "percentage") {
           discountedPrice = Math.max(
             0,
-            productData.sellingPrice -
-              (productData.sellingPrice * discount.discountValue) / 100
+            productData.regularPrice -
+              (productData.regularPrice * discount.discountValue) / 100
           );
         }
 

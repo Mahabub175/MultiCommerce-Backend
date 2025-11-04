@@ -55,7 +55,7 @@ const loginUserService = async (userData: any) => {
     .findOne(query)
     .populate("role")
     .select(
-      "_id firstName lastName userName email phoneNumber password defaultPassword role status otp otpGeneratedAt"
+      "_id firstName lastName userName email phoneNumber password defaultPassword role roleModel status otp otpGeneratedAt"
     );
 
   if (!user) {
@@ -122,10 +122,10 @@ const loginUserService = async (userData: any) => {
   const jwtPayload = {
     userId: user._id,
     phoneNumber: user.phoneNumber,
+    roleModel: user.roleModel,
     role: (user.role as any).name,
     exp: expirationTime,
   };
-
   const token = jwt.sign(jwtPayload, config.jwt_access_secret as string);
 
   return {

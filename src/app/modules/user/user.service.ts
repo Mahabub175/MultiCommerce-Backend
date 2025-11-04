@@ -5,6 +5,8 @@ import { userModel } from "./user.model";
 import { IUser } from "./user.interface";
 import path from "path";
 import fs from "fs";
+import { managementRoleModel } from "../managementRole/managementRole.model";
+import { customRoleModel } from "../customRole/customRole.model";
 
 //Create a User into database
 const createUserService = async (userData: IUser, filePath?: string) => {
@@ -13,17 +15,67 @@ const createUserService = async (userData: IUser, filePath?: string) => {
   return result;
 };
 
-// Get all Users withal pagination
 const getAllUserService = async (
+  currentUser: any,
   page?: number,
   limit?: number,
   searchText?: string,
   searchFields?: string[]
 ) => {
   let results;
+  const query = userModel.find().select("-password").populate("role");
+
+  const isSuperAdmin =
+    currentUser.roleModel === "managementRole" &&
+    currentUser.role === "super_admin";
+
+  let baseFilter: any = {};
+
+  if (!searchText && !isSuperAdmin) {
+    baseFilter.$or = [{ roleModel: "customRole" }];
+  }
+
+  if (searchText) {
+    const searchTerms = searchText.split(",").map((s) => s.trim());
+    const orFilters: any[] = [];
+
+    if (searchTerms.includes("customRole")) {
+      orFilters.push({ roleModel: "customRole" });
+    } else {
+      const matchedCustomRoles = await customRoleModel.find({
+        name: { $in: searchTerms },
+      });
+      if (matchedCustomRoles.length) {
+        orFilters.push({
+          roleModel: "customRole",
+          role: { $in: matchedCustomRoles.map((r) => r._id) },
+        });
+      }
+    }
+
+    const matchedManagementRoles = await managementRoleModel.find({
+      name: { $in: searchTerms, $ne: "super_admin" },
+    });
+    if (matchedManagementRoles.length) {
+      orFilters.push({
+        roleModel: "managementRole",
+        role: { $in: matchedManagementRoles.map((r) => r._id) },
+      });
+    }
+
+    baseFilter.$or = isSuperAdmin
+      ? orFilters.length
+        ? orFilters
+        : undefined
+      : orFilters.filter(
+          (f) =>
+            f.roleModel === "customRole" || f.roleModel === "managementRole"
+        );
+  }
+
+  query.where(baseFilter);
 
   if (page || limit || searchText) {
-    const query = userModel.find().select("-password").populate("role");
     const result = await paginateAndSort(
       query,
       page,
@@ -31,27 +83,17 @@ const getAllUserService = async (
       searchText,
       searchFields
     );
-
     result.results = formatResultImage<IUser>(
       result.results,
       "profileImage"
     ) as IUser[];
-
     return result;
-  } else {
-    results = await userModel
-      .find()
-      .select("-password")
-      .populate("role")
-      .sort({ createdAt: -1 })
-      .exec();
-
-    results = formatResultImage(results, "profileImage");
-
-    return {
-      results,
-    };
   }
+
+  results = await query.sort({ createdAt: -1 }).exec();
+  results = formatResultImage(results, "profileImage");
+
+  return { results };
 };
 
 // Get single User
@@ -82,47 +124,69 @@ const getSingleUserService = async (userId: number | string) => {
 //Update single User
 const updateSingleUserService = async (
   userId: string | number,
-  userData: IUser
+  userData: IUser,
+  currentUser: IUser
 ) => {
   const queryId =
     typeof userId === "string" ? new mongoose.Types.ObjectId(userId) : userId;
 
   const user = await userModel.findById(queryId).exec();
+  if (!user) throw new Error("User not found");
 
-  if (!user) {
-    throw new Error("User not found");
-  }
+  if (userData.role) {
+    const isSuperAdmin =
+      currentUser.roleModel === "managementRole" &&
+      (currentUser.role as any) === "super_admin";
 
-  if (userData.profileImage && user.profileImage !== userData.profileImage) {
-    const prevFileName = path.basename(user.profileImage);
-    const prevFilePath = path.join(process.cwd(), "uploads", prevFileName);
+    const customRole = await customRoleModel.findById(userData.role);
+    const managementRole = await managementRoleModel.findById(userData.role);
 
-    if (fs.existsSync(prevFilePath)) {
-      try {
-        fs.unlinkSync(prevFilePath);
-      } catch (err) {
-        console.warn(
-          `Failed to delete previous attachment for user ${user._id}`
+    if (!isSuperAdmin) {
+      if (managementRole) {
+        throw new Error(
+          "You do not have permission to assign management roles."
         );
       }
-    } else {
-      console.warn(`Previous attachment not found for user ${user._id}`);
+
+      if (customRole) {
+        userData.roleModel = "customRole";
+      } else if (managementRole) {
+        userData.roleModel = "managementRole";
+      } else {
+        throw new Error("Invalid role provided.");
+      }
     }
+
+    if (userData.profileImage && user.profileImage !== userData.profileImage) {
+      const prevFileName = path.basename(user.profileImage || "");
+      const prevFilePath = path.join(process.cwd(), "uploads", prevFileName);
+
+      if (fs.existsSync(prevFilePath)) {
+        try {
+          fs.unlinkSync(prevFilePath);
+        } catch (err) {
+          console.warn(
+            `Failed to delete previous attachment for user ${user._id}:`,
+            err
+          );
+        }
+      } else {
+        console.warn(`Previous attachment not found for user ${user._id}`);
+      }
+    }
+
+    const result = await userModel
+      .findByIdAndUpdate(
+        queryId,
+        { $set: userData },
+        { new: true, runValidators: true }
+      )
+      .exec();
+
+    if (!result) throw new Error("User update failed");
+
+    return result;
   }
-
-  const result = await userModel
-    .findByIdAndUpdate(
-      queryId,
-      { $set: userData },
-      { new: true, runValidators: true }
-    )
-    .exec();
-
-  if (!result) {
-    throw new Error("User update failed");
-  }
-
-  return result;
 };
 
 //Delete single User
