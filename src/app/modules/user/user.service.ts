@@ -68,11 +68,17 @@ const getAllUserService = async (
     const matchedManagementRoles = await managementRoleModel.find({
       name: { $in: searchTerms.filter((t) => t !== "super_admin") },
     });
+
     if (matchedManagementRoles.length) {
-      orFilters.push({
-        roleModel: "managementRole",
-        role: { $in: matchedManagementRoles.map((r) => r._id) },
-      });
+      const matchedRoleIds = matchedManagementRoles
+        .filter((r) => r.name !== "super_admin")
+        .map((r) => r._id);
+      if (matchedRoleIds.length) {
+        orFilters.push({
+          roleModel: "managementRole",
+          role: { $in: matchedRoleIds },
+        });
+      }
     }
 
     baseFilter.$or = isSuperAdmin
@@ -83,6 +89,18 @@ const getAllUserService = async (
           (f) =>
             f.roleModel === "customRole" || f.roleModel === "managementRole"
         );
+
+    if (searchTerms.includes("admin") && !searchTerms.includes("super_admin")) {
+      const superAdminRole = await managementRoleModel.findOne({
+        name: "super_admin",
+      });
+      if (superAdminRole) {
+        baseFilter.$and = [
+          { role: { $ne: superAdminRole._id } },
+          ...(baseFilter.$and || []),
+        ];
+      }
+    }
   }
 
   query.where(baseFilter);
