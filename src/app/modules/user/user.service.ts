@@ -53,8 +53,20 @@ const getAllUserService = async (
       }
     }
 
+    if (searchTerms.includes("super_admin")) {
+      const superAdminRole = await managementRoleModel.findOne({
+        name: "super_admin",
+      });
+      if (superAdminRole) {
+        orFilters.push({
+          roleModel: "managementRole",
+          role: superAdminRole._id,
+        });
+      }
+    }
+
     const matchedManagementRoles = await managementRoleModel.find({
-      name: { $in: searchTerms, $ne: "super_admin" },
+      name: { $in: searchTerms.filter((t) => t !== "super_admin") },
     });
     if (matchedManagementRoles.length) {
       orFilters.push({
