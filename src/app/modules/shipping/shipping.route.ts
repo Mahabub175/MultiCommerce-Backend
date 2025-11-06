@@ -1,10 +1,12 @@
 import express from "express";
 import { shippingControllers } from "./shipping.controller";
+import { uploadService } from "../upload/upload";
 
 const router = express.Router();
 
 router.post(
   "/shipping-slot/",
+  uploadService.single("attachment"),
   shippingControllers.createShippingSlotController
 );
 router.get(
@@ -17,6 +19,7 @@ router.get(
 );
 router.patch(
   "/shipping-slot/:slotId/",
+  uploadService.single("attachment"),
   shippingControllers.updateShippingSlotController
 );
 router.delete(

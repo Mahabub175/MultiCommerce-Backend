@@ -77,7 +77,7 @@ export interface IProduct extends Document {
   video: string;
   buyingPrice: number;
   regularPrice: number;
-  salePrice: number;
+  salePrice?: number;
   totalSold: number;
   stock: number;
   isVariant: boolean;

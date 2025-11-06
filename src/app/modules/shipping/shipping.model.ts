@@ -4,6 +4,8 @@ import { IShippingSlot, IShippingOrder } from "./shipping.interface";
 const shippingSlotSchema = new Schema<IShippingSlot>(
   {
     slotName: { type: String, required: true },
+    courierName: { type: String },
+    attachment: { type: String },
     startTime: { type: String, required: true },
     endTime: { type: String, required: true },
     basePrice: { type: Number, required: true },

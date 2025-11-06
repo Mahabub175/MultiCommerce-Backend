@@ -1,6 +1,7 @@
 import express from "express";
 import { uploadService } from "../upload/upload";
 import { productControllers } from "./product.controller";
+import { authMiddleware } from "../../middlewares/authMiddleware";
 
 const router = express.Router();
 
@@ -16,20 +17,27 @@ router.post(
   productControllers.createProductByFileController
 );
 
-router.get("/product/", productControllers.getAllProductController);
+router.get(
+  "/product/",
+  authMiddleware,
+  productControllers.getAllProductController
+);
 
 router.get(
   "/product/:productId/",
+  authMiddleware,
   productControllers.getSingleProductController
 );
 
 router.get(
   "/product/sku/:sku/",
+  authMiddleware,
   productControllers.getSingleProductBySkuController
 );
 
 router.get(
   "/product/slug/:productSlug/",
+  authMiddleware,
   productControllers.getSingleProductBySlugController
 );
 

@@ -1,4 +1,4 @@
-import { model, Schema, Types } from "mongoose";
+import { model, Schema } from "mongoose";
 import {
   IProduct,
   IReview,
@@ -142,39 +142,43 @@ productSchema.pre("save", function (next) {
   const product = this as IProduct;
   if (!product.regularPrice) return next();
 
-  const { regularPrice: sellingPrice } = product;
+  const basePrice: number = product.regularPrice;
 
   const calculateDiscountedPrice = (
-    basePrice: number,
-    discountType: "fixed" | "percentage",
-    discountValue: number
-  ): number => {
+    discountType: "fixed" | "percentage" | undefined,
+    discountValue: number | undefined
+  ): number | null => {
+    if (!discountType || discountValue === undefined || discountValue <= 0)
+      return null;
+
     let finalPrice = basePrice;
     if (discountType === "fixed") {
       finalPrice = basePrice - discountValue;
     } else if (discountType === "percentage") {
       finalPrice = basePrice - (basePrice * discountValue) / 100;
     }
-    return Math.max(finalPrice, 0);
+
+    return finalPrice < basePrice ? finalPrice : null;
   };
 
   const applyDiscountCalculation = <
     T extends {
-      discountType: any;
-      discountValue: number;
-      discountedPrice?: number;
+      discountType?: "fixed" | "percentage";
+      discountValue?: number;
+      discountedPrice?: number | null;
     }
   >(
     discounts: T[] = []
   ): T[] => {
-    return discounts.map((discount) => ({
-      ...discount,
-      discountedPrice: calculateDiscountedPrice(
-        sellingPrice,
-        discount.discountType,
-        discount.discountValue
-      ),
-    }));
+    return discounts
+      .map((discount) => {
+        const discountedPrice = calculateDiscountedPrice(
+          discount.discountType,
+          discount.discountValue
+        );
+        return { ...discount, discountedPrice };
+      })
+      .filter((discount) => discount.discountedPrice !== null) as T[];
   };
 
   product.globalRoleDiscounts = applyDiscountCalculation(
@@ -189,6 +193,10 @@ productSchema.pre("save", function (next) {
   product.categoryDiscounts = applyDiscountCalculation(
     product.categoryDiscounts
   );
+
+  if (product.salePrice && product.salePrice >= basePrice) {
+    product.salePrice = undefined;
+  }
 
   next();
 });

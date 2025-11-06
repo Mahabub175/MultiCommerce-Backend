@@ -8,7 +8,13 @@ const createShippingSlotController = async (
 ) => {
   try {
     const data = req.body;
-    const result = await shippingServices.createShippingSlotService(data);
+    const filePath = req.file ? req.file.path : undefined;
+    const formData = {
+      ...data,
+      filePath,
+    };
+
+    const result = await shippingServices.createShippingSlotService(formData);
     res.status(200).json({
       success: true,
       message: "Shipping Slot Created Successfully!",
@@ -72,9 +78,17 @@ const updateShippingSlotController = async (
   try {
     const { slotId } = req.params;
     const data = req.body;
+
+    const filePath = req.file ? req.file.path : undefined;
+
+    const formData = {
+      ...data,
+      filePath,
+    };
+
     const result = await shippingServices.updateShippingSlotService(
       slotId,
-      data
+      formData
     );
     res.status(200).json({
       success: true,

@@ -1,6 +1,7 @@
 import { Schema, model } from "mongoose";
 import { IUser } from "./user.interface";
 import { managementRoleModel } from "../managementRole/managementRole.model";
+import { customRoleModel } from "../customRole/customRole.model";
 
 const previousPasswordSchema = new Schema({
   password: { type: String, required: true },
@@ -31,7 +32,7 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
       enum: ["managementRole", "customRole"],
-      default: "managementRole",
+      default: "customRole",
     },
     city: String,
     zipCode: String,
@@ -72,10 +73,10 @@ userSchema.pre("save", async function (next) {
   }
 
   if (!this.role) {
-    const defaultRole = await managementRoleModel.findOne({ name: "user" });
+    const defaultRole = await customRoleModel.findOne({ name: "user" });
     if (defaultRole) {
       this.role = defaultRole._id;
-      this.roleModel = "managementRole";
+      this.roleModel = "customRole";
     }
   }
 

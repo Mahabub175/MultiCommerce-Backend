@@ -98,6 +98,7 @@ const getAllProductController = async (
     const searchFields = ["name"];
 
     const result = await productServices.getAllProductService(
+      req.user as any,
       pageNumber,
       pageSize,
       searchText,
@@ -122,7 +123,10 @@ const getSingleProductController = async (
 ) => {
   try {
     const { productId } = req.params;
-    const result = await productServices.getSingleProductService(productId);
+    const result = await productServices.getSingleProductService(
+      req.user as any,
+      productId
+    );
     res.status(200).json({
       success: true,
       message: "Product Fetched Successfully!",
@@ -160,6 +164,7 @@ const getSingleProductBySlugController = async (
   try {
     const { productSlug } = req.params;
     const result = await productServices.getSingleProductBySlugService(
+      req.user as any,
       productSlug
     );
     res.status(200).json({
@@ -224,6 +229,7 @@ const updateSingleProductController = async (
     }
 
     const existingProduct = await productServices.getSingleProductService(
+      req.user as any,
       productId
     );
 
@@ -236,7 +242,7 @@ const updateSingleProductController = async (
       : [];
     const imagesToKeep = [...stringImages, ...uploadedImages];
     const imagesToDelete = existingImages.filter(
-      (image) => !imagesToKeep.includes(image)
+      (image: string) => !imagesToKeep.includes(image)
     );
 
     for (const image of imagesToDelete) {

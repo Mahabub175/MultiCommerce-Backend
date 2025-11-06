@@ -12,6 +12,7 @@ import {
 } from "../../utils/findOrCreateItems";
 import { deleteFileSync } from "../../utils/deleteFilesFromStorage";
 import { customRoleModel } from "../customRole/customRole.model";
+import { postProcessProduct } from "../../utils/productUtils";
 
 const createProductService = async (productData: IProduct) => {
   const slug = productData.slug
@@ -134,111 +135,133 @@ const createProductByFileService = async (filePath?: any) => {
 };
 
 const getAllProductService = async (
+  currentUser?: any,
   page?: number,
   limit?: number,
   searchText?: string,
   searchFields?: string[]
 ) => {
-  if (page || limit || searchText) {
-    const query = productModel
-      .find()
-      .populate("category")
-      .populate("brand")
-      .populate("reviews.user")
-      .populate("globalRoleDiscounts.role")
-      .populate("productRoleDiscounts.role")
-      .populate("categoryRoleDiscounts.role");
+  const isManagementRole = currentUser?.roleModel === "managementRole";
+  const isCustomRole = currentUser?.roleModel === "customRole";
 
-    const paginated = await paginateAndSort(
-      query,
-      page,
-      limit,
-      searchText,
-      searchFields
+  // Base query setup
+  const query = productModel
+    .find()
+    .populate({
+      path: "category",
+      select: "-roleDiscounts",
+    })
+    .populate("brand")
+    .populate("reviews.user");
+
+  // ✅ Conditionally populate based on role
+  if (currentUser) {
+    if (isManagementRole) {
+      query
+        .populate("globalRoleDiscounts.role")
+        .populate("productRoleDiscounts.role")
+        .populate("categoryRoleDiscounts.role");
+    } else if (isCustomRole) {
+      query
+        .populate({
+          path: "globalRoleDiscounts.role",
+          match: { name: currentUser.role },
+        })
+        .populate({
+          path: "productRoleDiscounts.role",
+          match: { name: currentUser.role },
+        })
+        .populate({
+          path: "categoryRoleDiscounts.role",
+          match: { name: currentUser.role },
+        });
+    }
+  } else {
+    // ✅ No user → exclude all discounts entirely
+    query.select(
+      "-globalRoleDiscounts -productRoleDiscounts -categoryRoleDiscounts"
+    );
+  }
+
+  // Fetch data
+  const executeQuery = async () => {
+    if (page || limit || searchText) {
+      const paginated = await paginateAndSort(
+        query,
+        page,
+        limit,
+        searchText,
+        searchFields
+      );
+      paginated.results = paginated.results.map((product: any) =>
+        postProcessProduct(product, isCustomRole)
+      );
+      return paginated;
+    }
+
+    const results = await query.lean().sort({ createdAt: -1 }).exec();
+    const formattedResults = results.map((product: any) =>
+      postProcessProduct(product, isCustomRole)
     );
 
-    paginated.results = paginated.results.map((product: any) => {
-      if (typeof product.mainImage === "string") {
-        product.mainImage = formatResultImage(product.mainImage) as string;
-      }
-
-      if (Array.isArray(product.images)) {
-        product.images = product.images.map((img: string) =>
-          typeof img === "string" ? (formatResultImage(img) as string) : img
-        );
-      }
-
-      return product;
-    });
-
-    return paginated;
-  } else {
-    const results = await productModel
-      .find()
-      .populate("category")
-      .populate("brand")
-      .populate("reviews.user")
-      .populate("globalRoleDiscounts.role")
-      .populate("productRoleDiscounts.role")
-      .populate("categoryRoleDiscounts.role")
-      .lean()
-      .sort({ createdAt: -1 })
-      .exec();
-
-    const formattedResults = results.map((product) => {
-      if (typeof product.mainImage === "string") {
-        product.mainImage = formatResultImage(product.mainImage) as string;
-      }
-
-      if (Array.isArray(product.images)) {
-        product.images = product.images.map((img) =>
-          typeof img === "string" ? (formatResultImage(img) as string) : img
-        );
-      }
-
-      return product;
-    });
-
     return { results: formattedResults };
-  }
+  };
+
+  return await executeQuery();
 };
 
-const getSingleProductService = async (productId: number | string) => {
+const getSingleProductService = async (
+  currentUser: any,
+  productId: string | number
+) => {
   const queryId =
     typeof productId === "string"
       ? new mongoose.Types.ObjectId(productId)
       : productId;
 
-  const result = await productModel
+  const isManagementRole = currentUser?.roleModel === "managementRole";
+  const isCustomRole = currentUser?.roleModel === "customRole";
+
+  const query = productModel
     .findById(queryId)
     .populate("category")
     .populate("brand")
-    .populate("reviews.user")
-    .populate("globalRoleDiscounts.role")
-    .populate("productRoleDiscounts.role")
-    .populate("categoryRoleDiscounts.role")
-    .lean()
-    .exec();
+    .populate("reviews.user");
 
-  if (!result) {
-    throw new Error("Product not found");
+  if (isManagementRole) {
+    query
+      .populate("globalRoleDiscounts.role")
+      .populate("productRoleDiscounts.role")
+      .populate("categoryRoleDiscounts.role");
+  } else if (isCustomRole) {
+    query
+      .populate({
+        path: "globalRoleDiscounts.role",
+        match: { name: currentUser.role },
+      })
+      .populate({
+        path: "productRoleDiscounts.role",
+        match: { name: currentUser.role },
+      })
+      .populate({
+        path: "categoryRoleDiscounts.role",
+        match: { name: currentUser.role },
+      });
   }
 
-  if (typeof result.mainImage === "string") {
-    result.mainImage = formatResultImage<IProduct>(result.mainImage) as string;
+  const result = await query.lean().exec();
+  if (!result) throw new Error("Product not found");
+
+  if (!currentUser) {
+    result.globalRoleDiscounts = [];
+    result.productRoleDiscounts = [];
+    result.categoryRoleDiscounts = [];
   }
 
-  if (Array.isArray(result.images)) {
-    result.images = result.images.map((img) =>
-      typeof img === "string"
-        ? (formatResultImage<IProduct>(img) as string)
-        : img
-    );
-  }
+  const cleanedResult = postProcessProduct(result, isCustomRole);
 
-  return result;
+  return cleanedResult;
 };
-
 const getSingleProductBySkuService = async (sku: string | number) => {
   const result = await productModel
     .findOne({ $or: [{ sku }, { "variants.sku": sku }] })
@@ -271,23 +294,52 @@ const getSingleProductBySkuService = async (sku: string | number) => {
   };
 };
 
-const getSingleProductBySlugService = async (productSlug: string) => {
-  const result = await productModel
+const getSingleProductBySlugService = async (
+  currentUser: any,
+  productSlug: string
+) => {
+  const isManagementRole = currentUser?.roleModel === "managementRole";
+  const isCustomRole = currentUser?.roleModel === "customRole";
+
+  const query = productModel
     .findOne({ slug: productSlug })
     .populate("category")
     .populate("brand")
-    .populate("reviews.user")
-    .populate("globalRoleDiscounts.role")
-    .populate("productRoleDiscounts.role")
-    .populate("categoryRoleDiscounts.role")
-    .lean()
-    .exec();
+    .populate("reviews.user");
 
-  if (!result) {
-    throw new Error("Product not found");
+  if (isManagementRole) {
+    query
+      .populate("globalRoleDiscounts.role")
+      .populate("productRoleDiscounts.role")
+      .populate("categoryRoleDiscounts.role");
+  } else if (isCustomRole) {
+    query
+      .populate({
+        path: "globalRoleDiscounts.role",
+        match: { name: currentUser.role },
+      })
+      .populate({
+        path: "productRoleDiscounts.role",
+        match: { name: currentUser.role },
+      })
+      .populate({
+        path: "categoryRoleDiscounts.role",
+        match: { name: currentUser.role },
+      });
   }
 
-  return result;
+  const result = await query.lean().exec();
+  if (!result) throw new Error("Product not found");
+
+  if (!currentUser) {
+    result.globalRoleDiscounts = [];
+    result.productRoleDiscounts = [];
+    result.categoryRoleDiscounts = [];
+  }
+
+  const cleanedResult = postProcessProduct(result, isCustomRole);
+
+  return cleanedResult;
 };
 
 const updateSingleProductService = async (

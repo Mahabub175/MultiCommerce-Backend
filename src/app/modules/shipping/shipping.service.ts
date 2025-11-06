@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import { shippingSlotModel, shippingOrderModel } from "./shipping.model";
 import { IShippingSlot, IShippingOrder } from "./shipping.interface";
 import { paginateAndSort } from "../../utils/paginateAndSort";
+import fs from "fs";
+import path from "path";
 
 const createShippingSlotService = async (data: IShippingSlot) => {
   const result = await shippingSlotModel.create(data);
@@ -44,15 +46,32 @@ const getSingleShippingSlotService = async (slotId: string | number) => {
 
 const updateShippingSlotService = async (
   slotId: string | number,
-  data: Partial<IShippingSlot>
+  shippingData: Partial<IShippingSlot>
 ) => {
   const queryId =
     typeof slotId === "string" ? new mongoose.Types.ObjectId(slotId) : slotId;
 
+  const existingShippingSlot = await shippingSlotModel.findById(queryId);
+  if (!existingShippingSlot) throw new Error("Shipping Slot not found");
+
+  if (
+    shippingData.attachment &&
+    existingShippingSlot.attachment !== shippingData.attachment
+  ) {
+    const prevFile = path.join(
+      process.cwd(),
+      "uploads",
+      path.basename(existingShippingSlot.attachment || "")
+    );
+    if (fs.existsSync(prevFile)) {
+      fs.unlinkSync(prevFile);
+    }
+  }
+
   const result = await shippingSlotModel
     .findByIdAndUpdate(
       queryId,
-      { $set: data },
+      { $set: shippingData },
       { new: true, runValidators: true }
     )
     .exec();
@@ -64,6 +83,18 @@ const updateShippingSlotService = async (
 const deleteSingleShippingSlotService = async (slotId: string | number) => {
   const queryId =
     typeof slotId === "string" ? new mongoose.Types.ObjectId(slotId) : slotId;
+
+  const shippingSlot = await shippingSlotModel.findById(queryId);
+  if (!shippingSlot) throw new Error("Shipping Slot not found");
+
+  if (shippingSlot.attachment) {
+    const filePath = path.join(
+      process.cwd(),
+      "uploads",
+      path.basename(shippingSlot.attachment)
+    );
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  }
 
   const result = await shippingSlotModel.findByIdAndDelete(queryId).exec();
   if (!result) throw new Error("Shipping slot not found");

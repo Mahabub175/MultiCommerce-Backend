@@ -3,6 +3,8 @@ import { Document, Types } from "mongoose";
 export interface IShippingSlot extends Document {
   slotName: string;
   startTime: string;
+  courierName: string;
+  attachment: string;
   endTime: string;
   basePrice: number;
   perKmPrice: number;
