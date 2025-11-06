@@ -3,7 +3,7 @@ import { paginateAndSort } from "../../utils/paginateAndSort";
 import { formatResultImage } from "../../utils/formatResultImage";
 import { IProduct } from "./product.interface";
 import { productModel } from "./product.model";
-import { productSlug } from "../../utils/generateSlug";
+import { generateSlug } from "../../utils/generateSlug";
 import { parseExcel } from "../../utils/parseExcel";
 import config from "../../config";
 import {
@@ -16,7 +16,7 @@ import { customRoleModel } from "../customRole/customRole.model";
 const createProductService = async (productData: IProduct) => {
   const slug = productData.slug
     ? productData.slug
-    : productSlug(productData.name, productData.sku);
+    : generateSlug(productData.name);
 
   const totalStock =
     productData.isVariant && Array.isArray(productData.variants)
@@ -105,7 +105,7 @@ const createProductByFileService = async (filePath?: any) => {
       return {
         name: product.name,
         sku: product.sku,
-        slug: productSlug(product.name, product.sku),
+        slug: generateSlug(product.name),
         category: category._id,
         brand: brand?._id ?? null,
         video: product.video || null,
@@ -301,7 +301,7 @@ const updateSingleProductService = async (
 
   const slug = productData?.slug
     ? productData.slug
-    : productSlug(productData.name, productData.sku);
+    : generateSlug(productData.name);
 
   let totalStock = productData.stock;
 
