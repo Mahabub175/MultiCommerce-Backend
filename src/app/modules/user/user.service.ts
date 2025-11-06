@@ -53,6 +53,15 @@ const getAllUserService = async (
     const searchTerms = searchText.split(",").map((s) => s.trim());
     const orFilters: any[] = [];
 
+    if (searchTerms.includes("status=true") || searchTerms.includes("active")) {
+      baseFilter.$and = [...(baseFilter.$and || []), { status: true }];
+    } else if (
+      searchTerms.includes("status=false") ||
+      searchTerms.includes("inactive")
+    ) {
+      baseFilter.$and = [...(baseFilter.$and || []), { status: false }];
+    }
+
     if (searchTerms.includes("customRole")) {
       orFilters.push({ roleModel: "customRole" });
     } else {
@@ -95,14 +104,14 @@ const getAllUserService = async (
       }
     }
 
-    baseFilter.$or = isSuperAdmin
-      ? orFilters.length
+    if (orFilters.length > 0) {
+      baseFilter.$or = isSuperAdmin
         ? orFilters
-        : undefined
-      : orFilters.filter(
-          (f) =>
-            f.roleModel === "customRole" || f.roleModel === "managementRole"
-        );
+        : orFilters.filter(
+            (f) =>
+              f.roleModel === "customRole" || f.roleModel === "managementRole"
+          );
+    }
 
     if (searchTerms.includes("admin") && !searchTerms.includes("super_admin")) {
       const superAdminRole = await managementRoleModel.findOne({
