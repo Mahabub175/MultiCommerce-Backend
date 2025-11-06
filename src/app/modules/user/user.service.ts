@@ -101,6 +101,18 @@ const getAllUserService = async (
         ];
       }
     }
+
+    if (!isSuperAdmin) {
+      const superAdminRole = await managementRoleModel.findOne({
+        name: "super_admin",
+      });
+      if (superAdminRole) {
+        baseFilter.$and = [
+          ...(baseFilter.$and || []),
+          { role: { $ne: superAdminRole._id } },
+        ];
+      }
+    }
   }
 
   query.where(baseFilter);
