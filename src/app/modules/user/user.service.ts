@@ -32,7 +32,21 @@ const getAllUserService = async (
   let baseFilter: any = {};
 
   if (!searchText && !isSuperAdmin) {
-    baseFilter.$or = [{ roleModel: "customRole" }];
+    const superAdminRole = await managementRoleModel.findOne({
+      name: "super_admin",
+    });
+    if (superAdminRole) {
+      baseFilter = {
+        $or: [
+          { roleModel: "customRole" },
+          { roleModel: "managementRole", role: { $ne: superAdminRole._id } },
+        ],
+      };
+    } else {
+      baseFilter = {
+        roleModel: { $in: ["customRole", "managementRole"] },
+      };
+    }
   }
 
   if (searchText) {
