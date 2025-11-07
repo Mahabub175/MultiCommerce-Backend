@@ -32,6 +32,10 @@ export const postProcessProduct = (product: any, isCustomRole: boolean) => {
     product.mainImage = formatResultImage(product.mainImage) as string;
   }
 
+if (typeof product.video === "string") {
+    product.video = formatResultImage(product.video) as string;
+  }
+
   if (Array.isArray(product.images)) {
     product.images = product.images.map((img: string) =>
       typeof img === "string" ? (formatResultImage(img) as string) : img
