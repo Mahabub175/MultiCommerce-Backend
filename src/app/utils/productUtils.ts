@@ -42,5 +42,16 @@ if (typeof product.video === "string") {
     );
   }
 
+if (Array.isArray(product.variants)) {
+    product.variants = product.variants.map((variant: any) => {
+      if (Array.isArray(variant.images)) {
+        variant.images = variant.images.map((img: string) =>
+          typeof img === "string" ? (formatResultImage(img) as string) : img
+        );
+      }
+      return variant;
+    });
+  }
+
   return product;
 };
