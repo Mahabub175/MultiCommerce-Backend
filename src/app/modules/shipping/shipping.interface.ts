@@ -16,20 +16,6 @@ export interface IShippingSlot extends Document {
 
 export interface IDeliveryItem {
   order: Types.ObjectId;
-  user: Types.ObjectId;
-  address: {
-    name: string;
-    phone: string;
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    postalCode: string;
-    country: string;
-    location?: {
-      lat: number;
-      lng: number;
-    };
-  };
   charge: number;
   expectedDeliveryAt?: Date;
   actualDeliveryAt?: Date;

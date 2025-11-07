@@ -144,9 +144,11 @@ const getAllShippingOrdersService = async (
 ) => {
   const query = shippingOrderModel
     .find()
-    .populate("shippingSlot")
-    .populate("deliveryList.order")
-    .populate("deliveryList.user");
+    .populate({
+      path: "deliveryList.order",
+      populate: { path: "user", select: "-password" },
+    })
+    .populate("shippingSlot");
 
   if (page || limit || searchText) {
     const result = await paginateAndSort(
@@ -173,9 +175,11 @@ const getSingleShippingOrderService = async (
 
   const result = await shippingOrderModel
     .findById(queryId)
+    .populate({
+      path: "deliveryList.order",
+      populate: { path: "user", select: "-password" },
+    })
     .populate("shippingSlot")
-    .populate("deliveryList.order")
-    .populate("deliveryList.user")
     .exec();
 
   if (!result) throw new Error("Shipping order not found");

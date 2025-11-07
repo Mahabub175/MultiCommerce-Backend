@@ -27,20 +27,6 @@ const shippingOrderSchema = new Schema<IShippingOrder>(
     deliveryList: [
       {
         order: { type: Schema.Types.ObjectId, ref: "order", required: true },
-        user: { type: Schema.Types.ObjectId, ref: "user", required: true },
-        address: {
-          name: String,
-          phone: String,
-          addressLine1: String,
-          addressLine2: String,
-          city: String,
-          postalCode: String,
-          country: String,
-          location: {
-            lat: Number,
-            lng: Number,
-          },
-        },
         charge: Number,
         status: {
           type: String,
