@@ -142,13 +142,13 @@ const getAllShippingOrdersService = async (
   searchText?: string,
   searchFields?: string[]
 ) => {
-  if (page || limit || searchText) {
-    const query = shippingOrderModel
-      .find()
-      .populate("order")
-      .populate("user")
-      .populate("shippingSlot");
+  const query = shippingOrderModel
+    .find()
+    .populate("shippingSlot")
+    .populate("deliveryList.order")
+    .populate("deliveryList.user");
 
+  if (page || limit || searchText) {
     const result = await paginateAndSort(
       query,
       page,
@@ -158,32 +158,28 @@ const getAllShippingOrdersService = async (
     );
     return result;
   } else {
-    const results = await shippingOrderModel
-      .find()
-      .populate("order")
-      .populate("user")
-      .populate("shippingSlot")
-      .sort({ createdAt: -1 })
-      .exec();
-
+    const results = await query.sort({ createdAt: -1 }).exec();
     return { results };
   }
 };
 
-const getSingleShippingOrderService = async (orderId: string | number) => {
+const getSingleShippingOrderService = async (
+  shippingOrderId: string | number
+) => {
   const queryId =
-    typeof orderId === "string"
-      ? new mongoose.Types.ObjectId(orderId)
-      : orderId;
+    typeof shippingOrderId === "string"
+      ? new mongoose.Types.ObjectId(shippingOrderId)
+      : shippingOrderId;
 
   const result = await shippingOrderModel
     .findById(queryId)
-    .populate("order")
-    .populate("user")
     .populate("shippingSlot")
+    .populate("deliveryList.order")
+    .populate("deliveryList.user")
     .exec();
 
   if (!result) throw new Error("Shipping order not found");
+
   return result;
 };
 

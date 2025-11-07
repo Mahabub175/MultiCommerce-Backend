@@ -14,11 +14,10 @@ export interface IShippingSlot extends Document {
   status: boolean;
 }
 
-export interface IShippingOrder extends Document {
-  order: Types.ObjectId[];
-  user: Types.ObjectId[];
-  shippingSlot: Types.ObjectId;
-  deliveryAddress: {
+export interface IDeliveryItem {
+  order: Types.ObjectId;
+  user: Types.ObjectId;
+  address: {
     name: string;
     phone: string;
     addressLine1: string;
@@ -26,23 +25,45 @@ export interface IShippingOrder extends Document {
     city: string;
     postalCode: string;
     country: string;
-    location?: { lat: number; lng: number };
+    location?: {
+      lat: number;
+      lng: number;
+    };
   };
-  deliveryCharge: number;
+  charge: number;
   expectedDeliveryAt?: Date;
   actualDeliveryAt?: Date;
-  courier?: {
-    name?: string;
-    contact?: string;
-    trackingId?: string;
-  };
-  shippingStatus:
+  status:
     | "pending"
     | "dispatched"
     | "in_transit"
     | "delivered"
     | "cancelled"
     | "returned";
+  progress?: {
+    status:
+      | "pending"
+      | "dispatched"
+      | "in_transit"
+      | "delivered"
+      | "cancelled"
+      | "returned";
+    note?: string;
+    updatedAt?: Date;
+  }[];
   notes?: string;
+  active?: boolean;
+}
+
+export interface IShippingOrder extends Document {
+  shippingSlot: Types.ObjectId;
+  courier?: {
+    name?: string;
+    contact?: string;
+    trackingId?: string;
+  };
+  deliveryList: IDeliveryItem[];
   status: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
