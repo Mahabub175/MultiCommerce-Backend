@@ -154,7 +154,6 @@ const getAllProductService = async (
     .populate("brand")
     .populate("reviews.user");
 
-  // ✅ Conditionally populate based on role
   if (currentUser) {
     if (isManagementRole) {
       query
@@ -177,13 +176,11 @@ const getAllProductService = async (
         });
     }
   } else {
-    // ✅ No user → exclude all discounts entirely
     query.select(
       "-globalRoleDiscounts -productRoleDiscounts -categoryRoleDiscounts"
     );
   }
 
-  // Fetch data
   const executeQuery = async () => {
     if (page || limit || searchText) {
       const paginated = await paginateAndSort(
