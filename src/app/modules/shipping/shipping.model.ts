@@ -3,16 +3,16 @@ import { IShippingSlot, IShippingOrder } from "./shipping.interface";
 
 const shippingSlotSchema = new Schema<IShippingSlot>(
   {
-    slotName: { type: String, required: true },
+    slotName: { type: String },
     courierName: { type: String },
     attachment: { type: String },
-    startTime: { type: String, required: true },
-    endTime: { type: String, required: true },
-    basePrice: { type: Number, required: true },
+    startTime: { type: String },
+    endTime: { type: String },
+    basePrice: { type: Number },
     additionalPricePerKm: { type: Number, default: 0 },
     maxOrders: { type: Number, default: 50 },
-    perKmPrice: { type: Number, required: true },
-    estimatedDeliveryTime: { type: Number, required: true },
+    perKmPrice: { type: Number },
+    estimatedDeliveryTime: { type: Number },
     status: {
       type: Boolean,
       default: true,
@@ -39,7 +39,7 @@ const shippingOrderSchema = new Schema<IShippingOrder>(
         lng: Number,
       },
     },
-    deliveryCharge: { type: Number, required: true },
+    deliveryCharge: { type: Number },
     expectedDeliveryAt: Date,
     actualDeliveryAt: Date,
     courier: {
