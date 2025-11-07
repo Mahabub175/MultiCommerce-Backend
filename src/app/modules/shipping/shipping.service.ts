@@ -4,6 +4,7 @@ import { IShippingSlot, IShippingOrder } from "./shipping.interface";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import fs from "fs";
 import path from "path";
+import { formatResultImage } from "../../utils/formatResultImage";
 
 const createShippingSlotService = async (data: IShippingSlot) => {
   const result = await shippingSlotModel.create(data);
@@ -16,6 +17,7 @@ const getAllShippingSlotsService = async (
   searchText?: string,
   searchFields?: string[]
 ) => {
+  let results;
   if (page || limit || searchText) {
     const query = shippingSlotModel.find();
     const result = await paginateAndSort(
@@ -25,12 +27,15 @@ const getAllShippingSlotsService = async (
       searchText,
       searchFields
     );
+
+    result.results = formatResultImage<IShippingSlot>(
+      result.results,
+      "attachment"
+    ) as IShippingSlot[];
     return result;
   } else {
-    const results = await shippingSlotModel
-      .find()
-      .sort({ createdAt: -1 })
-      .exec();
+    results = await shippingSlotModel.find().sort({ createdAt: -1 }).exec();
+    results = formatResultImage(results, "attachment");
     return { results };
   }
 };
@@ -41,6 +46,14 @@ const getSingleShippingSlotService = async (slotId: string | number) => {
 
   const result = await shippingSlotModel.findById(queryId).exec();
   if (!result) throw new Error("Shipping slot not found");
+  if (typeof result.attachment === "string") {
+    const formattedAttachment = formatResultImage<IShippingSlot>(
+      result.attachment
+    );
+    if (typeof formattedAttachment === "string") {
+      result.attachment = formattedAttachment;
+    }
+  }
   return result;
 };
 
