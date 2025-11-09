@@ -131,14 +131,19 @@ const updateSingleCustomRoleService = async (
     discountType: updatedCustomRole.discountType,
     discountValue: updatedCustomRole.discountValue,
     minimumQuantity: updatedCustomRole.minimumQuantity || 1,
-    status: updatedCustomRole.status,
   };
 
   if (updatedCustomRole.status === false) {
     await Promise.all([
       productModel.updateMany(
         {},
-        { $pull: { roleDiscounts: { role: updatedCustomRole._id } } }
+        {
+          $pull: {
+            globalRoleDiscounts: { role: updatedCustomRole._id },
+            categoryRoleDiscounts: { role: updatedCustomRole._id },
+            productRoleDiscounts: { role: updatedCustomRole._id },
+          },
+        }
       ),
       categoryModel.updateMany(
         {},
@@ -146,22 +151,61 @@ const updateSingleCustomRoleService = async (
       ),
     ]);
   } else {
-    await Promise.all([
-      productModel.updateMany(
-        { "roleDiscounts.role": updatedCustomRole._id },
+    const updateRoleDiscounts = async () => {
+      await productModel.updateMany(
+        { "productRoleDiscounts.role": updatedCustomRole._id },
         {
           $set: {
-            "roleDiscounts.$.discountType": discountData.discountType,
-            "roleDiscounts.$.discountValue": discountData.discountValue,
-            "roleDiscounts.$.minimumQuantity": discountData.minimumQuantity,
+            "productRoleDiscounts.$.discountType": discountData.discountType,
+            "productRoleDiscounts.$.discountValue": discountData.discountValue,
+            "productRoleDiscounts.$.minimumQuantity":
+              discountData.minimumQuantity,
           },
         }
-      ),
-      productModel.updateMany(
-        { "roleDiscounts.role": { $ne: updatedCustomRole._id } },
-        { $push: { roleDiscounts: discountData } }
-      ),
+      );
 
+      await productModel.updateMany(
+        { "productRoleDiscounts.role": { $ne: updatedCustomRole._id } },
+        { $push: { productRoleDiscounts: discountData } }
+      );
+
+      await productModel.updateMany(
+        { "categoryRoleDiscounts.role": updatedCustomRole._id },
+        {
+          $set: {
+            "categoryRoleDiscounts.$.discountType": discountData.discountType,
+            "categoryRoleDiscounts.$.discountValue": discountData.discountValue,
+            "categoryRoleDiscounts.$.minimumQuantity":
+              discountData.minimumQuantity,
+          },
+        }
+      );
+
+      await productModel.updateMany(
+        { "categoryRoleDiscounts.role": { $ne: updatedCustomRole._id } },
+        { $push: { categoryRoleDiscounts: discountData } }
+      );
+
+      await productModel.updateMany(
+        { "globalRoleDiscounts.role": updatedCustomRole._id },
+        {
+          $set: {
+            "globalRoleDiscounts.$.discountType": discountData.discountType,
+            "globalRoleDiscounts.$.discountValue": discountData.discountValue,
+            "globalRoleDiscounts.$.minimumQuantity":
+              discountData.minimumQuantity,
+          },
+        }
+      );
+
+      await productModel.updateMany(
+        { "globalRoleDiscounts.role": { $ne: updatedCustomRole._id } },
+        { $push: { globalRoleDiscounts: discountData } }
+      );
+    };
+
+    await Promise.all([
+      updateRoleDiscounts(),
       categoryModel.updateMany(
         { "roleDiscounts.role": updatedCustomRole._id },
         {
