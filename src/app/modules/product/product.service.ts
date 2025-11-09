@@ -144,12 +144,12 @@ const getAllProductService = async (
   const isManagementRole = currentUser?.roleModel === "managementRole";
   const isCustomRole = currentUser?.roleModel === "customRole";
 
-  // Base query setup
   const query = productModel
     .find()
     .populate({
       path: "category",
-      select: "-roleDiscounts",
+      select:
+        "-roleDiscounts -parentCategory -categories -subCategories -subSubCategories -children",
     })
     .populate("brand")
     .populate("reviews.user");
@@ -221,7 +221,11 @@ const getSingleProductService = async (
 
   const query = productModel
     .findById(queryId)
-    .populate("category")
+    .populate({
+      path: "category",
+      select:
+        "-roleDiscounts -parentCategory -categories -subCategories -subSubCategories -children",
+    })
     .populate("brand")
     .populate("reviews.user");
 
@@ -300,7 +304,11 @@ const getSingleProductBySlugService = async (
 
   const query = productModel
     .findOne({ slug: productSlug })
-    .populate("category")
+    .populate({
+      path: "category",
+      select:
+        "-roleDiscounts -parentCategory -categories -subCategories -subSubCategories -children",
+    })
     .populate("brand")
     .populate("reviews.user");
 
