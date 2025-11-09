@@ -10,10 +10,12 @@ const orderItemSchema = new Schema({
 
 const shippingAddressSchema = new Schema(
   {
-    fullName: { type: String, required: true },
-    phone: { type: String, required: true },
-    address: { type: String, required: true },
-    city: { type: String, required: true },
+    firstName: { type: String },
+    lastName: { type: String },
+    phoneNumber: { type: String },
+    address1: { type: String },
+    address2: { type: String },
+    city: { type: String },
     postalCode: { type: String },
     country: { type: String },
   },
@@ -24,7 +26,7 @@ const paymentInfoSchema = new Schema(
   {
     method: {
       type: String,
-      enum: ["paypal", "stripe", "cash_on_delivery", "manual", "points"],
+      enum: ["paypal", "stripe", "cash_on_delivery", "manual", "credit"],
       required: true,
     },
     transactionId: { type: String },
@@ -45,6 +47,7 @@ const orderSchema = new Schema<IOrder>(
     shippingAddress: { type: shippingAddressSchema, required: true },
     paymentInfo: { type: paymentInfoSchema, required: true },
     subtotal: { type: Number, required: true },
+    additionalPayment: { type: Number },
     discount: { type: Number, default: 0 },
     grandTotal: { type: Number, required: true },
     coupon: { type: Schema.Types.ObjectId, ref: "coupon" },

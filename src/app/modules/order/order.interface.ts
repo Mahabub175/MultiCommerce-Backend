@@ -8,9 +8,11 @@ export interface IOrderItem {
 }
 
 export interface IShippingAddress {
-  fullName: string;
-  phone: string;
-  address: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  address1: string;
+  address2: string;
   city: string;
   postalCode?: string;
   country?: string;
@@ -29,6 +31,7 @@ export interface IOrder {
   shippingAddress: IShippingAddress;
   paymentInfo: IPaymentInfo;
   subtotal: number;
+  additionalPayment: number;
   discount?: number;
   grandTotal: number;
   coupon?: Types.ObjectId;

@@ -14,6 +14,8 @@ export interface IUser {
   profileImage: string;
   address: string;
   credit: number;
+  limit: number;
+  minimumAmount: number;
   phoneNumber: string;
   role: Types.ObjectId;
   roleModel: string;

@@ -22,6 +22,15 @@ const userSchema = new Schema<IUser>(
       min: 0,
       set: (v: number) => parseInt(v.toString(), 10),
     },
+    limit: {
+      type: Number,
+      min: 0,
+    },
+    minimumAmount: {
+      type: Number,
+      min: 0,
+      set: (v: number) => parseInt(v.toString(), 10),
+    },
     point: { type: Number, set: (v: number) => parseInt(v.toString(), 10) },
     phoneNumber: { type: String, required: true, unique: true },
     role: {
