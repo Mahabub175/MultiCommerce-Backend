@@ -131,7 +131,8 @@ const loginUserService = async (userData: any) => {
   return {
     user: {
       _id: user._id,
-      name: user.firstName + " " + user.lastName,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
       phoneNumber: user.phoneNumber,
       role: {
