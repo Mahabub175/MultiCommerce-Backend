@@ -5,6 +5,13 @@ export interface IPreviousPasswords {
   createdAt: Date;
 }
 
+export interface IShippingAddress {
+  city: { type: string };
+  zipCode: { type: string };
+  streetAddress1: { type: string };
+  isDefault: { type: boolean; default: false };
+}
+
 export interface IUser {
   userName: string;
   email: string;
@@ -27,8 +34,10 @@ export interface IUser {
   city2: string;
   streetAddress1: string;
   streetAddress2: string;
+  addressSummery: string;
   zipCode: string;
   zipCode2: string;
+  shippingAddresses: IShippingAddress[];
   previousPasswords: IPreviousPasswords[];
   status: boolean;
 }

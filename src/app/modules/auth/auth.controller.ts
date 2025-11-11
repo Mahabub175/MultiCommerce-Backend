@@ -19,6 +19,23 @@ const sendUserOtpController = async (
   }
 };
 
+const sendEmailController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const result = await authServices.sendEmailService(req.body);
+    res.status(200).json({
+      success: true,
+      message: "Email sent successfully",
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const loginUserController = async (
   req: Request,
   res: Response,
@@ -96,6 +113,7 @@ const resetUserPasswordController = async (
 
 export const authControllers = {
   sendUserOtpController,
+  sendEmailController,
   loginUserController,
   changeUserPasswordController,
   forgotUserPasswordController,

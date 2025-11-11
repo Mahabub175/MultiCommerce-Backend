@@ -205,7 +205,7 @@ const getNestedCategoriesService = async () => {
   const allCategories = await categoryModel
     .find()
     .select(
-      "_id name slug level parentCategory children megaMenuStatus sortingOrder status"
+      "_id name slug level parentCategory children megaMenuStatus sortingOrder isNew status"
     )
     .lean();
 
@@ -282,6 +282,7 @@ const getNestedCategoriesService = async () => {
       slug: cat.slug,
       level: cat.level,
       megaMenuStatus: cat.megaMenuStatus ?? false,
+      isNew: cat.isNew ?? true,
       status: cat.status ?? true,
       sortingOrder: cat.sortingOrder ?? 1,
       hasSubmenu,

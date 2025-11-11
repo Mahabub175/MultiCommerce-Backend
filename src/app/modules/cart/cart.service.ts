@@ -82,26 +82,8 @@ const getSingleCartByUserService = async (userId: string) => {
 
   const result = await cartModel
     .find(query)
-    .populate({
-      path: "product",
-      select: "name price sku variants mainImage slug",
-      populate: {
-        path: "variants.attributeCombination",
-        model: "attributeOption",
-        populate: {
-          path: "attribute",
-          model: "attribute",
-          populate: {
-            path: "options",
-            model: "attributeOption",
-          },
-        },
-      },
-    })
-    .populate({
-      path: "user",
-      select: "name email",
-    })
+    .populate("product")
+    .populate("user")
     .exec();
 
   const cartDetails = result.map((cartItem) => {

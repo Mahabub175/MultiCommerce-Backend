@@ -8,6 +8,7 @@ import httpStatus from "http-status";
 import appError from "../../errors/appError";
 import mongoose from "mongoose";
 import { globalSettingModel } from "../globalSetting/globalSetting.model";
+import { sendEmail } from "../../utils/sendEmail";
 
 const sendUserOtpService = async (phoneNumber: string) => {
   const globalSetting = await globalSettingModel.findOne();
@@ -40,6 +41,27 @@ const sendUserOtpService = async (phoneNumber: string) => {
   } catch (error: any) {
     throw new Error(error.message || "Error sending OTP");
   }
+};
+
+interface SendEmailBody {
+  to: string | string[];
+  subject: string;
+  text?: string;
+  html?: string;
+}
+const sendEmailService = async (emailData: SendEmailBody) => {
+  let { to, subject, text, html } = emailData;
+
+  if (!to || !subject || (!text && !html)) {
+    throw new Error("Missing required fields: to, subject, and text or html");
+  }
+
+  if (Array.isArray(to)) {
+    to = to.join(",");
+  }
+
+  await sendEmail({ to, subject, text, html });
+  return { message: `Email sent successfully to ${to}` };
 };
 
 const loginUserService = async (userData: any) => {
@@ -326,6 +348,7 @@ const resetUserPasswordService = async (payload: {
 
 export const authServices = {
   sendUserOtpService,
+  sendEmailService,
   loginUserService,
   changeUserPasswordService,
   forgotUserPasswordService,

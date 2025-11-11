@@ -1,12 +1,23 @@
 import { Schema, model } from "mongoose";
 import { IUser } from "./user.interface";
-import { managementRoleModel } from "../managementRole/managementRole.model";
 import { customRoleModel } from "../customRole/customRole.model";
 
 const previousPasswordSchema = new Schema({
   password: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });
+
+const shippingAddressSchema = new Schema(
+  {
+    city: { type: String, trim: true },
+    zipCode: { type: String, trim: true },
+    streetAddress1: { type: String, trim: true },
+    streetAddress2: { type: String, trim: true },
+    addressSummery: { type: String, trim: true },
+    isDefault: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
 
 const userSchema = new Schema<IUser>(
   {
@@ -22,15 +33,8 @@ const userSchema = new Schema<IUser>(
       min: 0,
       set: (v: number) => parseInt(v.toString(), 10),
     },
-    limit: {
-      type: Number,
-      min: 0,
-    },
-    minimumAmount: {
-      type: Number,
-      min: 0,
-      set: (v: number) => parseInt(v.toString(), 10),
-    },
+    limit: Number,
+    minimumAmount: Number,
     point: { type: Number, set: (v: number) => parseInt(v.toString(), 10) },
     phoneNumber: { type: String, required: true, unique: true },
     role: {
@@ -47,8 +51,13 @@ const userSchema = new Schema<IUser>(
     zipCode: String,
     streetAddress1: String,
     streetAddress2: String,
+    addressSummery: String,
     city2: String,
     zipCode2: String,
+    shippingAddresses: {
+      type: [shippingAddressSchema],
+      default: [],
+    },
     otp: { type: String, trim: true, default: "0000" },
     otpGeneratedAt: { type: String, trim: true },
     defaultPassword: {
@@ -65,10 +74,12 @@ const userSchema = new Schema<IUser>(
 );
 
 userSchema.pre("save", async function (next) {
-  if (!this.userName) {
-    const first = this.firstName?.toLowerCase() || "";
-    const last = this.lastName?.toLowerCase() || "";
-    const phoneDigits = this.phoneNumber?.slice(0, 2) || "00";
+  const user = this as any;
+
+  if (!user.userName) {
+    const first = user.firstName?.toLowerCase() || "";
+    const last = user.lastName?.toLowerCase() || "";
+    const phoneDigits = user.phoneNumber?.slice(0, 2) || "00";
     const baseName = `${first}${last}${phoneDigits}` || "user";
 
     let uniqueName = baseName;
@@ -78,15 +89,30 @@ userSchema.pre("save", async function (next) {
       existingUser = await userModel.findOne({ userName: uniqueName });
     }
 
-    this.userName = uniqueName;
+    user.userName = uniqueName;
   }
 
-  if (!this.role) {
+  if (!user.role) {
     const defaultRole = await customRoleModel.findOne({ name: "user" });
     if (defaultRole) {
-      this.role = defaultRole._id;
-      this.roleModel = "customRole";
+      user.role = defaultRole._id;
+      user.roleModel = "customRole";
     }
+  }
+
+  if (
+    (!user.shippingAddresses || user.shippingAddresses.length === 0) &&
+    (user.city || user.streetAddress1)
+  ) {
+    const defaultAddress = {
+      city: user.city || "",
+      zipCode: user.zipCode || "",
+      streetAddress1: user.streetAddress1 || "",
+      streetAddress2: user.streetAddress2 || "",
+      addressSummery: user.addressSummery || "",
+      isDefault: true,
+    };
+    user.shippingAddresses = [defaultAddress];
   }
 
   next();

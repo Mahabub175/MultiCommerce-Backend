@@ -25,5 +25,6 @@ export interface ICategory {
   attachment?: string;
   megaMenuStatus?: boolean;
   sortingOrder: number;
+  isNew: boolean;
   status: boolean;
 }

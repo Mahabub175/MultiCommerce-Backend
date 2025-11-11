@@ -6,6 +6,9 @@ import { log } from "console-log-colors";
 async function main() {
   try {
     await mongoose.connect(config.database_url as string);
+
+    await import("./app/utils/productUtils");
+
     app.listen(config.port, () => {
       log("Database is connected successfully!", "green");
       log(`Server is running on http://localhost:${config.port}`, "green");

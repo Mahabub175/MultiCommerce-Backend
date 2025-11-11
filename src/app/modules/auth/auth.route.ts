@@ -4,6 +4,7 @@ import { authControllers } from "./auth.controller";
 const router = express.Router();
 
 router.post("/auth/send-otp/", authControllers.sendUserOtpController);
+router.post("/auth/send-email/", authControllers.sendEmailController);
 router.post("/auth/login/", authControllers.loginUserController);
 router.patch(
   "/auth/change-password/:id/",

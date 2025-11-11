@@ -69,6 +69,10 @@ const categorySchema = new Schema<ICategory>(
       type: Boolean,
       default: true,
     },
+    isNew: {
+      type: Boolean,
+      default: true,
+    },
     status: {
       type: Boolean,
       default: true,

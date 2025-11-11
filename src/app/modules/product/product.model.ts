@@ -142,6 +142,13 @@ productSchema.pre("save", function (next) {
   const product = this as IProduct;
   if (!product.regularPrice) return next();
 
+  if (product.variants && product.variants.length > 0) {
+    product.stock = product.variants.reduce(
+      (sum, variant) => sum + (variant.stock || 0),
+      0
+    );
+  }
+
   const basePrice: number = product.regularPrice;
 
   const calculateDiscountedPrice = (

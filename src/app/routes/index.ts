@@ -22,6 +22,7 @@ import { orderRoutes } from "../modules/order/order.route";
 import { managementRoleRoutes } from "../modules/managementRole/managementRole.route";
 import { customRoleRoutes } from "../modules/customRole/customRole.route";
 import { shippingRoutes } from "../modules/shipping/shipping.route";
+import { reserveOrderRoutes } from "../modules/reserveOrder/reserveOrder.route";
 
 const router = Router();
 
@@ -48,6 +49,7 @@ const routes = [
   reviewRoutes,
   orderRoutes,
   shippingRoutes,
+  reserveOrderRoutes,
 ];
 
 routes.forEach((route) => {
