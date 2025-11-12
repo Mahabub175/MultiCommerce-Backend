@@ -59,7 +59,7 @@ export const postProcessProduct = (product: any, isCustomRole: boolean) => {
   return product;
 };
 
-export const restoreProductStock = async (sku: string) => {
+export const restoreProductStock = async (sku: string, quantity = 1) => {
   const product =
     (await productModel.findOne({ "variants.sku": sku })) ||
     (await productModel.findOne({ sku }));
@@ -68,9 +68,9 @@ export const restoreProductStock = async (sku: string) => {
 
   const variant = product.variants?.find((v) => v.sku === sku);
   if (variant) {
-    variant.stock += 1;
+    variant.stock += quantity;
   } else if (product.sku === sku) {
-    product.stock += 1;
+    product.stock += quantity;
   }
 
   product.stock = product.variants?.length
@@ -92,8 +92,14 @@ cron.schedule("0 2 * * *", async () => {
     });
 
     for (const order of expiredOrders) {
-      await restoreProductStock(order.sku);
+      for (const item of order.products) {
+        await restoreProductStock(item.sku, item.quantity);
+      }
       await reserveOrderModel.findByIdAndDelete(order._id);
     }
-  } catch (err) {}
+
+    console.log(`Cleanup job completed. Deleted ${expiredOrders.length} orders.`);
+  } catch (err) {
+    console.error("Error running Reserve Order Cleanup Job:", err);
+  }
 });
