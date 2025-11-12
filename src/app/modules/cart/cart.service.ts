@@ -1,28 +1,46 @@
 import mongoose from "mongoose";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import { cartModel } from "./cart.model";
-import { ICart } from "./cart.interface";
+import { ICart, ICartProduct } from "./cart.interface";
 
-//Create a cart into database
+// Create or update cart
 const createCartService = async (cartData: ICart) => {
-  const { user, deviceId, sku } = cartData;
+  const { user, deviceId, products } = cartData;
 
-  const query: any = { sku };
-
-  if (user) query.user = user;
-  if (deviceId) query.deviceId = deviceId;
-
-  const existingCart = await cartModel.findOne(query);
-
-  if (existingCart) {
-    throw new Error("This product is already in your cart.");
+  if (!products?.length) {
+    throw new Error("No products provided for the cart.");
   }
 
-  const result = await cartModel.create(cartData);
-  return result;
+  const query: any = {};
+  if (user) query.user = user;
+  else if (deviceId) query.deviceId = deviceId;
+  else throw new Error("Either user or deviceId must be provided.");
+
+  let existingCart = await cartModel.findOne(query);
+
+  if (existingCart) {
+    for (const newItem of products) {
+      const existingItem = existingCart.products.find(
+        (item: ICartProduct) => item.sku === newItem.sku
+      );
+
+      if (existingItem) {
+        existingItem.quantity += newItem.quantity;
+        existingItem.price = newItem.price; 
+        existingItem.weight = newItem.weight;
+      } else {
+        existingCart.products.push(newItem);
+      }
+    }
+
+    await existingCart.save();
+    return existingCart;
+  }
+
+  const newCart = await cartModel.create(cartData);
+  return newCart;
 };
 
-// Get all cart with optional pagination
 const getAllCartService = async (
   page?: number,
   limit?: number,
@@ -31,9 +49,12 @@ const getAllCartService = async (
 ) => {
   let results;
 
-  if (page || limit || searchText) {
-    const query = cartModel.find().populate("product").populate("user");
+  const query = cartModel
+    .find()
+    .populate("products.product")
+    .populate("user");
 
+  if (page || limit || searchText) {
     const result = await paginateAndSort(
       query,
       page,
@@ -41,77 +62,60 @@ const getAllCartService = async (
       searchText,
       searchFields
     );
-
     return result;
-  } else {
-    results = await cartModel
-      .find()
-      .populate("product")
-      .populate("user")
-      .sort({ createdAt: -1 })
-      .exec();
-
-    return {
-      results,
-    };
   }
+
+  results = await query.sort({ createdAt: -1 }).exec();
+  return { results };
 };
 
-//Get single cart
-const getSingleCartService = async (cartId: number | string) => {
+// Get single cart by ID
+const getSingleCartService = async (cartId: string | number) => {
   const queryId =
     typeof cartId === "string" ? new mongoose.Types.ObjectId(cartId) : cartId;
 
   const result = await cartModel
     .findById(queryId)
-    .populate("product")
+    .populate("products.product")
     .populate("user")
     .exec();
 
-  if (!result) {
-    throw new Error("Cart not found");
-  }
-
+  if (!result) throw new Error("Cart not found");
   return result;
 };
 
+// Get cart by user or deviceId
 const getSingleCartByUserService = async (userId: string) => {
   const query = mongoose.Types.ObjectId.isValid(userId)
     ? { $or: [{ user: userId }, { deviceId: userId }] }
     : { deviceId: userId };
 
   const result = await cartModel
-    .find(query)
-    .populate("product")
+    .findOne(query)
+    .populate("products.product")
     .populate("user")
     .exec();
 
-  const cartDetails = result.map((cartItem) => {
-    const product = cartItem.product as any;
+  if (!result) return [];
 
-    let matchingVariant = null;
-    if (product.sku === cartItem.sku) {
-      if (product.variants?.length > 0) {
-        matchingVariant = product.variants[0];
-      }
-    } else {
-      matchingVariant = product.variants?.find(
-        (variant: any) => variant.sku === cartItem.sku
-      );
-    }
+  const cartDetails = result.products.map((item: any) => {
+    const product = item.product as any;
+    const matchingVariant = product?.variants?.find(
+      (variant: any) => variant.sku === item.sku
+    );
 
     return {
-      _id: cartItem._id,
-      user: cartItem.user,
-      productId: product._id,
-      slug: product.slug,
-      productName: product.name,
-      sku: cartItem.sku,
-      price: cartItem.price,
+      _id: result._id,
+      user: result.user,
+      productId: product?._id,
+      slug: product?.slug,
+      productName: product?.name,
+      sku: item.sku,
+      price: item.price,
       image: matchingVariant?.image ?? product?.mainImage,
-      quantity: cartItem.quantity,
-      weight: cartItem.weight,
-      totalPrice: cartItem.price * cartItem.quantity,
+      quantity: item.quantity,
+      weight: item.weight,
+      totalPrice: item.price * item.quantity,
       variant: matchingVariant || null,
     };
   });
@@ -119,57 +123,69 @@ const getSingleCartByUserService = async (userId: string) => {
   return cartDetails;
 };
 
-//Update single cart
+// Update a product inside cart
 const updateSingleCartService = async (
   cartId: string | number,
-  cartData: ICart
+  updatedProduct: ICartProduct
 ) => {
   const queryId =
     typeof cartId === "string" ? new mongoose.Types.ObjectId(cartId) : cartId;
 
-  const result = await cartModel
-    .findByIdAndUpdate(
-      queryId,
-      { $set: cartData },
-      { new: true, runValidators: true }
-    )
-    .exec();
+  const cart = await cartModel.findById(queryId);
+  if (!cart) throw new Error("Cart not found");
 
-  if (!result) {
-    throw new Error("Cart not found");
+  const existingItem = cart.products.find(
+    (item: ICartProduct) => item.sku === updatedProduct.sku
+  );
+
+  if (existingItem) {
+    existingItem.quantity = updatedProduct.quantity ?? existingItem.quantity;
+    existingItem.price = updatedProduct.price ?? existingItem.price;
+    existingItem.weight = updatedProduct.weight ?? existingItem.weight;
+  } else {
+    cart.products.push(updatedProduct);
   }
 
-  return result;
+  await cart.save();
+  return cart;
 };
 
-//Delete single cart
+// Remove a product from cart
+const deleteProductFromCartService = async (
+  cartId: string,
+  sku: string
+) => {
+  const cart = await cartModel.findById(cartId);
+  if (!cart) throw new Error("Cart not found");
+
+  cart.products = cart.products.filter(
+    (item: ICartProduct) => item.sku !== sku
+  );
+
+  await cart.save();
+  return cart;
+};
+
+// Delete entire cart
 const deleteSingleCartService = async (cartId: string | number) => {
   const queryId =
     typeof cartId === "string" ? new mongoose.Types.ObjectId(cartId) : cartId;
 
   const result = await cartModel.findByIdAndDelete(queryId).exec();
-
-  if (!result) {
-    throw new Error("Cart not found");
-  }
+  if (!result) throw new Error("Cart not found");
 
   return result;
 };
 
-//Delete many cart
+// Delete multiple carts
 const deleteManyCartService = async (cartIds: (string | number)[]) => {
-  const queryIds = cartIds.map((id) => {
-    if (typeof id === "string" && mongoose.Types.ObjectId.isValid(id)) {
-      return new mongoose.Types.ObjectId(id);
-    } else if (typeof id === "number") {
-      return id;
-    } else {
-      throw new Error(`Invalid ID format: ${id}`);
-    }
-  });
+  const queryIds = cartIds.map((id) =>
+    typeof id === "string" && mongoose.Types.ObjectId.isValid(id)
+      ? new mongoose.Types.ObjectId(id)
+      : id
+  );
 
   const result = await cartModel.deleteMany({ _id: { $in: queryIds } }).exec();
-
   return result;
 };
 
@@ -179,6 +195,7 @@ export const cartServices = {
   getSingleCartService,
   getSingleCartByUserService,
   updateSingleCartService,
+  deleteProductFromCartService,
   deleteSingleCartService,
   deleteManyCartService,
 };
