@@ -9,17 +9,18 @@ const createReserveOrderController = async (
   try {
     const data = req.body;
 
-    const formData = {
-      ...data,
-    };
+    if (!data.products || !Array.isArray(data.products) || data.products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Products array is required.",
+      });
+    }
 
-    const result = await reserveOrderServices.createReserveOrderService(
-      formData
-    );
+    const result = await reserveOrderServices.createReserveOrderService(data);
 
     res.status(200).json({
       success: true,
-      message: "ReserveOrder Created Successfully",
+      message: "ReserveOrder created successfully",
       data: result,
     });
   } catch (error: any) {
@@ -33,25 +34,23 @@ const getAllReserveOrderController = async (
   next: NextFunction
 ) => {
   try {
-    const { page, limit } = req.query;
+    const { page, limit, searchText } = req.query;
 
-    const pageNumber = page ? parseInt(page as string, 1) : undefined;
-    const pageSize = limit ? parseInt(limit as string, 100) : undefined;
+    const pageNumber = page ? parseInt(page as string, 10) : undefined;
+    const pageSize = limit ? parseInt(limit as string, 10) : undefined;
 
-    const searchText = req.query.searchText as string | undefined;
-
-    const searchFields = ["price", "quantity"];
+    const searchFields = ["products.price", "products.quantity"];
 
     const result = await reserveOrderServices.getAllReserveOrderService(
       pageNumber,
       pageSize,
-      searchText,
+      searchText as string | undefined,
       searchFields
     );
 
     res.status(200).json({
       success: true,
-      message: "ReserveOrders Fetched Successfully!",
+      message: "ReserveOrders fetched successfully!",
       data: result,
     });
   } catch (error) {
@@ -59,7 +58,6 @@ const getAllReserveOrderController = async (
   }
 };
 
-//Get single ReserveOrder data
 const getSingleReserveOrderController = async (
   req: Request,
   res: Response,
@@ -67,12 +65,11 @@ const getSingleReserveOrderController = async (
 ) => {
   try {
     const { reserveOrderId } = req.params;
-    const result = await reserveOrderServices.getSingleReserveOrderService(
-      reserveOrderId
-    );
+    const result = await reserveOrderServices.getSingleReserveOrderService(reserveOrderId);
+
     res.status(200).json({
       success: true,
-      message: "ReserveOrder Fetched Successfully!",
+      message: "ReserveOrder fetched successfully!",
       data: result,
     });
   } catch (error: any) {
@@ -80,18 +77,18 @@ const getSingleReserveOrderController = async (
   }
 };
 
-const getSingleReserveOrderBuyUserController = async (
+const getSingleReserveOrderByUserController = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { userId } = req.params;
-    const result =
-      await reserveOrderServices.getSingleReserveOrderByUserService(userId);
+    const result = await reserveOrderServices.getSingleReserveOrderByUserService(userId);
+
     res.status(200).json({
       success: true,
-      message: "ReserveOrder By User Fetched Successfully!",
+      message: "ReserveOrder by user fetched successfully!",
       data: result,
     });
   } catch (error: any) {
@@ -99,7 +96,6 @@ const getSingleReserveOrderBuyUserController = async (
   }
 };
 
-//Update single ReserveOrder controller
 const updateSingleReserveOrderController = async (
   req: Request,
   res: Response,
@@ -109,18 +105,18 @@ const updateSingleReserveOrderController = async (
     const { reserveOrderId } = req.params;
     const data = req.body;
 
-    const reserveOrderData = {
-      ...data,
-    };
+    if (!data.sku) {
+      return res.status(400).json({
+        success: false,
+        message: "SKU is required to update a product in the order.",
+      });
+    }
 
-    const result = await reserveOrderServices.updateSingleReserveOrderService(
-      reserveOrderId,
-      reserveOrderData
-    );
+    const result = await reserveOrderServices.updateSingleReserveOrderService(reserveOrderId, data);
 
     res.status(200).json({
       success: true,
-      message: "ReserveOrder Updated Successfully!",
+      message: "ReserveOrder updated successfully!",
       data: result,
     });
   } catch (error: any) {
@@ -128,7 +124,33 @@ const updateSingleReserveOrderController = async (
   }
 };
 
-//Delete single ReserveOrder controller
+const deleteProductFromReserveOrderController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { reserveOrderId, sku } = req.params;
+
+    if (!sku) {
+      return res.status(400).json({
+        success: false,
+        message: "SKU is required to remove a product from the order.",
+      });
+    }
+
+    const result = await reserveOrderServices.deleteProductFromReserveOrderService(reserveOrderId, sku);
+
+    res.status(200).json({
+      success: true,
+      message: "Product removed from ReserveOrder successfully!",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
 const deleteSingleReserveOrderController = async (
   req: Request,
   res: Response,
@@ -137,17 +159,16 @@ const deleteSingleReserveOrderController = async (
   try {
     const { reserveOrderId } = req.params;
     await reserveOrderServices.deleteSingleReserveOrderService(reserveOrderId);
+
     res.status(200).json({
       success: true,
-      message: "ReserveOrder Deleted Successfully!",
-      data: null,
+      message: "ReserveOrder deleted successfully!",
     });
   } catch (error: any) {
     next(error);
   }
 };
 
-//Delete many ReserveOrder controller
 const deleteManyReserveOrderController = async (
   req: Request,
   res: Response,
@@ -160,18 +181,14 @@ const deleteManyReserveOrderController = async (
       return res.status(400).json({
         success: false,
         message: "Invalid or empty ReserveOrder IDs array provided",
-        data: null,
       });
     }
 
-    const result = await reserveOrderServices.deleteManyReserveOrderService(
-      reserveOrderIds
-    );
+    const result = await reserveOrderServices.deleteManyReserveOrderService(reserveOrderIds);
 
     res.status(200).json({
       success: true,
-      message: `Bulk ReserveOrder Delete Successful! Deleted ${result.deletedCount} ReserveOrders.`,
-      data: null,
+      message: `Bulk ReserveOrder delete successful! Deleted ${result.deletedCount} orders.`,
     });
   } catch (error: any) {
     next(error);
@@ -182,8 +199,9 @@ export const reserveOrderControllers = {
   createReserveOrderController,
   getAllReserveOrderController,
   getSingleReserveOrderController,
-  getSingleReserveOrderBuyUserController,
+  getSingleReserveOrderByUserController,
   updateSingleReserveOrderController,
+  deleteProductFromReserveOrderController,
   deleteSingleReserveOrderController,
   deleteManyReserveOrderController,
 };
