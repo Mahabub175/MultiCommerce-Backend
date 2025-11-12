@@ -1,12 +1,16 @@
 import { Types } from "mongoose";
 
-export interface ICart {
+export interface ICartProduct {
   product: Types.ObjectId;
   sku: string;
-  user: Types.ObjectId;
-  deviceId: string;
   quantity: number;
-  weight: number;
+  weight?: number;
   price: number;
+}
+
+export interface ICart {
+  user?: Types.ObjectId;
+  deviceId?: string;
+  products: ICartProduct[];
   status: boolean;
 }
