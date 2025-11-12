@@ -9,12 +9,11 @@ router.get("/cart/", cartControllers.getAllCartController);
 
 router.get("/cart/:cartId/", cartControllers.getSingleCartController);
 
-router.get(
-  "/cart/user/:userId/",
-  cartControllers.getSingleCartBuyUserController
-);
+router.get("/cart/user/:userId/", cartControllers.getSingleCartByUserController);
 
 router.patch("/cart/:cartId/", cartControllers.updateSingleCartController);
+
+router.delete("/cart/:cartId/product/:sku/", cartControllers.deleteProductFromCartController);
 
 router.delete("/cart/:cartId/", cartControllers.deleteSingleCartController);
 
