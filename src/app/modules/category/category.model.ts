@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import { ICategory } from "./category.interface";
+import config from "../../config";
 
 export enum CategoryLevel {
   PARENT_CATEGORY = "parentCategory",
@@ -92,6 +93,24 @@ categorySchema.pre("save", async function (next) {
     this.sortingOrder = lastCategory ? lastCategory.sortingOrder + 1 : 1;
   }
   next();
+});
+
+const BASE_URL = config.base_url;
+
+categorySchema.set("toJSON", {
+  virtuals: true,
+  transform: (_doc, ret) => {
+    const formatUrl = (path: string): string =>
+      path?.startsWith("http")
+        ? path
+        : `${BASE_URL}/${path.replace(/\\/g, "/").replace(/^\/+/, "")}`;
+
+    if (ret.attachment) {
+      ret.attachment = formatUrl(ret.attachment);
+    }
+
+    return ret;
+  },
 });
 
 export const categoryModel = model<ICategory>("category", categorySchema);

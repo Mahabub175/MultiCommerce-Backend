@@ -21,19 +21,25 @@ export const deleteFileFromStorage = async (filePath: string) => {
 };
 
 // Delete file synchronously using fs
-export const deleteFileSync = (filePath: string) => {
+export const deleteFileSync = (filePath: string): void => {
   if (!filePath) return;
 
-  const fileName = path.basename(filePath);
-  const fullPath = path.join(process.cwd(), "uploads", fileName);
+  try {
+    const fileName = path.basename(filePath);
 
-  if (fs.existsSync(fullPath)) {
-    try {
-      fs.unlinkSync(fullPath);
-    } catch (err) {
-      console.warn(`Failed to delete file: ${fileName}`);
+    const fullPath = path.resolve(process.cwd(), "uploads", fileName);
+
+    if (!fs.existsSync(fullPath)) {
+      console.warn(`⚠️ File not found: ${fileName}`);
+      return;
     }
-  } else {
-    console.warn(`File not found: ${fileName}`);
-  }
+
+    const stats = fs.statSync(fullPath);
+
+    if (!stats.isFile()) {
+      return;
+    }
+
+    fs.unlinkSync(fullPath);
+  } catch (error) {}
 };

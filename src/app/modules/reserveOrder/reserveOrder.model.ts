@@ -7,7 +7,11 @@ const reserveOrderSchema = new Schema<IReserveOrder>(
     deviceId: { type: String, trim: true },
     products: [
       {
-        product: { type: Schema.Types.ObjectId, ref: "product", required: true },
+        product: {
+          type: Schema.Types.ObjectId,
+          ref: "product",
+          required: true,
+        },
         sku: { type: String, required: true, trim: true },
         quantity: { type: Number, required: true },
         weight: { type: Number },

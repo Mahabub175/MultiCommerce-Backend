@@ -3,11 +3,20 @@ import { paginateAndSort } from "../../utils/paginateAndSort";
 import { IReserveOrder, IReserveOrderProduct } from "./reserveOrder.interface";
 import { reserveOrderModel } from "./reserveOrder.model";
 import { productModel } from "../product/product.model";
+import { validateReferences } from "../../utils/validateReferences";
+import { userModel } from "../user/user.model";
 
 const createReserveOrderService = async (reserveOrderData: IReserveOrder) => {
   const { user, deviceId, products } = reserveOrderData;
 
   if (!products?.length) throw new Error("No products provided.");
+
+  if (user) {
+    await validateReferences(userModel, user, "user");
+  }
+
+  const productIds = products.map((p) => p.product);
+  await validateReferences(productModel, productIds, "product");
 
   const query: any = {};
   if (user) query.user = user;
@@ -30,13 +39,15 @@ const createReserveOrderService = async (reserveOrderData: IReserveOrder) => {
         existingOrder.products.push(newItem);
       }
 
-      const product = await productModel.findOne({ "variants.sku": newItem.sku }) || 
-                      await productModel.findOne({ sku: newItem.sku });
+      const product =
+        (await productModel.findOne({ "variants.sku": newItem.sku })) ||
+        (await productModel.findOne({ sku: newItem.sku }));
 
       if (product) {
-        const variant = product.variants?.find(v => v.sku === newItem.sku);
+        const variant = product.variants?.find((v) => v.sku === newItem.sku);
         if (variant && variant.stock > 0) variant.stock -= newItem.quantity;
-        else if (!variant && product.stock > 0) product.stock -= newItem.quantity;
+        else if (!variant && product.stock > 0)
+          product.stock -= newItem.quantity;
 
         product.stock = product.variants?.length
           ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
@@ -51,11 +62,12 @@ const createReserveOrderService = async (reserveOrderData: IReserveOrder) => {
   }
 
   for (const newItem of products) {
-    const product = await productModel.findOne({ "variants.sku": newItem.sku }) ||
-                    await productModel.findOne({ sku: newItem.sku });
+    const product =
+      (await productModel.findOne({ "variants.sku": newItem.sku })) ||
+      (await productModel.findOne({ sku: newItem.sku }));
 
     if (product) {
-      const variant = product.variants?.find(v => v.sku === newItem.sku);
+      const variant = product.variants?.find((v) => v.sku === newItem.sku);
       if (variant && variant.stock > 0) variant.stock -= newItem.quantity;
       else if (!variant && product.stock > 0) product.stock -= newItem.quantity;
 
@@ -77,7 +89,10 @@ const getAllReserveOrderService = async (
   searchText?: string,
   searchFields?: string[]
 ) => {
-  const query = reserveOrderModel.find().populate("products.product").populate("user");
+  const query = reserveOrderModel
+    .find()
+    .populate("products.product")
+    .populate("user");
 
   if (page || limit || searchText) {
     return await paginateAndSort(query, page, limit, searchText, searchFields);
@@ -87,11 +102,16 @@ const getAllReserveOrderService = async (
   return { results };
 };
 
-const getSingleReserveOrderService = async (reserveOrderId: string | number) => {
+const getSingleReserveOrderService = async (
+  reserveOrderId: string | number
+) => {
   const queryId =
-    typeof reserveOrderId === "string" ? new mongoose.Types.ObjectId(reserveOrderId) : reserveOrderId;
+    typeof reserveOrderId === "string"
+      ? new mongoose.Types.ObjectId(reserveOrderId)
+      : reserveOrderId;
 
-  const result = await reserveOrderModel.findById(queryId)
+  const result = await reserveOrderModel
+    .findById(queryId)
     .populate("products.product")
     .populate("user")
     .exec();
@@ -105,17 +125,20 @@ const getSingleReserveOrderByUserService = async (userId: string) => {
     ? { $or: [{ user: userId }, { deviceId: userId }] }
     : { deviceId: userId };
 
-  const result = await reserveOrderModel.find(query)
+  const result = await reserveOrderModel
+    .find(query)
     .populate("products.product")
     .populate("user")
     .exec();
 
-  return result.map(order => ({
+  return result.map((order) => ({
     _id: order._id,
     user: order.user,
     products: order.products.map((item: any) => {
       const product = item.product;
-      const matchingVariant = product?.variants?.find((v: any) => v.sku === item.sku);
+      const matchingVariant = product?.variants?.find(
+        (v: any) => v.sku === item.sku
+      );
       return {
         productId: product?._id,
         slug: product?.slug,
@@ -130,7 +153,6 @@ const getSingleReserveOrderByUserService = async (userId: string) => {
       };
     }),
     status: order.status,
-    createdAt: order.createdAt,
   }));
 };
 
@@ -139,12 +161,18 @@ const updateSingleReserveOrderService = async (
   updatedProduct: IReserveOrderProduct
 ) => {
   const queryId =
-    typeof reserveOrderId === "string" ? new mongoose.Types.ObjectId(reserveOrderId) : reserveOrderId;
+    typeof reserveOrderId === "string"
+      ? new mongoose.Types.ObjectId(reserveOrderId)
+      : reserveOrderId;
 
   const order = await reserveOrderModel.findById(queryId);
   if (!order) throw new Error("ReserveOrder not found");
 
-  const existingItem = order.products.find(item => item.sku === updatedProduct.sku);
+  await validateReferences(productModel, updatedProduct.product, "product");
+
+  const existingItem = order.products.find(
+    (item) => item.sku === updatedProduct.sku
+  );
   if (existingItem) {
     existingItem.quantity = updatedProduct.quantity ?? existingItem.quantity;
     existingItem.price = updatedProduct.price ?? existingItem.price;
@@ -157,27 +185,38 @@ const updateSingleReserveOrderService = async (
   return order;
 };
 
-const deleteProductFromReserveOrderService = async (reserveOrderId: string, sku: string) => {
+const deleteProductFromReserveOrderService = async (
+  reserveOrderId: string,
+  sku: string
+) => {
   const order = await reserveOrderModel.findById(reserveOrderId);
   if (!order) throw new Error("ReserveOrder not found");
 
-  order.products = order.products.filter(item => item.sku !== sku);
+  order.products = order.products.filter((item) => item.sku !== sku);
   await order.save();
   return order;
 };
 
-const deleteSingleReserveOrderService = async (reserveOrderId: string | number) => {
+const deleteSingleReserveOrderService = async (
+  reserveOrderId: string | number
+) => {
   const queryId =
-    typeof reserveOrderId === "string" ? new mongoose.Types.ObjectId(reserveOrderId) : reserveOrderId;
+    typeof reserveOrderId === "string"
+      ? new mongoose.Types.ObjectId(reserveOrderId)
+      : reserveOrderId;
 
   const result = await reserveOrderModel.findByIdAndDelete(queryId).exec();
   if (!result) throw new Error("ReserveOrder not found");
   return result;
 };
 
-const deleteManyReserveOrderService = async (reserveOrderIds: (string | number)[]) => {
-  const queryIds = reserveOrderIds.map(id =>
-    typeof id === "string" && mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : id
+const deleteManyReserveOrderService = async (
+  reserveOrderIds: (string | number)[]
+) => {
+  const queryIds = reserveOrderIds.map((id) =>
+    typeof id === "string" && mongoose.Types.ObjectId.isValid(id)
+      ? new mongoose.Types.ObjectId(id)
+      : id
   );
 
   return await reserveOrderModel.deleteMany({ _id: { $in: queryIds } }).exec();

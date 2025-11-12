@@ -111,7 +111,6 @@ const updateSingleCategoryController = async (
     const { categoryId } = req.params;
     const data = req.body;
     const filePath = req.file ? req.file.path : undefined;
-
     const slug = data.slug ? data.slug : generateSlug(data.name);
 
     const categoryData = {

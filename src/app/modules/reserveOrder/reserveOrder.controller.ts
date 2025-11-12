@@ -9,7 +9,11 @@ const createReserveOrderController = async (
   try {
     const data = req.body;
 
-    if (!data.products || !Array.isArray(data.products) || data.products.length === 0) {
+    if (
+      !data.products ||
+      !Array.isArray(data.products) ||
+      data.products.length === 0
+    ) {
       return res.status(400).json({
         success: false,
         message: "Products array is required.",
@@ -65,7 +69,9 @@ const getSingleReserveOrderController = async (
 ) => {
   try {
     const { reserveOrderId } = req.params;
-    const result = await reserveOrderServices.getSingleReserveOrderService(reserveOrderId);
+    const result = await reserveOrderServices.getSingleReserveOrderService(
+      reserveOrderId
+    );
 
     res.status(200).json({
       success: true,
@@ -84,7 +90,8 @@ const getSingleReserveOrderByUserController = async (
 ) => {
   try {
     const { userId } = req.params;
-    const result = await reserveOrderServices.getSingleReserveOrderByUserService(userId);
+    const result =
+      await reserveOrderServices.getSingleReserveOrderByUserService(userId);
 
     res.status(200).json({
       success: true,
@@ -112,7 +119,10 @@ const updateSingleReserveOrderController = async (
       });
     }
 
-    const result = await reserveOrderServices.updateSingleReserveOrderService(reserveOrderId, data);
+    const result = await reserveOrderServices.updateSingleReserveOrderService(
+      reserveOrderId,
+      data
+    );
 
     res.status(200).json({
       success: true,
@@ -139,7 +149,11 @@ const deleteProductFromReserveOrderController = async (
       });
     }
 
-    const result = await reserveOrderServices.deleteProductFromReserveOrderService(reserveOrderId, sku);
+    const result =
+      await reserveOrderServices.deleteProductFromReserveOrderService(
+        reserveOrderId,
+        sku
+      );
 
     res.status(200).json({
       success: true,
@@ -184,7 +198,9 @@ const deleteManyReserveOrderController = async (
       });
     }
 
-    const result = await reserveOrderServices.deleteManyReserveOrderService(reserveOrderIds);
+    const result = await reserveOrderServices.deleteManyReserveOrderService(
+      reserveOrderIds
+    );
 
     res.status(200).json({
       success: true,

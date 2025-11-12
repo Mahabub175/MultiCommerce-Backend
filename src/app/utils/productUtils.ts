@@ -82,8 +82,6 @@ export const restoreProductStock = async (sku: string, quantity = 1) => {
 
 cron.schedule("0 2 * * *", async () => {
   try {
-    console.log("Running Reserve Order Cleanup Job...");
-
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
@@ -97,9 +95,5 @@ cron.schedule("0 2 * * *", async () => {
       }
       await reserveOrderModel.findByIdAndDelete(order._id);
     }
-
-    console.log(`Cleanup job completed. Deleted ${expiredOrders.length} orders.`);
-  } catch (err) {
-    console.error("Error running Reserve Order Cleanup Job:", err);
-  }
+  } catch (err) {}
 });

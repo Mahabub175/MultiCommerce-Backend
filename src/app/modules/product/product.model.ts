@@ -8,6 +8,7 @@ import {
   ICategoryDiscount,
   IProductRoleDiscount,
 } from "./product.interface";
+import config from "../../config";
 
 const variantSchema = new Schema<IVariant>({
   sku: { type: String, required: true },
@@ -28,11 +29,7 @@ const variantSchema = new Schema<IVariant>({
 const reviewSchema = new Schema<IReview>(
   {
     comment: { type: String, trim: true },
-    user: {
-      type: Schema.Types.ObjectId,
-      ref: "user",
-      required: true,
-    },
+    user: { type: Schema.Types.ObjectId, ref: "user", required: true },
     rating: { type: Number, required: true },
     attachment: [{ type: String }],
   },
@@ -42,10 +39,7 @@ const reviewSchema = new Schema<IReview>(
 const globalRoleDiscountSchema = new Schema<IGlobalRoleDiscount>(
   {
     role: { type: Schema.Types.ObjectId, ref: "customRole" },
-    discountType: {
-      type: String,
-      enum: ["fixed", "percentage"],
-    },
+    discountType: { type: String, enum: ["fixed", "percentage"] },
     discountValue: { type: Number },
     discountedPrice: { type: Number },
     minimumQuantity: { type: Number },
@@ -56,10 +50,7 @@ const globalRoleDiscountSchema = new Schema<IGlobalRoleDiscount>(
 const productRoleDiscountSchema = new Schema<IProductRoleDiscount>(
   {
     role: { type: Schema.Types.ObjectId, ref: "customRole" },
-    discountType: {
-      type: String,
-      enum: ["fixed", "percentage"],
-    },
+    discountType: { type: String, enum: ["fixed", "percentage"] },
     discountValue: { type: Number },
     discountedPrice: { type: Number },
     minimumQuantity: { type: Number },
@@ -70,10 +61,7 @@ const productRoleDiscountSchema = new Schema<IProductRoleDiscount>(
 const categoryRoleDiscountSchema = new Schema<ICategoryRoleDiscount>(
   {
     role: { type: Schema.Types.ObjectId, ref: "customRole" },
-    discountType: {
-      type: String,
-      enum: ["fixed", "percentage"],
-    },
+    discountType: { type: String, enum: ["fixed", "percentage"] },
     discountValue: { type: Number },
     discountedPrice: { type: Number },
     minimumQuantity: { type: Number },
@@ -84,10 +72,7 @@ const categoryRoleDiscountSchema = new Schema<ICategoryRoleDiscount>(
 const categoryDiscountSchema = new Schema<ICategoryDiscount>(
   {
     category: { type: Schema.Types.ObjectId, ref: "category" },
-    discountType: {
-      type: String,
-      enum: ["fixed", "percentage"],
-    },
+    discountType: { type: String, enum: ["fixed", "percentage"] },
     discountValue: { type: Number },
     discountedPrice: { type: Number },
     minimumQuantity: { type: Number },
@@ -206,6 +191,34 @@ productSchema.pre("save", function (next) {
   }
 
   next();
+});
+
+const BASE_URL = config.base_url;
+
+productSchema.set("toJSON", {
+  virtuals: true,
+  transform: (_doc, ret) => {
+    const formatUrl = (path: string): string =>
+      path?.startsWith("http")
+        ? path
+        : `${BASE_URL}/${path.replace(/\\/g, "/").replace(/^\/+/, "")}`;
+
+    const formatPath = (path: string): string => formatUrl(path);
+
+    if (ret.mainImage) ret.mainImage = formatPath(ret.mainImage);
+    if (Array.isArray(ret.images)) ret.images = ret.images.map(formatPath);
+    if (Array.isArray(ret.variants))
+      ret.variants = ret.variants.map((variant: any) => ({
+        ...variant,
+        images: (variant.images || []).map(formatPath),
+      }));
+    if (Array.isArray(ret.reviews))
+      ret.reviews = ret.reviews.map((review: any) => ({
+        ...review,
+        attachment: (review.attachment || []).map(formatPath),
+      }));
+    return ret;
+  },
 });
 
 export const productModel = model<IProduct>("product", productSchema);

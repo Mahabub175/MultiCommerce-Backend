@@ -2,6 +2,9 @@ import mongoose from "mongoose";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import { cartModel } from "./cart.model";
 import { ICart, ICartProduct } from "./cart.interface";
+import { validateReferences } from "../../utils/validateReferences";
+import { userModel } from "../user/user.model";
+import { productModel } from "../product/product.model";
 
 // Create or update cart
 const createCartService = async (cartData: ICart) => {
@@ -10,6 +13,13 @@ const createCartService = async (cartData: ICart) => {
   if (!products?.length) {
     throw new Error("No products provided for the cart.");
   }
+
+  if (user) {
+    await validateReferences(userModel, user, "user");
+  }
+
+  const productIds = products.map((p) => p.product);
+  await validateReferences(productModel, productIds, "product");
 
   const query: any = {};
   if (user) query.user = user;
@@ -26,7 +36,7 @@ const createCartService = async (cartData: ICart) => {
 
       if (existingItem) {
         existingItem.quantity += newItem.quantity;
-        existingItem.price = newItem.price; 
+        existingItem.price = newItem.price;
         existingItem.weight = newItem.weight;
       } else {
         existingCart.products.push(newItem);
@@ -49,10 +59,7 @@ const getAllCartService = async (
 ) => {
   let results;
 
-  const query = cartModel
-    .find()
-    .populate("products.product")
-    .populate("user");
+  const query = cartModel.find().populate("products.product").populate("user");
 
   if (page || limit || searchText) {
     const result = await paginateAndSort(
@@ -134,6 +141,8 @@ const updateSingleCartService = async (
   const cart = await cartModel.findById(queryId);
   if (!cart) throw new Error("Cart not found");
 
+  await validateReferences(productModel, updatedProduct.product, "product");
+
   const existingItem = cart.products.find(
     (item: ICartProduct) => item.sku === updatedProduct.sku
   );
@@ -151,10 +160,7 @@ const updateSingleCartService = async (
 };
 
 // Remove a product from cart
-const deleteProductFromCartService = async (
-  cartId: string,
-  sku: string
-) => {
+const deleteProductFromCartService = async (cartId: string, sku: string) => {
   const cart = await cartModel.findById(cartId);
   if (!cart) throw new Error("Cart not found");
 

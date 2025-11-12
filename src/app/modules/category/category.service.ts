@@ -10,6 +10,7 @@ import {
   applyRoleDiscountsToProducts,
 } from "../../utils/applyDiscountToCategoryProducts";
 import { customRoleModel } from "../customRole/customRole.model";
+import { deleteFileSync } from "../../utils/deleteFilesFromStorage";
 
 // Create a category
 const createCategoryService = async (categoryData: ICategory) => {
@@ -335,14 +336,7 @@ export const updateSingleCategoryService = async (
     categoryData.attachment &&
     existingCategory.attachment !== categoryData.attachment
   ) {
-    const prevFile = path.join(
-      process.cwd(),
-      "uploads",
-      path.basename(existingCategory.attachment || "")
-    );
-    if (fs.existsSync(prevFile)) {
-      fs.unlinkSync(prevFile);
-    }
+    deleteFileSync(existingCategory.attachment as string);
   }
 
   const updatedCategory = await categoryModel
