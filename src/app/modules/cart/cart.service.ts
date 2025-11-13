@@ -188,13 +188,23 @@ const updateCartProductQuantityService = async (
 };
 
 // Remove a product from cart
-const deleteProductFromCartService = async (cartId: string, sku: string) => {
+const deleteProductsFromCartService = async (
+  cartId: string,
+  identifiers: { skus?: string[]; productIds?: string[] }
+) => {
+  const { skus = [], productIds = [] } = identifiers;
+
   const cart = await cartModel.findById(cartId);
   if (!cart) throw new Error("Cart not found");
 
-  cart.products = cart.products.filter(
-    (item: ICartProduct) => item.sku !== sku
-  );
+  if (skus.length === 0 && productIds.length === 0) {
+    throw new Error("No product identifiers provided for deletion");
+  }
+  cart.products = cart.products.filter((item: ICartProduct) => {
+    const skuMatch = skus.includes(item.sku);
+    const idMatch = productIds.includes(item.product?.toString());
+    return !skuMatch && !idMatch;
+  });
 
   await cart.save();
   return cart;
@@ -230,7 +240,7 @@ export const cartServices = {
   getSingleCartByUserService,
   updateSingleCartService,
   updateCartProductQuantityService,
-  deleteProductFromCartService,
+  deleteProductsFromCartService,
   deleteSingleCartService,
   deleteManyCartService,
 };
