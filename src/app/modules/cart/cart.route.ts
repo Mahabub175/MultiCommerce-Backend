@@ -22,7 +22,7 @@ router.patch(
 );
 
 router.delete(
-  "/cart/:cartId/product/:sku/",
+  "/cart/:cartId/delete-products/",
   cartControllers.deleteProductFromCartController
 );
 
