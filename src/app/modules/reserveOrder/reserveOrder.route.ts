@@ -34,8 +34,8 @@ router.patch(
 );
 
 router.delete(
-  "/reserve-order/:reserveOrderId/product/:sku/",
-  reserveOrderControllers.deleteProductFromReserveOrderController
+  "/reserve-order/:reserveOrderId/delete-products/",
+  reserveOrderControllers.deleteProductsFromReserveOrderController
 );
 
 router.delete(

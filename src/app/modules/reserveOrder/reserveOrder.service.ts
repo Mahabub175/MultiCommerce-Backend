@@ -263,33 +263,56 @@ const updateReserveOrderProductQuantityService = async (
   return order;
 };
 
-const deleteProductFromReserveOrderService = async (
+const deleteProductsFromReserveOrderService = async (
   reserveOrderId: string,
-  sku: string
+  identifiers: { skus?: string[]; productIds?: string[] }
 ) => {
+  const { skus = [], productIds = [] } = identifiers;
+
   const order = await reserveOrderModel.findById(reserveOrderId);
   if (!order) throw new Error("ReserveOrder not found");
 
-  const removedItem = order.products.find((item) => item.sku === sku);
-  if (!removedItem) throw new Error("Product not found in order");
-
-  const product =
-    (await productModel.findOne({ "variants.sku": sku })) ||
-    (await productModel.findOne({ sku }));
-
-  if (product) {
-    const variant = product.variants?.find((v) => v.sku === sku);
-    if (variant) variant.stock += removedItem.quantity;
-    else product.stock += removedItem.quantity;
-
-    product.stock = product.variants?.length
-      ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
-      : product.stock;
-
-    await product.save();
+  if (skus.length === 0 && productIds.length === 0) {
+    throw new Error("No product identifiers provided for deletion");
   }
 
-  order.products = order.products.filter((item) => item.sku !== sku);
+  const itemsToRemove = order.products.filter((item) => {
+    const skuMatch = skus.includes(item.sku);
+    const idMatch = productIds.includes(item.product?.toString());
+    return skuMatch || idMatch;
+  });
+
+  if (itemsToRemove.length === 0) {
+    throw new Error("No matching products found in order");
+  }
+
+  for (const removedItem of itemsToRemove) {
+    const product =
+      (await productModel.findOne({ "variants.sku": removedItem.sku })) ||
+      (await productModel.findOne({ sku: removedItem.sku }));
+
+    if (product) {
+      const variant = product.variants?.find((v) => v.sku === removedItem.sku);
+      if (variant) {
+        variant.stock += removedItem.quantity;
+      } else {
+        product.stock += removedItem.quantity;
+      }
+
+      product.stock = product.variants?.length
+        ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+        : product.stock;
+
+      await product.save();
+    }
+  }
+
+  order.products = order.products.filter((item) => {
+    const skuMatch = skus.includes(item.sku);
+    const idMatch = productIds.includes(item.product?.toString());
+    return !skuMatch && !idMatch;
+  });
+
   await order.save();
 
   return order;
@@ -377,7 +400,7 @@ export const reserveOrderServices = {
   getSingleReserveOrderByUserService,
   updateSingleReserveOrderService,
   updateReserveOrderProductQuantityService,
-  deleteProductFromReserveOrderService,
+  deleteProductsFromReserveOrderService,
   deleteSingleReserveOrderService,
   deleteManyReserveOrderService,
 };

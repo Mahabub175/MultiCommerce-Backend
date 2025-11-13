@@ -168,30 +168,46 @@ const updateReserveOrderProductQuantityController = async (
   }
 };
 
-const deleteProductFromReserveOrderController = async (
+const deleteProductsFromReserveOrderController = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { reserveOrderId, sku } = req.params;
+    const { reserveOrderId } = req.params;
+    const products = req.body;
 
-    if (!sku) {
+    if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "SKU is required to remove a product from the order.",
+        message: "Array of products required!",
+      });
+    }
+
+    const skus = products
+      .map((p) => p.sku)
+      .filter((sku): sku is string => !!sku);
+
+    const productIds = products
+      .map((p) => p._id)
+      .filter((id): id is string => !!id);
+
+    if (skus.length === 0 && productIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Each product must include at least a _id or SKU.",
       });
     }
 
     const result =
-      await reserveOrderServices.deleteProductFromReserveOrderService(
+      await reserveOrderServices.deleteProductsFromReserveOrderService(
         reserveOrderId,
-        sku
+        { skus, productIds }
       );
 
     res.status(200).json({
       success: true,
-      message: "Product removed from ReserveOrder successfully!",
+      message: "Selected products removed from ReserveOrder successfully.",
       data: result,
     });
   } catch (error: any) {
@@ -252,7 +268,7 @@ export const reserveOrderControllers = {
   getSingleReserveOrderByUserController,
   updateSingleReserveOrderController,
   updateReserveOrderProductQuantityController,
-  deleteProductFromReserveOrderController,
+  deleteProductsFromReserveOrderController,
   deleteSingleReserveOrderController,
   deleteManyReserveOrderController,
 };

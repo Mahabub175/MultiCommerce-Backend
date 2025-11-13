@@ -214,7 +214,6 @@ const deleteProductsFromCartController = async (
   }
 };
 
-
 // Delete an entire cart
 const deleteSingleCartController = async (
   req: Request,
