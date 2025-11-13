@@ -167,33 +167,53 @@ const updateCartProductQuantityController = async (
   }
 };
 
-// Remove a single product from a cart
-const deleteProductFromCartController = async (
+// Remove a products from a cart
+const deleteProductsFromCartController = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { cartId, sku } = req.params;
+    const { cartId } = req.params;
+    const products = req.body;
 
-    if (!sku) {
+    if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "SKU parameter is required to delete a product from the cart.",
+        message: "Array of products required!",
       });
     }
 
-    const result = await cartServices.deleteProductFromCartService(cartId, sku);
+    const skus = products
+      .map((p) => p.sku)
+      .filter((sku): sku is string => !!sku);
+
+    const productIds = products
+      .map((p) => p._id)
+      .filter((id): id is string => !!id);
+
+    if (skus.length === 0 && productIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Each product must include at least a _id or SKU.",
+      });
+    }
+
+    const result = await cartServices.deleteProductsFromCartService(cartId, {
+      skus,
+      productIds,
+    });
 
     res.status(200).json({
       success: true,
-      message: "Product removed from cart successfully.",
+      message: "Selected products removed from cart successfully.",
       data: result,
     });
   } catch (error: any) {
     next(error);
   }
 };
+
 
 // Delete an entire cart
 const deleteSingleCartController = async (
@@ -248,7 +268,7 @@ export const cartControllers = {
   getSingleCartByUserController,
   updateSingleCartController,
   updateCartProductQuantityController,
-  deleteProductFromCartController,
+  deleteProductsFromCartController,
   deleteSingleCartController,
   deleteManyCartController,
 };
