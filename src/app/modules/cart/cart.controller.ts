@@ -10,7 +10,11 @@ const createCartController = async (
   try {
     const data = req.body;
 
-    if (!data.products || !Array.isArray(data.products) || data.products.length === 0) {
+    if (
+      !data.products ||
+      !Array.isArray(data.products) ||
+      data.products.length === 0
+    ) {
       return res.status(400).json({
         success: false,
         message: "Products array is required in cart data.",
@@ -107,21 +111,56 @@ const updateSingleCartController = async (
 ) => {
   try {
     const { cartId } = req.params;
-    const updatedProduct = req.body; 
+    const updatedProduct = req.body;
 
-    if (!updatedProduct?.sku) {
-      return res.status(400).json({
-        success: false,
-        message: "SKU is required to update a product in the cart.",
-      });
-    }
-
-    const result = await cartServices.updateSingleCartService(cartId, updatedProduct);
+    // if (!updatedProduct?.sku) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "SKU is required to update a product in the cart.",
+    //   });
+    // }
+    const result = await cartServices.updateSingleCartService(
+      cartId,
+      updatedProduct
+    );
 
     res.status(200).json({
       success: true,
       message: "Cart product updated successfully.",
       data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+const updateCartProductQuantityController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { cartId, productId, sku } = req.params;
+    const { quantity } = req.body;
+
+    if (typeof quantity !== "number") {
+      return res.status(400).json({
+        success: false,
+        message: "Quantity (number) is required in the body.",
+      });
+    }
+
+    const updatedCart = await cartServices.updateCartProductQuantityService(
+      cartId,
+      productId,
+      sku,
+      quantity
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Cart product quantity updated successfully",
+      data: updatedCart,
     });
   } catch (error: any) {
     next(error);
@@ -208,6 +247,7 @@ export const cartControllers = {
   getSingleCartController,
   getSingleCartByUserController,
   updateSingleCartController,
+  updateCartProductQuantityController,
   deleteProductFromCartController,
   deleteSingleCartController,
   deleteManyCartController,

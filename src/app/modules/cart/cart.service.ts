@@ -159,6 +159,34 @@ const updateSingleCartService = async (
   return cart;
 };
 
+const updateCartProductQuantityService = async (
+  cartId: string | number,
+  productId: string,
+  sku: string,
+  newQuantity: number
+) => {
+  const queryId =
+    typeof cartId === "string" ? new mongoose.Types.ObjectId(cartId) : cartId;
+
+  const cart = await cartModel.findById(queryId);
+  if (!cart) throw new Error("Cart not found");
+
+  await validateReferences(productModel, productId, "product");
+
+  const productItem = cart.products.find(
+    (item: ICartProduct) =>
+      item.product.toString() === productId.toString() && item.sku === sku
+  );
+
+  if (!productItem) throw new Error("Product not found in cart");
+
+  productItem.quantity = newQuantity;
+
+  await cart.save();
+
+  return cart;
+};
+
 // Remove a product from cart
 const deleteProductFromCartService = async (cartId: string, sku: string) => {
   const cart = await cartModel.findById(cartId);
@@ -201,6 +229,7 @@ export const cartServices = {
   getSingleCartService,
   getSingleCartByUserService,
   updateSingleCartService,
+  updateCartProductQuantityService,
   deleteProductFromCartService,
   deleteSingleCartService,
   deleteManyCartService,

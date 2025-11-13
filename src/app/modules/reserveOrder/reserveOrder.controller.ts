@@ -112,12 +112,12 @@ const updateSingleReserveOrderController = async (
     const { reserveOrderId } = req.params;
     const data = req.body;
 
-    if (!data.sku) {
-      return res.status(400).json({
-        success: false,
-        message: "SKU is required to update a product in the order.",
-      });
-    }
+    // if (!data.sku) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "SKU is required to update a product in the order.",
+    //   });
+    // }
 
     const result = await reserveOrderServices.updateSingleReserveOrderService(
       reserveOrderId,
@@ -128,6 +128,40 @@ const updateSingleReserveOrderController = async (
       success: true,
       message: "ReserveOrder updated successfully!",
       data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+const updateReserveOrderProductQuantityController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { reserveOrderId, productId, sku } = req.params;
+    const { quantity } = req.body;
+
+    if (typeof quantity !== "number") {
+      return res.status(400).json({
+        success: false,
+        message: "Quantity (number) is required in the body.",
+      });
+    }
+
+    const updatedReserveOrder =
+      await reserveOrderServices.updateReserveOrderProductQuantityService(
+        reserveOrderId,
+        productId,
+        sku,
+        quantity
+      );
+
+    res.status(200).json({
+      success: true,
+      message: "ReserveOrder product quantity updated successfully",
+      data: updatedReserveOrder,
     });
   } catch (error: any) {
     next(error);
@@ -217,6 +251,7 @@ export const reserveOrderControllers = {
   getSingleReserveOrderController,
   getSingleReserveOrderByUserController,
   updateSingleReserveOrderController,
+  updateReserveOrderProductQuantityController,
   deleteProductFromReserveOrderController,
   deleteSingleReserveOrderController,
   deleteManyReserveOrderController,

@@ -156,7 +156,7 @@ const getSingleReserveOrderByUserService = async (userId: string) => {
   }));
 };
 
-const updateSingleReserveOrderService = async (
+export const updateSingleReserveOrderService = async (
   reserveOrderId: string | number,
   updatedProduct: IReserveOrderProduct
 ) => {
@@ -173,15 +173,93 @@ const updateSingleReserveOrderService = async (
   const existingItem = order.products.find(
     (item) => item.sku === updatedProduct.sku
   );
+
+  const product =
+    (await productModel.findOne({ "variants.sku": updatedProduct.sku })) ||
+    (await productModel.findOne({ sku: updatedProduct.sku }));
+
+  if (!product) throw new Error("Product not found");
+
+  const variant = product.variants?.find((v) => v.sku === updatedProduct.sku);
+
   if (existingItem) {
+    const prevQty = existingItem.quantity;
+    if (variant) variant.stock += prevQty;
+    else product.stock += prevQty;
+
     existingItem.quantity = updatedProduct.quantity ?? existingItem.quantity;
     existingItem.price = updatedProduct.price ?? existingItem.price;
     existingItem.weight = updatedProduct.weight ?? existingItem.weight;
+
+    if (variant) variant.stock -= existingItem.quantity;
+    else product.stock -= existingItem.quantity;
   } else {
     order.products.push(updatedProduct);
+
+    if (variant && variant.stock > 0) variant.stock -= updatedProduct.quantity;
+    else if (!variant && product.stock > 0)
+      product.stock -= updatedProduct.quantity;
   }
 
+  product.stock = product.variants?.length
+    ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+    : product.stock;
+
+  await product.save();
   await order.save();
+
+  return order;
+};
+
+const updateReserveOrderProductQuantityService = async (
+  reserveOrderId: string | number,
+  productId: string,
+  sku: string,
+  newQuantity: number
+) => {
+  const queryId =
+    typeof reserveOrderId === "string"
+      ? new mongoose.Types.ObjectId(reserveOrderId)
+      : reserveOrderId;
+
+  const order = await reserveOrderModel.findById(queryId);
+  if (!order) throw new Error("ReserveOrder not found");
+
+  await validateReferences(productModel, productId, "product");
+
+  const existingItem = order.products.find(
+    (item) =>
+      item.product.toString() === productId.toString() && item.sku === sku
+  );
+  if (!existingItem) throw new Error("Product not found in reserve order");
+
+  const product =
+    (await productModel.findOne({ "variants.sku": sku })) ||
+    (await productModel.findOne({ sku }));
+  if (!product) throw new Error("Product not found");
+
+  const variant = product.variants?.find((v) => v.sku === sku);
+
+  const prevQuantity = existingItem.quantity;
+  const diff = newQuantity - prevQuantity;
+
+  if (diff > 0) {
+    if (variant) variant.stock -= diff;
+    else product.stock -= diff;
+  } else if (diff < 0) {
+    if (variant) variant.stock += Math.abs(diff);
+    else product.stock += Math.abs(diff);
+  }
+
+  product.stock = product.variants?.length
+    ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+    : product.stock;
+
+  existingItem.quantity = newQuantity;
+
+  await product.save();
+  await order.save();
+
   return order;
 };
 
@@ -192,8 +270,28 @@ const deleteProductFromReserveOrderService = async (
   const order = await reserveOrderModel.findById(reserveOrderId);
   if (!order) throw new Error("ReserveOrder not found");
 
+  const removedItem = order.products.find((item) => item.sku === sku);
+  if (!removedItem) throw new Error("Product not found in order");
+
+  const product =
+    (await productModel.findOne({ "variants.sku": sku })) ||
+    (await productModel.findOne({ sku }));
+
+  if (product) {
+    const variant = product.variants?.find((v) => v.sku === sku);
+    if (variant) variant.stock += removedItem.quantity;
+    else product.stock += removedItem.quantity;
+
+    product.stock = product.variants?.length
+      ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+      : product.stock;
+
+    await product.save();
+  }
+
   order.products = order.products.filter((item) => item.sku !== sku);
   await order.save();
+
   return order;
 };
 
@@ -205,8 +303,28 @@ const deleteSingleReserveOrderService = async (
       ? new mongoose.Types.ObjectId(reserveOrderId)
       : reserveOrderId;
 
+  const reserveOrder = await reserveOrderModel.findById(queryId);
+  if (!reserveOrder) throw new Error("ReserveOrder not found");
+
+  for (const item of reserveOrder.products) {
+    const product =
+      (await productModel.findOne({ "variants.sku": item.sku })) ||
+      (await productModel.findOne({ sku: item.sku }));
+
+    if (product) {
+      const variant = product.variants?.find((v) => v.sku === item.sku);
+      if (variant) variant.stock += item.quantity;
+      else product.stock += item.quantity;
+
+      product.stock = product.variants?.length
+        ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+        : product.stock;
+
+      await product.save();
+    }
+  }
+
   const result = await reserveOrderModel.findByIdAndDelete(queryId).exec();
-  if (!result) throw new Error("ReserveOrder not found");
   return result;
 };
 
@@ -219,7 +337,37 @@ const deleteManyReserveOrderService = async (
       : id
   );
 
-  return await reserveOrderModel.deleteMany({ _id: { $in: queryIds } }).exec();
+  const orders = await reserveOrderModel.find({ _id: { $in: queryIds } });
+
+  if (!orders.length) throw new Error("No reserve orders found");
+
+  for (const order of orders) {
+    for (const item of order.products) {
+      const product =
+        (await productModel.findOne({ "variants.sku": item.sku })) ||
+        (await productModel.findOne({ sku: item.sku }));
+
+      if (product) {
+        const variant = product.variants?.find((v) => v.sku === item.sku);
+        if (variant) variant.stock += item.quantity;
+        else product.stock += item.quantity;
+
+        product.stock = product.variants?.length
+          ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+          : product.stock;
+
+        await product.save();
+      }
+    }
+  }
+
+  const result = await reserveOrderModel
+    .deleteMany({
+      _id: { $in: queryIds },
+    })
+    .exec();
+
+  return result;
 };
 
 export const reserveOrderServices = {
@@ -228,6 +376,7 @@ export const reserveOrderServices = {
   getSingleReserveOrderService,
   getSingleReserveOrderByUserService,
   updateSingleReserveOrderService,
+  updateReserveOrderProductQuantityService,
   deleteProductFromReserveOrderService,
   deleteSingleReserveOrderService,
   deleteManyReserveOrderService,

@@ -12,5 +12,9 @@ export interface ICart {
   user?: Types.ObjectId;
   deviceId?: string;
   products: ICartProduct[];
+  totalAmount: number;
+  totalWeight: number;
+  totalQuantity: number;
+  note: string;
   status: boolean;
 }

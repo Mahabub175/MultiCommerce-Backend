@@ -28,6 +28,11 @@ router.patch(
   reserveOrderControllers.updateSingleReserveOrderController
 );
 
+router.patch(
+  "/reserve-order/:reserveOrderId/product/:productId/:sku/update-quantity/",
+  reserveOrderControllers.updateReserveOrderProductQuantityController
+);
+
 router.delete(
   "/reserve-order/:reserveOrderId/product/:sku/",
   reserveOrderControllers.deleteProductFromReserveOrderController
