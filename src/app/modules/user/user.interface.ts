@@ -39,8 +39,8 @@ export interface IUser {
   city2: string;
   streetAddress1: string;
   streetAddress2: string;
-  addressSummery1: string;
-  addressSummery2: string;
+  addressSummary1: string;
+  addressSummary2: string;
   country1: string;
   country2: string;
   zipCode1: string;
