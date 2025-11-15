@@ -232,6 +232,47 @@ const updateSingleShippingOrderController = async (
   }
 };
 
+const requestReturnController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { shippingOrderId, orderId } = req.params;
+    const userId = req.user._id;
+
+    const result = await shippingServices.requestReturnService(
+      shippingOrderId,
+      orderId,
+      userId
+    );
+    res.json({ success: true, result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const handleReturnRequestController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { shippingOrderId, orderId } = req.params;
+    const { decision } = req.body;
+
+    const result = await shippingServices.handleReturnRequestService(
+      shippingOrderId,
+      orderId,
+      decision
+    );
+
+    res.json({ success: true, result });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const updateShippingStatusController = async (
   req: Request,
   res: Response,
@@ -331,6 +372,8 @@ export const shippingControllers = {
   getAllShippingOrdersController,
   getSingleShippingOrderController,
   updateSingleShippingOrderController,
+  requestReturnController,
+  handleReturnRequestController,
   updateShippingStatusController,
   assignShippingSlotController,
   deleteSingleShippingOrderController,

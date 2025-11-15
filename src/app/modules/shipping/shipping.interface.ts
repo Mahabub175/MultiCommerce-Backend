@@ -26,15 +26,11 @@ export interface IDeliveryItem {
     | "delivered"
     | "cancelled"
     | "returned";
-  progress?: {
-    status:
-      | "pending"
-      | "dispatched"
-      | "in_transit"
-      | "delivered"
-      | "cancelled"
-      | "returned";
-    note?: string;
+  returnRequested: boolean;
+  returnStatus: "none" | "pending" | "accepted" | "rejected";
+  progress: {
+    status: string;
+    note: string;
     updatedAt?: Date;
   }[];
   notes?: string;

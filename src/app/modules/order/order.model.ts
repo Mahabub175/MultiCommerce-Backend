@@ -53,7 +53,14 @@ const orderSchema = new Schema<IOrder>(
     coupon: { type: Schema.Types.ObjectId, ref: "coupon" },
     orderStatus: {
       type: String,
-      enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+      enum: [
+        "pending",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "returned",
+      ],
       default: "pending",
     },
     note: { type: String },

@@ -40,6 +40,12 @@ const shippingOrderSchema = new Schema<IShippingOrder>(
           ],
           default: "pending",
         },
+        returnRequested: { type: Boolean, default: false },
+        returnStatus: {
+          type: String,
+          enum: ["none", "pending", "accepted", "rejected"],
+          default: "none",
+        },
         progress: [
           {
             status: String,

@@ -1,6 +1,7 @@
 import express from "express";
 import { shippingControllers } from "./shipping.controller";
 import { uploadService } from "../upload/upload";
+import { authMiddleware } from "../../middlewares/authMiddleware";
 
 const router = express.Router();
 
@@ -46,6 +47,16 @@ router.get(
 router.patch(
   "/shipping-order/:orderId/",
   shippingControllers.updateSingleShippingOrderController
+);
+router.post(
+  "/shipping-order/:shippingOrderId/return-request/:orderId/",
+  authMiddleware,
+  shippingControllers.requestReturnController
+);
+router.post(
+  "/shipping-order/:shippingOrderId/return-handle/:orderId/",
+  authMiddleware,
+  shippingControllers.handleReturnRequestController
 );
 router.patch(
   "/shipping-order/:orderId/status/",

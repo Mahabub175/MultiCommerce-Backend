@@ -5,6 +5,7 @@ import { paginateAndSort } from "../../utils/paginateAndSort";
 import fs from "fs";
 import path from "path";
 import { formatResultImage } from "../../utils/formatResultImage";
+import { orderModel } from "../order/order.model";
 
 const createShippingSlotService = async (data: IShippingSlot) => {
   const result = await shippingSlotModel.create(data);
@@ -225,6 +226,73 @@ const updateShippingStatusService = async (
   return result;
 };
 
+const requestReturnService = async (
+  shippingOrderId: string,
+  orderId: string,
+  userId: string
+) => {
+  const shippingOrder = await shippingOrderModel.findById(shippingOrderId);
+  if (!shippingOrder) throw new Error("Shipping order not found");
+
+  const item = shippingOrder.deliveryList.find(
+    (d) => d.order.toString() === orderId
+  );
+
+  if (!item) throw new Error("Delivery item not found");
+  if (item.status !== "delivered")
+    throw new Error("Only delivered orders can be returned");
+
+  if (item.returnRequested) throw new Error("Return request already submitted");
+  item.returnRequested = true;
+  item.returnStatus = "pending";
+
+  item.progress.push({
+    status: "return_requested",
+    note: "User requested return",
+  });
+
+  await shippingOrder.save();
+  return { message: "Return request submitted successfully" };
+};
+
+const handleReturnRequestService = async (
+  shippingOrderId: string,
+  orderId: string,
+  decision: "accepted" | "rejected"
+) => {
+  const shippingOrder = await shippingOrderModel.findById(shippingOrderId);
+  if (!shippingOrder) throw new Error("Shipping order not found");
+
+  const item = shippingOrder.deliveryList.find(
+    (d) => d.order.toString() === orderId
+  );
+  if (!item) throw new Error("Delivery item not found");
+
+  if (!item.returnRequested || item.returnStatus !== "pending") {
+    throw new Error("No active return request");
+  }
+
+  item.returnStatus = decision;
+
+  if (decision === "accepted") {
+    item.status = "returned";
+
+    await orderModel.findByIdAndUpdate(orderId, {
+      $set: { orderStatus: "returned" },
+    });
+  }
+
+  item.progress.push({
+    status: `return_${decision}`,
+    note: `Admin ${decision} the return request`,
+    updatedAt: new Date(),
+  });
+
+  await shippingOrder.save();
+
+  return { message: `Return request ${decision}` };
+};
+
 const deleteSingleShippingOrderService = async (orderId: string | number) => {
   const queryId =
     typeof orderId === "string"
@@ -290,6 +358,8 @@ export const shippingServices = {
   getSingleShippingOrderService,
   updateSingleShippingOrderService,
   updateShippingStatusService,
+  requestReturnService,
+  handleReturnRequestService,
   deleteSingleShippingOrderService,
   deleteManyShippingOrderService,
   assignShippingSlotService,
