@@ -1,11 +1,6 @@
 import { model, Schema } from "mongoose";
 import { IGlobalSetting } from "./globalSetting.interface";
 
-const categorySchema = new Schema({
-  categories: [{ type: Schema.Types.ObjectId, ref: "category" }],
-  multiple: { type: Boolean, default: false },
-});
-
 const globalSettingSchema = new Schema<IGlobalSetting>(
   {
     name: {
