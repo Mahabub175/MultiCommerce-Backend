@@ -17,7 +17,7 @@ const shippingAddressSchema = new Schema(
     country: { type: String, trim: true },
     zipCode: { type: String, trim: true },
     streetAddress: { type: String, trim: true },
-    addressSummery: { type: String, trim: true },
+    addressSummary: { type: String, trim: true },
   },
   { _id: false }
 );

@@ -113,7 +113,7 @@ userSchema.pre("save", async function (next) {
       city: user.city1 || "",
       zipCode: user.zipCode1 || "",
       streetAddress: user.streetAddress1 || "",
-      addressSummery: user.addressSummery1 || "",
+      addressSummary: user.addressSummary1 || "",
       isDefault: true,
     };
 
