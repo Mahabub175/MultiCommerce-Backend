@@ -1,7 +1,13 @@
 import mongoose from "mongoose";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import { formatResultImage } from "../../utils/formatResultImage";
-import { IProduct } from "./product.interface";
+import {
+  ICategoryDiscount,
+  ICategoryRoleDiscount,
+  IGlobalRoleDiscount,
+  IProduct,
+  IProductRoleDiscount,
+} from "./product.interface";
 import { productModel } from "./product.model";
 import { generateSlug } from "../../utils/generateSlug";
 import { parseExcel } from "../../utils/parseExcel";
@@ -26,6 +32,48 @@ const createProductService = async (productData: IProduct) => {
           0
         )
       : productData.stock || 0;
+
+  const regularPrice = productData.regularPrice || 0;
+
+  if (regularPrice <= 0) {
+    throw new Error("Regular price must be greater than 0");
+  }
+
+  if (productData.salePrice !== undefined) {
+    if (productData.salePrice >= regularPrice || productData.salePrice < 0) {
+      throw new Error(
+        "Sale price must be less than regular price and non-negative"
+      );
+    }
+  }
+
+  if (productData.isVariant) {
+    if (
+      !Array.isArray(productData.variants) ||
+      productData.variants.length === 0
+    ) {
+      throw new Error("Variants must be provided for a variant product");
+    }
+    for (const variant of productData.variants) {
+      if ((variant.regularPrice || 0) <= 0) {
+        throw new Error(
+          `Variant ${variant.sku} selling price must be greater than 0`
+        );
+      }
+      if (
+        variant.salePrice !== undefined &&
+        (variant.salePrice >= variant.regularPrice! || variant.salePrice < 0)
+      ) {
+        throw new Error(
+          `Variant ${variant.sku} offer price must be less than selling price and non-negative`
+        );
+      }
+    }
+  }
+
+  if (productData.buyingPrice && productData.buyingPrice > regularPrice) {
+    throw new Error("Buying price cannot exceed regular price");
+  }
 
   const activeRoles = await customRoleModel.find({ status: true });
 
@@ -114,13 +162,13 @@ const createProductByFileService = async (filePath?: any) => {
         unit: product.unit || null,
         productModel: product.productModel || null,
         buyingPrice: Number(product.buyingPrice),
-        sellingPrice: Number(product.sellingPrice),
-        offerPrice: product.offerPrice ? Number(product.offerPrice) : null,
+        regularPrice: Number(product.regularPrice),
+        salePrice: product.salePrice ? Number(product.salePrice) : null,
         stock: Number(product.stock),
         totalSold: 0,
         isVariant: false,
         isFeatured: product.isFeatured ?? false,
-        isOnSale: product?.offerPrice && Number(product.offerPrice) > 0,
+        isOnSale: product?.salePrice && Number(product.salePrice) > 0,
         isAvailable: true,
         isBestSeller: false,
         isTopRated: false,
@@ -360,29 +408,52 @@ const updateSingleProductService = async (
     ? productData.slug
     : generateSlug(productData.name);
 
+  const regularPrice = productData.regularPrice || 0;
+  if (regularPrice <= 0) {
+    throw new Error("Regular price must be greater than 0");
+  }
+
+  if (productData.salePrice !== undefined) {
+    if (productData.salePrice >= regularPrice || productData.salePrice < 0) {
+      throw new Error(
+        "Sale price must be less than regular price and non-negative"
+      );
+    }
+  }
+
+  if (productData.buyingPrice && productData.buyingPrice > regularPrice) {
+    throw new Error("Buying price cannot exceed regular price");
+  }
+
   let totalStock = productData.stock;
+  if (productData.isVariant && Array.isArray(productData.variants)) {
+    if (productData.variants.length === 0) {
+      throw new Error("Variants must be provided for a variant product");
+    }
 
-  const dataToUpdate: Partial<IProduct> = {
-    ...productData,
-    slug,
-  };
+    for (const variant of productData.variants) {
+      if ((variant.regularPrice || 0) <= 0) {
+        throw new Error(
+          `Variant ${variant.sku} selling price must be greater than 0`
+        );
+      }
+      if (
+        variant.salePrice !== undefined &&
+        (variant.salePrice >= variant.regularPrice! || variant.salePrice < 0)
+      ) {
+        throw new Error(
+          `Variant ${variant.sku} offer price must be less than selling price and non-negative`
+        );
+      }
+    }
 
-  if (
-    productData.isVariant &&
-    Array.isArray(productData.variants) &&
-    productData.variants.length > 0
-  ) {
     totalStock = productData.variants.reduce(
       (sum, variant) => sum + (Number(variant.stock) || 0),
       0
     );
-    dataToUpdate.stock = totalStock;
-  } else {
-    dataToUpdate.isVariant = false;
-    dataToUpdate.variants = [];
-    dataToUpdate.stock = productData.stock;
   }
 
+  let ratings = undefined;
   if (productData.reviews && productData.reviews.length > 0) {
     const totalRating = productData.reviews.reduce(
       (sum, review) => sum + (Number(review.rating) || 0),
@@ -391,43 +462,49 @@ const updateSingleProductService = async (
     const count = productData.reviews.length;
     const average =
       count > 0 ? parseFloat((totalRating / count).toFixed(2)) : 0;
-
-    dataToUpdate.ratings = {
-      average,
-      count,
-    };
+    ratings = { average, count };
   }
 
-  if (
-    productData.productRoleDiscounts &&
-    productData.productRoleDiscounts.length > 0
-  ) {
-    const updatedRoleDiscounts = productData.productRoleDiscounts.map(
-      (discount) => {
-        let discountedPrice = productData.regularPrice;
-
-        if (discount.discountType === "fixed") {
-          discountedPrice = Math.max(
-            0,
-            productData.regularPrice - discount.discountValue
-          );
-        } else if (discount.discountType === "percentage") {
-          discountedPrice = Math.max(
-            0,
-            productData.regularPrice -
-              (productData.regularPrice * discount.discountValue) / 100
-          );
-        }
-
-        return {
-          ...discount,
-          discountedPrice,
-        };
+  const recalculateDiscounts = (discounts: any[] = []) => {
+    return discounts.map((discount) => {
+      if (!discount.discountType || !discount.discountValue) {
+        return { ...discount, discountedPrice: undefined };
       }
-    );
 
-    dataToUpdate.productRoleDiscounts = updatedRoleDiscounts;
-  }
+      let discountedPrice = regularPrice;
+      if (discount.discountType === "fixed") {
+        discountedPrice = Math.max(0, regularPrice - discount.discountValue);
+      } else if (discount.discountType === "percentage") {
+        discountedPrice = Math.max(
+          0,
+          regularPrice - (regularPrice * discount.discountValue) / 100
+        );
+      }
+
+      return { ...discount, discountedPrice };
+    });
+  };
+
+  const dataToUpdate: Partial<IProduct> = {
+    ...productData,
+    slug,
+    stock: totalStock,
+    isVariant: productData.isVariant && Array.isArray(productData.variants),
+    variants: productData.isVariant ? productData.variants : [],
+    ratings,
+    productRoleDiscounts: recalculateDiscounts(
+      productData.productRoleDiscounts || []
+    ),
+    globalRoleDiscounts: recalculateDiscounts(
+      productData.globalRoleDiscounts || []
+    ),
+    categoryRoleDiscounts: recalculateDiscounts(
+      productData.categoryRoleDiscounts || []
+    ),
+    categoryDiscounts: recalculateDiscounts(
+      productData.categoryDiscounts || []
+    ),
+  };
 
   const result = await productModel
     .findByIdAndUpdate(

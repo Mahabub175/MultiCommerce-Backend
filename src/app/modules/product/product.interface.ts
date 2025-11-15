@@ -15,8 +15,8 @@ export interface IVariant {
   sku: string;
   attributeCombination: IVariantAttributeCombination[];
   buyingPrice: number;
-  sellingPrice: number;
-  offerPrice: number;
+  regularPrice: number;
+  salePrice: number;
   stock: number;
   images: string[];
 }

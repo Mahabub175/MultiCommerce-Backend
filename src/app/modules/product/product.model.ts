@@ -19,9 +19,9 @@ const variantSchema = new Schema<IVariant>({
       optionLabel: { type: String, required: true, trim: true },
     },
   ],
-  sellingPrice: { type: Number },
+  regularPrice: { type: Number },
   buyingPrice: { type: Number },
-  offerPrice: { type: Number },
+  salePrice: { type: Number },
   stock: { type: Number, required: true },
   images: [{ type: String }],
 });
