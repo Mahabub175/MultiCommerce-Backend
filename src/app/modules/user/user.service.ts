@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import { formatResultImage } from "../../utils/formatResultImage";
 import { userModel } from "./user.model";
-import { IUser } from "./user.interface";
+import { IShippingAddress, IUser } from "./user.interface";
 import path from "path";
 import fs from "fs";
 import { managementRoleModel } from "../managementRole/managementRole.model";
@@ -263,6 +263,92 @@ const updateSingleUserService = async (
   return result;
 };
 
+const addOrUpdateAddressService = async (
+  userId: string,
+  addressId: string,
+  payload: any
+) => {
+  const user = await userModel.findById(userId);
+  if (!user) throw new Error("User not found");
+  const isSettingDefault = payload.isDefault === true;
+
+  if (isSettingDefault) {
+    user.shippingAddresses.forEach((addr: any) => {
+      addr.isDefault = false;
+    });
+  }
+
+  if (addressId) {
+    let found = false;
+
+    user.shippingAddresses = user.shippingAddresses.map((addr: any) => {
+      if (addr._id.toString() === addressId) {
+        found = true;
+        return { ...addr, ...payload };
+      }
+      return addr;
+    });
+
+    if (!found) throw new Error("Address not found");
+
+    await user.save();
+
+    return {
+      message: "Address updated successfully",
+      user,
+    };
+  }
+
+  const newAddress = {
+    firstName: payload.firstName || user.firstName,
+    lastName: payload.lastName || user.lastName,
+    phoneNumber: payload.phoneNumber || user.phoneNumber,
+    country: payload.country,
+    city: payload.city,
+    zipCode: payload.zipCode,
+    streetAddress: payload.streetAddress,
+    addressSummery: payload.addressSummery,
+    isDefault: isSettingDefault || user.shippingAddresses.length === 0,
+  };
+
+  user.shippingAddresses.push(newAddress);
+
+  await user.save();
+  return { message: "Shipping Address added successfully", user };
+};
+
+const deleteAddressService = async (userId: string, addressId: string) => {
+  const user = await userModel.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  let isDefaultDeleted = false;
+  let found = false;
+
+  user.shippingAddresses = user.shippingAddresses.filter((addr: any) => {
+    const match = addr._id.toString() === addressId;
+
+    if (match) {
+      found = true;
+      if (addr.isDefault) isDefaultDeleted = true;
+    }
+
+    return !match;
+  });
+
+  if (!found) throw new Error("Address not found");
+
+  if (isDefaultDeleted && user.shippingAddresses.length > 0) {
+    user.shippingAddresses[0].isDefault = true;
+  }
+
+  await user.save();
+
+  return {
+    message: "Address deleted successfully",
+    user,
+  };
+};
+
 //Delete single User
 const deleteSingleUserService = async (userId: string | number) => {
   const queryId =
@@ -339,6 +425,8 @@ export const userServices = {
   getAllUserService,
   getSingleUserService,
   updateSingleUserService,
+  addOrUpdateAddressService,
+  deleteAddressService,
   deleteSingleUserService,
   deleteManyUsersService,
 };

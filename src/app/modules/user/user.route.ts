@@ -18,6 +18,21 @@ router.patch(
   userControllers.updateSingleUserController
 );
 
+router.post(
+  "/user/:userId/shipping-address/",
+  userControllers.saveAddressController
+);
+
+router.patch(
+  "/user/:userId/shipping-address/:addressId/",
+  userControllers.saveAddressController
+);
+
+router.delete(
+  "/user/:userId/shipping-address/:addressId/",
+  userControllers.deleteAddressController
+);
+
 router.delete("/user/:userId/", userControllers.deleteSingleUserController);
 
 router.post("/user/bulk-delete/", userControllers.deleteManyUsersController);

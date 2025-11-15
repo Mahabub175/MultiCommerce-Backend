@@ -115,6 +115,41 @@ export const updateSingleUserController = async (
   }
 };
 
+const saveAddressController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId, addressId } = req.params;
+    const payload = req.body;
+
+    const result = await userServices.addOrUpdateAddressService(
+      userId,
+      addressId,
+      payload
+    );
+    res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const deleteAddressController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId, addressId } = req.params;
+
+    const result = await userServices.deleteAddressService(userId, addressId);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+};
+
 //Delete single user controller
 const deleteSingleUserController = async (
   req: Request,
@@ -168,6 +203,8 @@ export const userControllers = {
   getAllUserController,
   getSingleUserController,
   updateSingleUserController,
+  saveAddressController,
+  deleteAddressController,
   deleteSingleUserController,
   deleteManyUsersController,
 };

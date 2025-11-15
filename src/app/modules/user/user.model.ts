@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { IUser } from "./user.interface";
+import { IShippingAddress, IUser } from "./user.interface";
 import { customRoleModel } from "../customRole/customRole.model";
 
 const previousPasswordSchema = new Schema({
@@ -7,20 +7,17 @@ const previousPasswordSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-const shippingAddressSchema = new Schema(
-  {
-    firstName: { type: String, trim: true },
-    lastName: { type: String, trim: true },
-    phoneNumber: { type: String, trim: true },
-    country: { type: String, trim: true },
-    city: { type: String, trim: true },
-    zipCode: { type: String, trim: true },
-    streetAddress: { type: String, trim: true },
-    addressSummery: { type: String, trim: true },
-    isDefault: { type: Boolean, default: false },
-  },
-  { _id: false }
-);
+const shippingAddressSchema = new Schema<IShippingAddress>({
+  firstName: { type: String, trim: true },
+  lastName: { type: String, trim: true },
+  phoneNumber: { type: String, trim: true },
+  country: { type: String, trim: true },
+  city: { type: String, trim: true },
+  zipCode: { type: String, trim: true },
+  streetAddress: { type: String, trim: true },
+  addressSummery: { type: String, trim: true },
+  isDefault: { type: Boolean, default: false },
+});
 
 const userSchema = new Schema<IUser>(
   {
@@ -105,22 +102,22 @@ userSchema.pre("save", async function (next) {
       user.roleModel = "customRole";
     }
   }
-
   if (
     (!user.shippingAddresses || user.shippingAddresses.length === 0) &&
-    (user.city || user.streetAddress1)
+    (user.city1 || user.streetAddress1)
   ) {
     const defaultAddress = {
       firstName: user.firstName || "",
       lastName: user.lastName || "",
       phoneNumber: user.phoneNumber || "",
+      country: user.country1 || "",
       city: user.city1 || "",
       zipCode: user.zipCode1 || "",
-      streetAddress1: user.streetAddress1 || "",
-      streetAddress2: user.streetAddress2 || "",
+      streetAddress: user.streetAddress1 || "",
       addressSummery: user.addressSummery1 || "",
       isDefault: true,
     };
+
     user.shippingAddresses = [defaultAddress];
   }
 

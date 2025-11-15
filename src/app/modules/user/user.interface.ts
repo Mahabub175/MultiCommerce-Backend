@@ -6,15 +6,15 @@ export interface IPreviousPasswords {
 }
 
 export interface IShippingAddress {
-  city: { type: string };
-  firstName: { type: string };
-  lastName: { type: string };
-  phoneNumber: { type: string };
-  country: { type: string };
-  zipCode: { type: string };
-  streetAddress: { type: string };
-  addressSummery: { type: string };
-  isDefault: { type: boolean; default: false };
+  city: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  country: string;
+  zipCode: string;
+  streetAddress: string;
+  addressSummery: string;
+  isDefault: boolean;
 }
 
 export interface IUser {
