@@ -11,6 +11,8 @@ export interface IShippingAddress {
   lastName: string;
   phoneNumber: string;
   country: string;
+  email: string;
+  label: string;
   zipCode: string;
   streetAddress: string;
   addressSummary: string;

@@ -10,6 +10,8 @@ const previousPasswordSchema = new Schema({
 const shippingAddressSchema = new Schema<IShippingAddress>({
   firstName: { type: String, trim: true },
   lastName: { type: String, trim: true },
+  email: { type: String, trim: true },
+  label: { type: String, trim: true },
   phoneNumber: { type: String, trim: true },
   country: { type: String, trim: true },
   city: { type: String, trim: true },
@@ -113,7 +115,7 @@ userSchema.pre("save", async function (next) {
       city: user.city1 || "",
       zipCode: user.zipCode1 || "",
       streetAddress: user.streetAddress1 || "",
-      addressSummery: user.addressSummery1 || "",
+      addressSummary: user.addressSummary1 || "",
       isDefault: true,
     };
 
