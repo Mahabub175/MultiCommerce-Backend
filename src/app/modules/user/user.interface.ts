@@ -13,7 +13,7 @@ export interface IShippingAddress {
   country: { type: string };
   zipCode: { type: string };
   streetAddress: { type: string };
-  addressSummery: { type: string };
+  addressSummary: { type: string };
   isDefault: { type: boolean; default: false };
 }
 
