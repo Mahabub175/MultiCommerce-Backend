@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 import { shippingSlotModel, shippingOrderModel } from "./shipping.model";
-import { IShippingSlot, IShippingOrder } from "./shipping.interface";
+import {
+  IShippingSlot,
+  IShippingOrder,
+  IReturnRequest,
+  IReturnDecision,
+} from "./shipping.interface";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import fs from "fs";
 import path from "path";
@@ -228,69 +233,85 @@ const updateShippingStatusService = async (
 
 const requestReturnService = async (
   shippingOrderId: string,
-  orderId: string,
-  userId: string
+  returnRequests: IReturnRequest[]
 ) => {
   const shippingOrder = await shippingOrderModel.findById(shippingOrderId);
   if (!shippingOrder) throw new Error("Shipping order not found");
 
-  const item = shippingOrder.deliveryList.find(
-    (d) => d.order.toString() === orderId
-  );
+  const updatedOrders: string[] = [];
 
-  if (!item) throw new Error("Delivery item not found");
-  if (item.status !== "delivered")
-    throw new Error("Only delivered orders can be returned");
+  for (const reqItem of returnRequests) {
+    const { orderId, reason } = reqItem;
+    const item = shippingOrder.deliveryList.find(
+      (d) => d.order.toString() === orderId
+    );
+    if (!item) throw new Error(`Delivery item not found: ${orderId}`);
+    if (item.status !== "delivered")
+      throw new Error(`Only delivered orders can be returned: ${orderId}`);
+    if (item.returnRequested)
+      throw new Error(`Return request already submitted: ${orderId}`);
 
-  if (item.returnRequested) throw new Error("Return request already submitted");
-  item.returnRequested = true;
-  item.returnStatus = "pending";
+    item.returnRequested = true;
+    item.returnStatus = "pending";
+    item.returnReason = reason;
 
-  item.progress.push({
-    status: "return_requested",
-    note: "User requested return",
-  });
+    item.progress.push({
+      status: "return_requested",
+      note: reason,
+      updatedAt: new Date(),
+    });
+
+    updatedOrders.push(orderId);
+  }
 
   await shippingOrder.save();
-  return { message: "Return request submitted successfully" };
+
+  return { message: "Return requests submitted successfully", updatedOrders };
 };
 
 const handleReturnRequestService = async (
   shippingOrderId: string,
-  orderId: string,
-  decision: "accepted" | "rejected"
+  returnDecisions: IReturnDecision[]
 ) => {
   const shippingOrder = await shippingOrderModel.findById(shippingOrderId);
   if (!shippingOrder) throw new Error("Shipping order not found");
 
-  const item = shippingOrder.deliveryList.find(
-    (d) => d.order.toString() === orderId
-  );
-  if (!item) throw new Error("Delivery item not found");
+  const updatedOrders: string[] = [];
 
-  if (!item.returnRequested || item.returnStatus !== "pending") {
-    throw new Error("No active return request");
-  }
+  for (const { orderId, decision } of returnDecisions) {
+    const item = shippingOrder.deliveryList.find(
+      (d) => d.order.toString() === orderId
+    );
+    if (!item) throw new Error(`Delivery item not found: ${orderId}`);
+    if (!item.returnRequested || item.returnStatus !== "pending") {
+      throw new Error(`No active return request for order: ${orderId}`);
+    }
 
-  item.returnStatus = decision;
+    item.returnStatus = decision;
 
-  if (decision === "accepted") {
-    item.status = "returned";
+    if (decision === "accepted") {
+      item.status = "returned";
 
-    await orderModel.findByIdAndUpdate(orderId, {
-      $set: { orderStatus: "returned" },
+      await orderModel.findByIdAndUpdate(orderId, {
+        $set: { orderStatus: "returned" },
+      });
+    }
+
+    item.progress.push({
+      status: `return_${decision}`,
+      note: `Admin ${decision} the return request`,
+      updatedAt: new Date(),
     });
-  }
 
-  item.progress.push({
-    status: `return_${decision}`,
-    note: `Admin ${decision} the return request`,
-    updatedAt: new Date(),
-  });
+    updatedOrders.push(orderId);
+  }
 
   await shippingOrder.save();
 
-  return { message: `Return request ${decision}` };
+  return {
+    message: `Return requests processed for ${updatedOrders.length} order(s)`,
+    updatedOrders,
+  };
 };
 
 const deleteSingleShippingOrderService = async (orderId: string | number) => {

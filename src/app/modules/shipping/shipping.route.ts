@@ -54,7 +54,7 @@ router.post(
   shippingControllers.requestReturnController
 );
 router.post(
-  "/shipping-order/:shippingOrderId/return-handle/:orderId/",
+  "/shipping-order/:shippingOrderId/return-handle/",
   authMiddleware,
   shippingControllers.handleReturnRequestController
 );

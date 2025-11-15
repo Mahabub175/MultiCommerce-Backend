@@ -1,5 +1,15 @@
 import { Document, Types } from "mongoose";
 
+export interface IReturnRequest {
+  orderId: string;
+  reason: string;
+}
+
+export interface IReturnDecision {
+  orderId: string;
+  decision: "accepted" | "rejected";
+}
+
 export interface IShippingSlot extends Document {
   slotName: string;
   startTime: string;
@@ -28,13 +38,13 @@ export interface IDeliveryItem {
     | "returned";
   returnRequested: boolean;
   returnStatus: "none" | "pending" | "accepted" | "rejected";
+  returnReason: string;
+  returnNote: string;
   progress: {
     status: string;
     note: string;
     updatedAt?: Date;
   }[];
-  notes?: string;
-  active?: boolean;
 }
 
 export interface IShippingOrder extends Document {
@@ -45,6 +55,7 @@ export interface IShippingOrder extends Document {
     trackingId?: string;
   };
   deliveryList: IDeliveryItem[];
+  note: string;
   status: boolean;
   createdAt?: Date;
   updatedAt?: Date;

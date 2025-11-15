@@ -46,6 +46,8 @@ const shippingOrderSchema = new Schema<IShippingOrder>(
           enum: ["none", "pending", "accepted", "rejected"],
           default: "none",
         },
+        returnReason: { type: String, default: "" },
+        returnNote: { type: String, default: "" },
         progress: [
           {
             status: String,
@@ -55,6 +57,11 @@ const shippingOrderSchema = new Schema<IShippingOrder>(
         ],
       },
     ],
+    note: { type: String },
+    status: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

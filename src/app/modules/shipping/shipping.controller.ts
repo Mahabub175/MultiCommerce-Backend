@@ -238,14 +238,14 @@ const requestReturnController = async (
   next: NextFunction
 ) => {
   try {
-    const { shippingOrderId, orderId } = req.params;
-    const userId = req.user._id;
+    const { shippingOrderId } = req.params;
+    const returnRequests = req.body;
 
     const result = await shippingServices.requestReturnService(
       shippingOrderId,
-      orderId,
-      userId
+      returnRequests
     );
+
     res.json({ success: true, result });
   } catch (err) {
     next(err);
@@ -258,13 +258,12 @@ const handleReturnRequestController = async (
   next: NextFunction
 ) => {
   try {
-    const { shippingOrderId, orderId } = req.params;
-    const { decision } = req.body;
+    const { shippingOrderId } = req.params;
+    const returnDecisions = req.body;
 
     const result = await shippingServices.handleReturnRequestService(
       shippingOrderId,
-      orderId,
-      decision
+      returnDecisions
     );
 
     res.json({ success: true, result });
@@ -272,7 +271,6 @@ const handleReturnRequestController = async (
     next(err);
   }
 };
-
 const updateShippingStatusController = async (
   req: Request,
   res: Response,
