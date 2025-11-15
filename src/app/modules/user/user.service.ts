@@ -307,7 +307,7 @@ const addOrUpdateAddressService = async (
     city: payload.city,
     zipCode: payload.zipCode,
     streetAddress: payload.streetAddress,
-    addressSummery: payload.addressSummery,
+    addressSummary: payload.addressSummery,
     isDefault: isSettingDefault || user.shippingAddresses.length === 0,
   };
 
