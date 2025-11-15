@@ -30,7 +30,6 @@ const userSchema = new Schema<IUser>(
     firstName: { type: String, trim: true, required: true },
     lastName: { type: String, trim: true, required: true },
     profileImage: String,
-    address: String,
     credit: {
       type: Number,
       min: 0,
