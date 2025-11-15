@@ -7,8 +7,13 @@ export interface IPreviousPasswords {
 
 export interface IShippingAddress {
   city: { type: string };
+  firstName: { type: string };
+  lastName: { type: string };
+  phoneNumber: { type: string };
+  country: { type: string };
   zipCode: { type: string };
-  streetAddress1: { type: string };
+  streetAddress: { type: string };
+  addressSummery: { type: string };
   isDefault: { type: boolean; default: false };
 }
 
@@ -30,12 +35,15 @@ export interface IUser {
   otpGeneratedAt: string;
   defaultPassword: string;
   point: number;
-  city: string;
+  city1: string;
   city2: string;
   streetAddress1: string;
   streetAddress2: string;
-  addressSummery: string;
-  zipCode: string;
+  addressSummery1: string;
+  addressSummery2: string;
+  country1: string;
+  country2: string;
+  zipCode1: string;
   zipCode2: string;
   shippingAddresses: IShippingAddress[];
   previousPasswords: IPreviousPasswords[];

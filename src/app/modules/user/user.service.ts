@@ -23,8 +23,17 @@ const getAllUserService = async (
   searchFields?: string[]
 ) => {
   let results;
-  const query = userModel.find().select("-password").populate("role");
 
+  if (!currentUser) {
+    const query = userModel.find().select("-password role roleModel");
+    const results = await query.sort({ createdAt: -1 }).exec();
+
+    return {
+      results: formatResultImage(results, "profileImage"),
+    };
+  }
+
+  const query = userModel.find().select("-password").populate("role");
   const isSuperAdmin =
     currentUser.roleModel === "managementRole" &&
     currentUser.role === "super_admin";
@@ -221,37 +230,37 @@ const updateSingleUserService = async (
         throw new Error("Invalid role provided.");
       }
     }
-
-    if (userData.profileImage && user.profileImage !== userData.profileImage) {
-      const prevFileName = path.basename(user.profileImage || "");
-      const prevFilePath = path.join(process.cwd(), "uploads", prevFileName);
-
-      if (fs.existsSync(prevFilePath)) {
-        try {
-          fs.unlinkSync(prevFilePath);
-        } catch (err) {
-          console.warn(
-            `Failed to delete previous attachment for user ${user._id}:`,
-            err
-          );
-        }
-      } else {
-        console.warn(`Previous attachment not found for user ${user._id}`);
-      }
-    }
-
-    const result = await userModel
-      .findByIdAndUpdate(
-        queryId,
-        { $set: userData },
-        { new: true, runValidators: true }
-      )
-      .exec();
-
-    if (!result) throw new Error("User update failed");
-
-    return result;
   }
+
+  if (userData.profileImage && user.profileImage !== userData.profileImage) {
+    const prevFileName = path.basename(user.profileImage || "");
+    const prevFilePath = path.join(process.cwd(), "uploads", prevFileName);
+
+    if (fs.existsSync(prevFilePath)) {
+      try {
+        fs.unlinkSync(prevFilePath);
+      } catch (err) {
+        console.warn(
+          `Failed to delete previous attachment for user ${user._id}:`,
+          err
+        );
+      }
+    } else {
+      console.warn(`Previous attachment not found for user ${user._id}`);
+    }
+  }
+
+  const result = await userModel
+    .findByIdAndUpdate(
+      queryId,
+      { $set: userData },
+      { new: true, runValidators: true }
+    )
+    .exec();
+
+  if (!result) throw new Error("User update failed");
+
+  return result;
 };
 
 //Delete single User

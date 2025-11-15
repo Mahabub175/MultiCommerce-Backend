@@ -10,14 +10,14 @@ const orderItemSchema = new Schema({
 
 const shippingAddressSchema = new Schema(
   {
-    firstName: { type: String },
-    lastName: { type: String },
-    phoneNumber: { type: String },
-    address1: { type: String },
-    address2: { type: String },
-    city: { type: String },
-    postalCode: { type: String },
-    country: { type: String },
+    firstName: { type: String, trim: true },
+    lastName: { type: String, trim: true },
+    phoneNumber: { type: String, trim: true },
+    city: { type: String, trim: true },
+    country: { type: String, trim: true },
+    zipCode: { type: String, trim: true },
+    streetAddress: { type: String, trim: true },
+    addressSummery: { type: String, trim: true },
   },
   { _id: false }
 );

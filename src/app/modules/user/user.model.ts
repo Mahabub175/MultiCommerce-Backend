@@ -9,10 +9,13 @@ const previousPasswordSchema = new Schema({
 
 const shippingAddressSchema = new Schema(
   {
+    firstName: { type: String, trim: true },
+    lastName: { type: String, trim: true },
+    phoneNumber: { type: String, trim: true },
+    country: { type: String, trim: true },
     city: { type: String, trim: true },
     zipCode: { type: String, trim: true },
-    streetAddress1: { type: String, trim: true },
-    streetAddress2: { type: String, trim: true },
+    streetAddress: { type: String, trim: true },
     addressSummery: { type: String, trim: true },
     isDefault: { type: Boolean, default: false },
   },
@@ -47,11 +50,14 @@ const userSchema = new Schema<IUser>(
       enum: ["managementRole", "customRole"],
       default: "customRole",
     },
-    city: String,
-    zipCode: String,
+    city1: String,
+    zipCode1: String,
     streetAddress1: String,
     streetAddress2: String,
-    addressSummery: String,
+    addressSummery1: String,
+    addressSummery2: String,
+    country1: String,
+    country2: String,
     city2: String,
     zipCode2: String,
     shippingAddresses: {
@@ -105,11 +111,14 @@ userSchema.pre("save", async function (next) {
     (user.city || user.streetAddress1)
   ) {
     const defaultAddress = {
-      city: user.city || "",
-      zipCode: user.zipCode || "",
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      phoneNumber: user.phoneNumber || "",
+      city: user.city1 || "",
+      zipCode: user.zipCode1 || "",
       streetAddress1: user.streetAddress1 || "",
       streetAddress2: user.streetAddress2 || "",
-      addressSummery: user.addressSummery || "",
+      addressSummery: user.addressSummery1 || "",
       isDefault: true,
     };
     user.shippingAddresses = [defaultAddress];
