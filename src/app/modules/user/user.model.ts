@@ -15,7 +15,7 @@ const shippingAddressSchema = new Schema<IShippingAddress>({
   city: { type: String, trim: true },
   zipCode: { type: String, trim: true },
   streetAddress: { type: String, trim: true },
-  addressSummery: { type: String, trim: true },
+  addressSummary: { type: String, trim: true },
   isDefault: { type: Boolean, default: false },
 });
 
@@ -27,7 +27,6 @@ const userSchema = new Schema<IUser>(
     firstName: { type: String, trim: true, required: true },
     lastName: { type: String, trim: true, required: true },
     profileImage: String,
-    address: String,
     credit: {
       type: Number,
       min: 0,
@@ -51,8 +50,8 @@ const userSchema = new Schema<IUser>(
     zipCode1: String,
     streetAddress1: String,
     streetAddress2: String,
-    addressSummery1: String,
-    addressSummery2: String,
+    addressSummary1: String,
+    addressSummary2: String,
     country1: String,
     country2: String,
     city2: String,
