@@ -16,7 +16,7 @@ const shippingAddressSchema = new Schema(
     city: { type: String, trim: true },
     zipCode: { type: String, trim: true },
     streetAddress: { type: String, trim: true },
-    addressSummery: { type: String, trim: true },
+    addressSummary: { type: String, trim: true },
     isDefault: { type: Boolean, default: false },
   },
   { _id: false }
