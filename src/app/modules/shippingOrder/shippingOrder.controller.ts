@@ -1,149 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { shippingServices } from "./shipping.service";
-
-const createShippingSlotController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const data = req.body;
-    const filePath = req.file ? req.file.path : undefined;
-    const formData = {
-      ...data,
-      attachment: filePath,
-    };
-
-    const result = await shippingServices.createShippingSlotService(formData);
-    res.status(200).json({
-      success: true,
-      message: "Shipping Slot Created Successfully!",
-      data: result,
-    });
-  } catch (error: any) {
-    next(error);
-  }
-};
-
-const getAllShippingSlotsController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { page, limit } = req.query;
-    const pageNumber = page ? parseInt(page as string, 1) : undefined;
-    const pageSize = limit ? parseInt(limit as string, 100) : undefined;
-    const searchText = req.query.searchText as string | undefined;
-    const searchFields = ["slotName", "status"];
-    const result = await shippingServices.getAllShippingSlotsService(
-      pageNumber,
-      pageSize,
-      searchText,
-      searchFields
-    );
-    res.status(200).json({
-      success: true,
-      message: "Shipping Slots Fetched Successfully!",
-      data: result,
-    });
-  } catch (error: any) {
-    next(error);
-  }
-};
-
-const getSingleShippingSlotController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { slotId } = req.params;
-    const result = await shippingServices.getSingleShippingSlotService(slotId);
-    res.status(200).json({
-      success: true,
-      message: "Shipping Slot Fetched Successfully!",
-      data: result,
-    });
-  } catch (error: any) {
-    next(error);
-  }
-};
-
-const updateShippingSlotController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { slotId } = req.params;
-    const data = req.body;
-
-    const filePath = req.file ? req.file.path : undefined;
-
-    const formData = {
-      ...data,
-      attachment: filePath,
-    };
-
-    const result = await shippingServices.updateShippingSlotService(
-      slotId,
-      formData
-    );
-    res.status(200).json({
-      success: true,
-      message: "Shipping Slot Updated Successfully!",
-      data: result,
-    });
-  } catch (error: any) {
-    next(error);
-  }
-};
-
-const deleteSingleShippingSlotController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { slotId } = req.params;
-    await shippingServices.deleteSingleShippingSlotService(slotId);
-    res.status(200).json({
-      success: true,
-      message: "Shipping Slot Deleted Successfully!",
-      data: null,
-    });
-  } catch (error: any) {
-    next(error);
-  }
-};
-
-const deleteManyShippingSlotsController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const slotIds = req.body;
-    if (!Array.isArray(slotIds) || slotIds.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid or empty Slot IDs array provided",
-        data: null,
-      });
-    }
-    const result = await shippingServices.deleteManyShippingSlotService(
-      slotIds
-    );
-    res.status(200).json({
-      success: true,
-      message: `Bulk Shipping Slot Delete Successful! Deleted ${result.deletedCount} slots.`,
-      data: null,
-    });
-  } catch (error: any) {
-    next(error);
-  }
-};
+import { shippingOrderServices } from "./shippingOrder.service";
 
 const createShippingOrderController = async (
   req: Request,
@@ -152,7 +8,7 @@ const createShippingOrderController = async (
 ) => {
   try {
     const data = req.body;
-    const result = await shippingServices.createShippingOrderService(data);
+    const result = await shippingOrderServices.createShippingOrderService(data);
     res.status(200).json({
       success: true,
       message: "Shipping Order Created Successfully!",
@@ -174,7 +30,7 @@ const getAllShippingOrdersController = async (
     const pageSize = limit ? parseInt(limit as string, 100) : undefined;
     const searchText = req.query.searchText as string | undefined;
     const searchFields = ["shippingStatus", "status"];
-    const result = await shippingServices.getAllShippingOrdersService(
+    const result = await shippingOrderServices.getAllShippingOrdersService(
       pageNumber,
       pageSize,
       searchText,
@@ -197,7 +53,7 @@ const getSingleShippingOrderController = async (
 ) => {
   try {
     const { orderId } = req.params;
-    const result = await shippingServices.getSingleShippingOrderService(
+    const result = await shippingOrderServices.getSingleShippingOrderService(
       orderId
     );
     res.status(200).json({
@@ -218,7 +74,7 @@ const updateSingleShippingOrderController = async (
   try {
     const { orderId } = req.params;
     const data = req.body;
-    const result = await shippingServices.updateSingleShippingOrderService(
+    const result = await shippingOrderServices.updateSingleShippingOrderService(
       orderId,
       data
     );
@@ -241,7 +97,7 @@ const requestReturnController = async (
     const { shippingOrderId } = req.params;
     const returnRequests = req.body;
 
-    const result = await shippingServices.requestReturnService(
+    const result = await shippingOrderServices.requestReturnService(
       shippingOrderId,
       returnRequests
     );
@@ -261,7 +117,7 @@ const handleReturnRequestController = async (
     const { shippingOrderId } = req.params;
     const returnDecisions = req.body;
 
-    const result = await shippingServices.handleReturnRequestService(
+    const result = await shippingOrderServices.handleReturnRequestService(
       shippingOrderId,
       returnDecisions
     );
@@ -279,7 +135,7 @@ const updateShippingStatusController = async (
   try {
     const { orderId } = req.params;
     const { status } = req.body;
-    const result = await shippingServices.updateShippingStatusService(
+    const result = await shippingOrderServices.updateShippingStatusService(
       orderId,
       status
     );
@@ -300,7 +156,7 @@ const assignShippingSlotController = async (
 ) => {
   try {
     const { orderId, slotId } = req.params;
-    const result = await shippingServices.assignShippingSlotService(
+    const result = await shippingOrderServices.assignShippingSlotService(
       orderId,
       slotId
     );
@@ -314,6 +170,27 @@ const assignShippingSlotController = async (
   }
 };
 
+const getOrdersByShippingSlotController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { slotId } = req.params;
+    const results = await shippingOrderServices.getOrdersByShippingSlotService(
+      slotId
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Shipping Orders for Slot ${slotId} fetched successfully!`,
+      data: results,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
 const deleteSingleShippingOrderController = async (
   req: Request,
   res: Response,
@@ -321,7 +198,7 @@ const deleteSingleShippingOrderController = async (
 ) => {
   try {
     const { orderId } = req.params;
-    await shippingServices.deleteSingleShippingOrderService(orderId);
+    await shippingOrderServices.deleteSingleShippingOrderService(orderId);
     res.status(200).json({
       success: true,
       message: "Shipping Order Deleted Successfully!",
@@ -346,7 +223,7 @@ const deleteManyShippingOrdersController = async (
         data: null,
       });
     }
-    const result = await shippingServices.deleteManyShippingOrderService(
+    const result = await shippingOrderServices.deleteManyShippingOrderService(
       orderIds
     );
     res.status(200).json({
@@ -359,13 +236,7 @@ const deleteManyShippingOrdersController = async (
   }
 };
 
-export const shippingControllers = {
-  createShippingSlotController,
-  getAllShippingSlotsController,
-  getSingleShippingSlotController,
-  updateShippingSlotController,
-  deleteSingleShippingSlotController,
-  deleteManyShippingSlotsController,
+export const shippingOrderControllers = {
   createShippingOrderController,
   getAllShippingOrdersController,
   getSingleShippingOrderController,
@@ -376,4 +247,5 @@ export const shippingControllers = {
   assignShippingSlotController,
   deleteSingleShippingOrderController,
   deleteManyShippingOrdersController,
+  getOrdersByShippingSlotController,
 };
