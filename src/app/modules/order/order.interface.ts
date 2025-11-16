@@ -8,14 +8,16 @@ export interface IOrderItem {
 }
 
 export interface IShippingAddress {
+  city: string;
   firstName: string;
   lastName: string;
   phoneNumber: string;
-  address1: string;
-  address2: string;
-  city: string;
-  postalCode?: string;
-  country?: string;
+  country: string;
+  email: string;
+  label: string;
+  zipCode: string;
+  streetAddress: string;
+  addressSummary: string;
 }
 
 export interface IPaymentInfo {
