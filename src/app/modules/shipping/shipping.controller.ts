@@ -11,7 +11,7 @@ const createShippingSlotController = async (
     const filePath = req.file ? req.file.path : undefined;
     const formData = {
       ...data,
-      filePath,
+      attachment: filePath,
     };
 
     const result = await shippingServices.createShippingSlotService(formData);
@@ -83,7 +83,7 @@ const updateShippingSlotController = async (
 
     const formData = {
       ...data,
-      filePath,
+      attachment: filePath,
     };
 
     const result = await shippingServices.updateShippingSlotService(
