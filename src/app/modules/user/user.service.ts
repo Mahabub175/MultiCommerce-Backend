@@ -304,6 +304,8 @@ const addOrUpdateAddressService = async (
     lastName: payload.lastName || user.lastName,
     phoneNumber: payload.phoneNumber || user.phoneNumber,
     country: payload.country,
+    email: payload.email || user.email,
+    label: payload.label,
     city: payload.city,
     zipCode: payload.zipCode,
     streetAddress: payload.streetAddress,

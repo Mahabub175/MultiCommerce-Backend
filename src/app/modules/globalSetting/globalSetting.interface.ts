@@ -27,6 +27,15 @@ export interface IGlobalSetting {
   privacyPolicy: string;
   refundAndReturns: string;
   termsAndConditions: string;
+  shippingPolicy: string;
+  cookiePolicy: string;
+  disclaimer: string;
+  accessibilityStatement: string;
+  paymentPolicy: string;
+  cancellationPolicy: string;
+  warrantyPolicy: string;
+  subscriptionPolicy: string;
+  affiliateDisclosure: string;
   galleryBanner: string;
   shopBanner: string;
   contactBanner: string;

@@ -10,6 +10,8 @@ const previousPasswordSchema = new Schema({
 const shippingAddressSchema = new Schema<IShippingAddress>({
   firstName: { type: String, trim: true },
   lastName: { type: String, trim: true },
+  email: { type: String, trim: true },
+  label: { type: String, trim: true },
   phoneNumber: { type: String, trim: true },
   country: { type: String, trim: true },
   city: { type: String, trim: true },

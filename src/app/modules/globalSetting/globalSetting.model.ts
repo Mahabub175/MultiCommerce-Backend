@@ -1,11 +1,6 @@
 import { model, Schema } from "mongoose";
 import { IGlobalSetting } from "./globalSetting.interface";
 
-const categorySchema = new Schema({
-  categories: [{ type: Schema.Types.ObjectId, ref: "category" }],
-  multiple: { type: Boolean, default: false },
-});
-
 const globalSettingSchema = new Schema<IGlobalSetting>(
   {
     name: {
@@ -95,11 +90,20 @@ const globalSettingSchema = new Schema<IGlobalSetting>(
     blogBanner: { type: String, default: null, trim: true },
     currency: { type: String, default: "৳" },
     delivery: { type: String, default: "" },
-    paymentTerms: { type: String, default: "" },
     pickupPoint: { type: String, default: "" },
+    paymentTerms: { type: String, default: "" },
     privacyPolicy: { type: String, default: "" },
     refundAndReturns: { type: String, default: "" },
     termsAndConditions: { type: String, default: "" },
+    shippingPolicy: { type: String },
+    cookiePolicy: { type: String },
+    disclaimer: { type: String },
+    accessibilityStatement: { type: String },
+    paymentPolicy: { type: String },
+    cancellationPolicy: { type: String },
+    warrantyPolicy: { type: String },
+    subscriptionPolicy: { type: String },
+    affiliateDisclosure: { type: String },
     ssl: { type: Boolean, default: false },
     useSms: { type: Boolean, default: false },
     useEmail: { type: Boolean, default: false },
