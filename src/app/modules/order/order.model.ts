@@ -12,9 +12,11 @@ const shippingAddressSchema = new Schema(
   {
     firstName: { type: String, trim: true },
     lastName: { type: String, trim: true },
+    email: { type: String, trim: true },
+    label: { type: String, trim: true },
     phoneNumber: { type: String, trim: true },
-    city: { type: String, trim: true },
     country: { type: String, trim: true },
+    city: { type: String, trim: true },
     zipCode: { type: String, trim: true },
     streetAddress: { type: String, trim: true },
     addressSummary: { type: String, trim: true },

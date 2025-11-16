@@ -1,28 +1,4 @@
-import { Document, Types } from "mongoose";
-
-export interface IReturnRequest {
-  orderId: string;
-  reason: string;
-}
-
-export interface IReturnDecision {
-  orderId: string;
-  decision: "accepted" | "rejected";
-}
-
-export interface IShippingSlot extends Document {
-  slotName: string;
-  startTime: string;
-  courierName: string;
-  attachment: string;
-  endTime: string;
-  basePrice: number;
-  perKmPrice: number;
-  additionalPricePerKm?: number;
-  maxOrders?: number;
-  estimatedDeliveryTime: number;
-  status: boolean;
-}
+import { Types } from "mongoose";
 
 export interface IDeliveryItem {
   order: Types.ObjectId;
@@ -49,6 +25,8 @@ export interface IDeliveryItem {
 
 export interface IShippingOrder extends Document {
   shippingSlot: Types.ObjectId;
+  selectedSlot: Types.ObjectId;
+  selectedSlotDetails?: any;
   courier?: {
     name?: string;
     contact?: string;

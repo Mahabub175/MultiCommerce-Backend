@@ -1,143 +1,27 @@
 import mongoose from "mongoose";
-import { shippingSlotModel, shippingOrderModel } from "./shipping.model";
-import {
-  IShippingSlot,
-  IShippingOrder,
-  IReturnRequest,
-  IReturnDecision,
-} from "./shipping.interface";
 import { paginateAndSort } from "../../utils/paginateAndSort";
-import fs from "fs";
-import path from "path";
-import { formatResultImage } from "../../utils/formatResultImage";
+import { IShippingOrder } from "./shippingOrder.interface";
+import { shippingOrderModel } from "./shippingOrder.model";
+import {
+  IReturnDecision,
+  IReturnRequest,
+} from "../shippingSlot/shippingSlot.interface";
 import { orderModel } from "../order/order.model";
-
-const createShippingSlotService = async (data: IShippingSlot) => {
-  const result = await shippingSlotModel.create(data);
-  return result;
-};
-
-const getAllShippingSlotsService = async (
-  page?: number,
-  limit?: number,
-  searchText?: string,
-  searchFields?: string[]
-) => {
-  let results;
-  if (page || limit || searchText) {
-    const query = shippingSlotModel.find();
-    const result = await paginateAndSort(
-      query,
-      page,
-      limit,
-      searchText,
-      searchFields
-    );
-
-    result.results = formatResultImage<IShippingSlot>(
-      result.results,
-      "attachment"
-    ) as IShippingSlot[];
-    return result;
-  } else {
-    results = await shippingSlotModel.find().sort({ createdAt: -1 }).exec();
-    results = formatResultImage(results, "attachment");
-    return { results };
-  }
-};
-
-const getSingleShippingSlotService = async (slotId: string | number) => {
-  const queryId =
-    typeof slotId === "string" ? new mongoose.Types.ObjectId(slotId) : slotId;
-
-  const result = await shippingSlotModel.findById(queryId).exec();
-  if (!result) throw new Error("Shipping slot not found");
-  if (typeof result.attachment === "string") {
-    const formattedAttachment = formatResultImage<IShippingSlot>(
-      result.attachment
-    );
-    if (typeof formattedAttachment === "string") {
-      result.attachment = formattedAttachment;
-    }
-  }
-  return result;
-};
-
-const updateShippingSlotService = async (
-  slotId: string | number,
-  shippingData: Partial<IShippingSlot>
-) => {
-  const queryId =
-    typeof slotId === "string" ? new mongoose.Types.ObjectId(slotId) : slotId;
-
-  const existingShippingSlot = await shippingSlotModel.findById(queryId);
-  if (!existingShippingSlot) throw new Error("Shipping Slot not found");
-
-  if (
-    shippingData.attachment &&
-    existingShippingSlot.attachment !== shippingData.attachment
-  ) {
-    const prevFile = path.join(
-      process.cwd(),
-      "uploads",
-      path.basename(existingShippingSlot.attachment || "")
-    );
-    if (fs.existsSync(prevFile)) {
-      fs.unlinkSync(prevFile);
-    }
-  }
-
-  const result = await shippingSlotModel
-    .findByIdAndUpdate(
-      queryId,
-      { $set: shippingData },
-      { new: true, runValidators: true }
-    )
-    .exec();
-
-  if (!result) throw new Error("Shipping slot not found");
-  return result;
-};
-
-const deleteSingleShippingSlotService = async (slotId: string | number) => {
-  const queryId =
-    typeof slotId === "string" ? new mongoose.Types.ObjectId(slotId) : slotId;
-
-  const shippingSlot = await shippingSlotModel.findById(queryId);
-  if (!shippingSlot) throw new Error("Shipping Slot not found");
-
-  if (shippingSlot.attachment) {
-    const filePath = path.join(
-      process.cwd(),
-      "uploads",
-      path.basename(shippingSlot.attachment)
-    );
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  }
-
-  const result = await shippingSlotModel.findByIdAndDelete(queryId).exec();
-  if (!result) throw new Error("Shipping slot not found");
-  return result;
-};
-
-const deleteManyShippingSlotService = async (slotIds: (string | number)[]) => {
-  const queryIds = slotIds.map((id) => {
-    if (typeof id === "string" && mongoose.Types.ObjectId.isValid(id)) {
-      return new mongoose.Types.ObjectId(id);
-    } else if (typeof id === "number") {
-      return id;
-    } else {
-      throw new Error(`Invalid ID format: ${id}`);
-    }
-  });
-
-  const result = await shippingSlotModel
-    .deleteMany({ _id: { $in: queryIds } })
-    .exec();
-  return result;
-};
+import { shippingSlotModel } from "../shippingSlot/shippingSlot.model";
 
 const createShippingOrderService = async (data: IShippingOrder) => {
+  const { shippingSlot, selectedSlot } = data;
+
+  const courier = await shippingSlotModel.findById(shippingSlot);
+  if (!courier) throw new Error("Invalid courier / shippingSlot");
+
+  const slotExists = courier.slots.some(
+    (slot: any) => slot._id.toString() === selectedSlot.toString()
+  );
+
+  if (!slotExists)
+    throw new Error("Selected slot does not belong to this courier");
+
   const result = await shippingOrderModel.create(data);
   return result;
 };
@@ -150,25 +34,46 @@ const getAllShippingOrdersService = async (
 ) => {
   const query = shippingOrderModel
     .find()
+    .populate("shippingSlot")
     .populate({
       path: "deliveryList.order",
       populate: { path: "user", select: "-password" },
-    })
-    .populate("shippingSlot");
+    });
+
+  let result;
 
   if (page || limit || searchText) {
-    const result = await paginateAndSort(
+    result = await paginateAndSort(
       query,
       page,
       limit,
       searchText,
       searchFields
     );
-    return result;
   } else {
     const results = await query.sort({ createdAt: -1 }).exec();
-    return { results };
+    result = { results };
   }
+
+  const processOrder = (order: any) => {
+    if (!order.shippingSlot) return order;
+
+    const courier = order.shippingSlot;
+
+    if (courier.slots && order.selectedSlot) {
+      order.selectedSlotDetails = courier.slots.find(
+        (slot: any) => slot._id.toString() === order.selectedSlot.toString()
+      );
+    }
+
+    return order;
+  };
+
+  if (result?.results) {
+    result.results = result.results.map(processOrder);
+  }
+
+  return result;
 };
 
 const getSingleShippingOrderService = async (
@@ -181,14 +86,23 @@ const getSingleShippingOrderService = async (
 
   const result = await shippingOrderModel
     .findById(queryId)
+    .populate("shippingSlot")
     .populate({
       path: "deliveryList.order",
       populate: { path: "user", select: "-password" },
     })
-    .populate("shippingSlot")
+    .lean()
     .exec();
 
   if (!result) throw new Error("Shipping order not found");
+
+  if (result.shippingSlot && result.selectedSlot) {
+    const courier = result.shippingSlot as any;
+    const selectedSlotDetails = courier.slots.find(
+      (slot: any) => slot._id.toString() === result.selectedSlot.toString()
+    );
+    result.selectedSlotDetails = selectedSlotDetails;
+  }
 
   return result;
 };
@@ -202,6 +116,21 @@ const updateSingleShippingOrderService = async (
       ? new mongoose.Types.ObjectId(orderId)
       : orderId;
 
+  const existing = await shippingOrderModel.findById(queryId);
+  if (!existing) throw new Error("Shipping order not found");
+
+  const courierId = data.shippingSlot || existing.shippingSlot;
+  const slotId = data.selectedSlot || existing.selectedSlot;
+
+  const courier = await shippingSlotModel.findById(courierId);
+  if (!courier) throw new Error("Invalid shippingSlot / courier");
+
+  const slotExists = courier.slots.some(
+    (slot: any) => slot._id.toString() === slotId.toString()
+  );
+  if (!slotExists)
+    throw new Error("Selected slot does not belong to this courier");
+
   const result = await shippingOrderModel
     .findByIdAndUpdate(
       queryId,
@@ -211,7 +140,13 @@ const updateSingleShippingOrderService = async (
     .exec();
 
   if (!result) throw new Error("Shipping order not found");
-  return result;
+
+  const updatedResult = result.toObject();
+  updatedResult.selectedSlotDetails = courier.slots.find(
+    (slot: any) => slot._id.toString() === updatedResult.selectedSlot.toString()
+  );
+
+  return updatedResult;
 };
 
 const updateShippingStatusService = async (
@@ -366,14 +301,7 @@ const getOrdersByShippingSlotService = async (slotId: string) => {
   return result;
 };
 
-export const shippingServices = {
-  createShippingSlotService,
-  getAllShippingSlotsService,
-  getSingleShippingSlotService,
-  updateShippingSlotService,
-  deleteSingleShippingSlotService,
-  deleteManyShippingSlotService,
-
+export const shippingOrderServices = {
   createShippingOrderService,
   getAllShippingOrdersService,
   getSingleShippingOrderService,
