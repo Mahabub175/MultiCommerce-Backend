@@ -46,7 +46,7 @@ const orderSchema = new Schema<IOrder>(
     orderId: { type: String, required: true, unique: true },
     user: { type: Schema.Types.ObjectId, ref: "user", required: true },
     items: { type: [orderItemSchema], required: true },
-    shippingAddress: { type: shippingAddressSchema, required: true },
+    shippingAddress: { type: shippingAddressSchema },
     paymentInfo: { type: paymentInfoSchema, required: true },
     subtotal: { type: Number, required: true },
     additionalPayment: { type: Number },
