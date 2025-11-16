@@ -19,7 +19,6 @@ export interface IShippingSlot extends Document {
   basePrice: number;
   perKmPrice: number;
   additionalPricePerKm?: number;
-  attachment:string;
   maxOrders?: number;
   estimatedDeliveryTime: number;
   status: boolean;
