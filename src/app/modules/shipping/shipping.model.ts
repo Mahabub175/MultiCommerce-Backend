@@ -12,6 +12,7 @@ const shippingSlotSchema = new Schema<IShippingSlot>(
     additionalPricePerKm: { type: Number, default: 0 },
     maxOrders: { type: Number, default: 50 },
     perKmPrice: { type: Number },
+    attachment: { type: String},
     estimatedDeliveryTime: { type: Number },
     status: {
       type: Boolean,
