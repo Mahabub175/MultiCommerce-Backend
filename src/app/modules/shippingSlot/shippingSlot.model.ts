@@ -3,7 +3,7 @@ import { IShippingSlot } from "./shippingSlot.interface";
 
 const shippingSlotSchema = new Schema<IShippingSlot>(
   {
-    courierName: { type: String, required: true },
+    courierName: { type: String, required: true, trim: true, unique: true },
     attachment: { type: String },
     slots: [
       {
