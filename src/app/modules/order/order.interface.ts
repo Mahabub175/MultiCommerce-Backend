@@ -36,6 +36,7 @@ export interface IOrder {
   subtotal: number;
   additionalPayment: number;
   discount?: number;
+  creditAmount?: number;
   grandTotal: number;
   coupon?: Types.ObjectId;
   orderStatus: "pending" | "processing" | "shipped" | "delivered" | "cancelled" | "returned";
