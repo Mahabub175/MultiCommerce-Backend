@@ -26,7 +26,7 @@ router.patch(
 );
 
 router.delete(
-  "/order/:orderId/items/:itemI/d",
+  "/order/:orderId/items/:itemId/",
   orderControllers.deleteOrderItemController
 );
 
@@ -36,7 +36,7 @@ router.patch(
 );
 
 router.patch(
-  "/order/:orderId/items/:itemId/shipping-status/",
+  "/order/:orderId/items/shipping-status/update/",
   orderControllers.updateShippingStatusController
 );
 
@@ -46,7 +46,7 @@ router.post(
 );
 
 router.patch(
-  "/order/:orderId/items/return-decision/",
+  "/order/:orderId/items/return-decision/update/",
   orderControllers.handleReturnRequestController
 );
 

@@ -6,6 +6,7 @@ import {
   IOrderItem,
   IReturnDecision,
   IReturnRequest,
+  IUpdateOrderItemStatus,
 } from "./order.interface";
 import { couponModel } from "../coupon/coupon.model";
 import { shippingSlotModel } from "../shippingSlot/shippingSlot.model";
@@ -101,8 +102,8 @@ const getAllOrderService = async (
   if (page || limit || searchText) {
     const query = orderModel
       .find()
-      .populate("user", "name email")
-      .populate("items.product", "name price")
+      .populate("user")
+      .populate("items.product", "name slug price")
       .populate("coupon", "code amount type");
 
     return await paginateAndSort(query, page, limit, searchText, searchFields);
@@ -110,8 +111,8 @@ const getAllOrderService = async (
 
   const results = await orderModel
     .find()
-    .populate("user", "name email")
-    .populate("items.product", "name price")
+    .populate("user")
+    .populate("items.product", "name slug price")
     .populate("coupon", "code amount type")
     .sort({ createdAt: -1 });
 
@@ -126,8 +127,8 @@ const getSingleOrderService = async (orderId: string | number) => {
 
   const result = await orderModel
     .findById(queryId)
-    .populate("user", "name email")
-    .populate("items.product", "name price")
+    .populate("user")
+    .populate("items.product", "name slug price")
     .populate("coupon", "code amount type");
 
   if (!result) {
@@ -205,30 +206,28 @@ const assignShippingSlotService = async (orderId: string, slotId: string) => {
 // Update shipping status of an order item
 const updateShippingStatusService = async (
   orderId: string,
-  itemId: string,
-  status:
-    | "pending"
-    | "dispatched"
-    | "in_transit"
-    | "delivered"
-    | "cancelled"
-    | "returned"
+  updates: IUpdateOrderItemStatus[]
 ) => {
   const order = await orderModel.findById(orderId);
   if (!order) throw new Error("Order not found");
 
-  const item = order.items.find((i) => i._id.toString() === itemId);
-  if (!item) throw new Error("Order item not found");
+  const updatedItems: string[] = [];
 
-  item.status = status;
-  item.progress.push({
-    status,
-    note: `Status updated to ${status}`,
-    updatedAt: new Date(),
-  });
+  for (const { itemId, status } of updates) {
+    const item = order.items.find((i) => i._id.toString() === itemId);
+    if (!item) continue;
+
+    item.status = status;
+    item.progress.push({
+      status,
+      note: `Status updated to ${status}`,
+      updatedAt: new Date(),
+    });
+
+    updatedItems.push(itemId);
+  }
 
   await order.save();
-  return order;
 };
 
 // Submit return requests for delivered items
@@ -240,7 +239,6 @@ const requestReturnService = async (
   if (!order) throw new Error("Order not found");
 
   const updatedItems: string[] = [];
-
   for (const { itemId, reason } of returnRequests) {
     const item = order.items.find((i) => i._id.toString() === itemId);
 
@@ -319,7 +317,7 @@ const addItemToOrderService = async (orderId: string, newItem: IOrderItem) => {
   const existingItem = order.items.find(
     (i) =>
       i.product.toString() === newItem.product.toString() &&
-      i.variant === newItem.variant
+      i.sku === newItem.sku
   );
 
   if (existingItem) {

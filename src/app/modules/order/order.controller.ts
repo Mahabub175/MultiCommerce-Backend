@@ -223,12 +223,19 @@ const updateShippingStatusController = async (
   next: NextFunction
 ) => {
   try {
-    const { orderId, itemId } = req.params;
-    const { status } = req.body;
+    const { orderId } = req.params;
+    const updates = req.body;
+
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No items provided to update",
+      });
+    }
+
     const result = await orderServices.updateShippingStatusService(
       orderId,
-      itemId,
-      status
+      updates
     );
 
     res.status(200).json({
@@ -249,6 +256,7 @@ const requestReturnController = async (
   try {
     const { orderId } = req.params;
     const returnRequests = req.body;
+
     const result = await orderServices.requestReturnService(
       orderId,
       returnRequests
