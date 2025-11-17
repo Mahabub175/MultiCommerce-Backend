@@ -24,6 +24,7 @@ export interface IDeliveryItem {
 }
 
 export interface IShippingOrder extends Document {
+  shippingMethod: string;
   shippingSlot: Types.ObjectId;
   selectedSlot: Types.ObjectId;
   selectedSlotDetails?: any;
