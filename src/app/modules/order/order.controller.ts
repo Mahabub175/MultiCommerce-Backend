@@ -8,9 +8,7 @@ const createOrderController = async (
 ) => {
   try {
     const data = req.body;
-    const formData = { ...data };
-
-    const result = await orderServices.createOrderService(formData);
+    const result = await orderServices.createOrderService(data);
 
     res.status(200).json({
       success: true,
@@ -28,18 +26,15 @@ const getAllOrderController = async (
   next: NextFunction
 ) => {
   try {
-    const { page, limit } = req.query;
-
+    const { page, limit, searchText } = req.query;
     const pageNumber = page ? parseInt(page as string, 1) : undefined;
     const pageSize = limit ? parseInt(limit as string, 100) : undefined;
-    const searchText = req.query.searchText as string | undefined;
-
     const searchFields = ["orderId", "status", "paymentMethod"];
 
     const result = await orderServices.getAllOrderService(
       pageNumber,
       pageSize,
-      searchText,
+      searchText as string,
       searchFields
     );
 
@@ -80,7 +75,6 @@ const updateSingleOrderController = async (
   try {
     const { orderId } = req.params;
     const data = req.body;
-
     const result = await orderServices.updateSingleOrderService(orderId, data);
 
     res.status(200).json({
@@ -119,7 +113,6 @@ const deleteManyOrderController = async (
 ) => {
   try {
     const orderIds = req.body;
-
     if (!Array.isArray(orderIds) || orderIds.length === 0) {
       return res.status(400).json({
         success: false,
@@ -127,13 +120,167 @@ const deleteManyOrderController = async (
         data: null,
       });
     }
-
     const result = await orderServices.deleteManyOrderService(orderIds);
 
     res.status(200).json({
       success: true,
       message: `Bulk Order Delete Successful! Deleted ${result.deletedCount} orders.`,
       data: null,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+const addItemToOrderController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { orderId } = req.params;
+    const newItem = req.body;
+    const result = await orderServices.addItemToOrderService(orderId, newItem);
+
+    res.status(200).json({
+      success: true,
+      message: "Item added to order successfully!",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+const updateOrderItemController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { orderId, itemId } = req.params;
+    const updatedItem = req.body;
+    const result = await orderServices.updateOrderItemService(
+      orderId,
+      itemId,
+      updatedItem
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Order item updated successfully!",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+const deleteOrderItemController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { orderId, itemId } = req.params;
+    const result = await orderServices.deleteOrderItemService(orderId, itemId);
+
+    res.status(200).json({
+      success: true,
+      message: "Order item deleted successfully!",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+const assignShippingSlotController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { orderId, slotId } = req.params;
+    const result = await orderServices.assignShippingSlotService(
+      orderId,
+      slotId
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Shipping slot assigned successfully!",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+const updateShippingStatusController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { orderId, itemId } = req.params;
+    const { status } = req.body;
+    const result = await orderServices.updateShippingStatusService(
+      orderId,
+      itemId,
+      status
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Shipping status updated successfully!",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+const requestReturnController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { orderId } = req.params;
+    const returnRequests = req.body;
+    const result = await orderServices.requestReturnService(
+      orderId,
+      returnRequests
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Return requests submitted successfully!",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+const handleReturnRequestController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { orderId } = req.params;
+    const returnDecisions = req.body;
+    const result = await orderServices.handleReturnRequestService(
+      orderId,
+      returnDecisions
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Return requests processed successfully!",
+      data: result,
     });
   } catch (error: any) {
     next(error);
@@ -147,4 +294,11 @@ export const orderControllers = {
   updateSingleOrderController,
   deleteSingleOrderController,
   deleteManyOrderController,
+  addItemToOrderController,
+  updateOrderItemController,
+  deleteOrderItemController,
+  assignShippingSlotController,
+  updateShippingStatusController,
+  requestReturnController,
+  handleReturnRequestController,
 };

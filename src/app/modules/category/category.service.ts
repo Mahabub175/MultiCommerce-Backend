@@ -488,12 +488,7 @@ export const deleteSingleCategoryService = async (
   if (!category) throw new Error("Category not found");
 
   if (category.attachment) {
-    const filePath = path.join(
-      process.cwd(),
-      "uploads",
-      path.basename(category.attachment)
-    );
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    deleteFileSync(category.attachment as string);
   }
 
   const removeFromParents = async (

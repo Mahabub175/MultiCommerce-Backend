@@ -2,10 +2,8 @@ import mongoose from "mongoose";
 import { shippingSlotModel } from "./shippingSlot.model";
 import { IShippingSlot } from "./shippingSlot.interface";
 import { paginateAndSort } from "../../utils/paginateAndSort";
-import fs from "fs";
-import path from "path";
 import { formatResultImage } from "../../utils/formatResultImage";
-import { orderModel } from "../order/order.model";
+import { deleteFileSync } from "../../utils/deleteFilesFromStorage";
 
 const createShippingSlotService = async (data: IShippingSlot) => {
   const result = await shippingSlotModel.create(data);
@@ -72,14 +70,7 @@ const updateShippingSlotService = async (
     shippingData.attachment &&
     existingShippingSlot.attachment !== shippingData.attachment
   ) {
-    const prevFile = path.join(
-      process.cwd(),
-      "uploads",
-      path.basename(existingShippingSlot.attachment || "")
-    );
-    if (fs.existsSync(prevFile)) {
-      fs.unlinkSync(prevFile);
-    }
+    deleteFileSync(existingShippingSlot.attachment as string);
   }
 
   const result = await shippingSlotModel
@@ -102,12 +93,7 @@ const deleteSingleShippingSlotService = async (slotId: string | number) => {
   if (!shippingSlot) throw new Error("Shipping Slot not found");
 
   if (shippingSlot.attachment) {
-    const filePath = path.join(
-      process.cwd(),
-      "uploads",
-      path.basename(shippingSlot.attachment)
-    );
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    deleteFileSync(shippingSlot.attachment as string);
   }
 
   const result = await shippingSlotModel.findByIdAndDelete(queryId).exec();
@@ -126,9 +112,18 @@ const deleteManyShippingSlotService = async (slotIds: (string | number)[]) => {
     }
   });
 
+  const slots = await shippingSlotModel.find({ _id: { $in: queryIds } }).exec();
+
+  for (const slot of slots) {
+    if (slot.attachment) {
+      deleteFileSync(slot.attachment as string);
+    }
+  }
+
   const result = await shippingSlotModel
     .deleteMany({ _id: { $in: queryIds } })
     .exec();
+
   return result;
 };
 
