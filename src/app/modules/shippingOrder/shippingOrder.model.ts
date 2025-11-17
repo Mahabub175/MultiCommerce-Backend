@@ -3,14 +3,15 @@ import { IShippingOrder } from "./shippingOrder.interface";
 
 const shippingOrderSchema = new Schema<IShippingOrder>(
   {
+    deliverMethod: {
+      type: String,
+    },
     shippingSlot: {
       type: Schema.Types.ObjectId,
       ref: "shippingSlot",
-      required: true,
     },
     selectedSlot: {
       type: Schema.Types.ObjectId,
-      required: true,
     },
     deliveryList: [
       {
