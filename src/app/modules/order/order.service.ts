@@ -1,26 +1,59 @@
 import mongoose from "mongoose";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import { orderModel } from "./order.model";
-import { IOrder } from "./order.interface";
+import {
+  IOrder,
+  IOrderItem,
+  IReturnDecision,
+  IReturnRequest,
+} from "./order.interface";
+import { couponModel } from "../coupon/coupon.model";
+import { shippingSlotModel } from "../shippingSlot/shippingSlot.model";
+import { productModel } from "../product/product.model";
 
-// Create a new order
+const calculateTotals = (order: any) => {
+  order.subtotal = order.items.reduce(
+    (sum: number, it: IOrderItem) => sum + it.price * it.quantity,
+    0
+  );
+
+  order.grandTotal =
+    order.subtotal +
+    (order.additionalPayment || 0) -
+    (order.discount || 0) -
+    (order.creditAmount || 0);
+};
+
 const createOrderService = async (payload: IOrder) => {
-  const { user, items, shippingMethod } = payload;
-  
+  const { user, items, shippingMethod, coupon } = payload;
+
+  if (coupon) {
+    const couponDoc = await couponModel.findById(coupon);
+    if (!couponDoc) {
+      throw new Error("Invalid coupon ID.");
+    }
+
+    couponDoc.count = (couponDoc.count || 0) + 1;
+    await couponDoc.save();
+  }
+
   if (shippingMethod === "add_to_my_existing_order") {
-    const existingOrder = await orderModel.findOne({
-      user,
-      orderStatus: { $in: ["pending", "processing"] },
-    }).sort({ createdAt: -1 });
+    const existingOrder = await orderModel
+      .findOne({
+        user,
+        orderStatus: { $in: ["pending", "processing"] },
+      })
+      .sort({ createdAt: -1 });
 
     if (!existingOrder) {
       throw new Error("No existing order found to add items to.");
     }
+
     for (const newItem of items) {
       const existingItem = existingOrder.items.find(
-        (i) =>
+        (i: any) =>
           i.product.toString() === newItem.product.toString() &&
-          i.variant === newItem.variant
+          i.sku === newItem.sku
       );
 
       if (existingItem) {
@@ -29,35 +62,42 @@ const createOrderService = async (payload: IOrder) => {
         existingOrder.items.push(newItem);
       }
     }
-    existingOrder.subtotal = existingOrder.items.reduce(
-      (sum, it) => sum + it.price * it.quantity,
-      0
-    );
 
-    existingOrder.grandTotal =
-      existingOrder.subtotal +
-      (existingOrder.additionalPayment || 0) -
-      (existingOrder.discount || 0) -
-      (existingOrder.creditAmount || 0);
-
+    calculateTotals(existingOrder);
     await existingOrder.save();
-
     return existingOrder;
   }
-  
+
+  if (shippingMethod === "reserve_order") {
+    for (const item of items) {
+      const product = await productModel.findById(item.product);
+      if (!product) throw new Error(`Product not found: ${item.product}`);
+
+      if (product.variants && product.variants.length > 0) {
+        const variant = product.variants.find((v) => v.sku === item.variant);
+        if (!variant) throw new Error(`Variant not found: ${item.variant}`);
+
+        variant.stock -= item.quantity;
+
+        product.stock = product.variants.reduce((sum, v) => sum + v.stock, 0);
+      } else {
+        product.stock -= item.quantity;
+      }
+
+      await product.save();
+    }
+  }
+
   const newOrder = await orderModel.create(payload);
   return newOrder;
 };
 
-// Get all orders (with optional pagination & search)
 const getAllOrderService = async (
   page?: number,
   limit?: number,
   searchText?: string,
   searchFields?: string[]
 ) => {
-  let results;
-
   if (page || limit || searchText) {
     const query = orderModel
       .find()
@@ -65,28 +105,19 @@ const getAllOrderService = async (
       .populate("items.product", "name price")
       .populate("coupon", "code amount type");
 
-    const result = await paginateAndSort(
-      query,
-      page,
-      limit,
-      searchText,
-      searchFields
-    );
-    return result;
-  } else {
-    results = await orderModel
-      .find()
-      .populate("user", "name email")
-      .populate("items.product", "name price")
-      .populate("coupon", "code amount type")
-      .sort({ createdAt: -1 })
-      .exec();
-
-    return { results };
+    return await paginateAndSort(query, page, limit, searchText, searchFields);
   }
+
+  const results = await orderModel
+    .find()
+    .populate("user", "name email")
+    .populate("items.product", "name price")
+    .populate("coupon", "code amount type")
+    .sort({ createdAt: -1 });
+
+  return { results };
 };
 
-// Get single order
 const getSingleOrderService = async (orderId: string | number) => {
   const queryId =
     typeof orderId === "string"
@@ -97,8 +128,7 @@ const getSingleOrderService = async (orderId: string | number) => {
     .findById(queryId)
     .populate("user", "name email")
     .populate("items.product", "name price")
-    .populate("coupon", "code amount type")
-    .exec();
+    .populate("coupon", "code amount type");
 
   if (!result) {
     throw new Error("Order not found");
@@ -107,7 +137,6 @@ const getSingleOrderService = async (orderId: string | number) => {
   return result;
 };
 
-// Update single order
 const updateSingleOrderService = async (
   orderId: string | number,
   orderData: Partial<IOrder>
@@ -117,13 +146,11 @@ const updateSingleOrderService = async (
       ? new mongoose.Types.ObjectId(orderId)
       : orderId;
 
-  const result = await orderModel
-    .findByIdAndUpdate(
-      queryId,
-      { $set: orderData },
-      { new: true, runValidators: true }
-    )
-    .exec();
+  const result = await orderModel.findByIdAndUpdate(
+    queryId,
+    { $set: orderData },
+    { new: true, runValidators: true }
+  );
 
   if (!result) {
     throw new Error("Order not found");
@@ -132,14 +159,13 @@ const updateSingleOrderService = async (
   return result;
 };
 
-// Delete single order (hard delete)
 const deleteSingleOrderService = async (orderId: string | number) => {
   const queryId =
     typeof orderId === "string"
       ? new mongoose.Types.ObjectId(orderId)
       : orderId;
 
-  const result = await orderModel.findByIdAndDelete(queryId).exec();
+  const result = await orderModel.findByIdAndDelete(queryId);
 
   if (!result) {
     throw new Error("Order not found");
@@ -148,21 +174,232 @@ const deleteSingleOrderService = async (orderId: string | number) => {
   return result;
 };
 
-// Delete multiple orders (hard delete)
 const deleteManyOrderService = async (orderIds: (string | number)[]) => {
   const queryIds = orderIds.map((id) => {
     if (typeof id === "string" && mongoose.Types.ObjectId.isValid(id)) {
       return new mongoose.Types.ObjectId(id);
     } else if (typeof id === "number") {
       return id;
-    } else {
-      throw new Error(`Invalid ID format: ${id}`);
     }
+    throw new Error(`Invalid ID format: ${id}`);
   });
 
-  const result = await orderModel.deleteMany({ _id: { $in: queryIds } }).exec();
+  return await orderModel.deleteMany({ _id: { $in: queryIds } });
+};
 
-  return result;
+// Assign shipping slot to order
+const assignShippingSlotService = async (orderId: string, slotId: string) => {
+  const slot = await shippingSlotModel.findById(slotId);
+  if (!slot) throw new Error("Invalid shipping slot");
+
+  const order = await orderModel.findByIdAndUpdate(
+    orderId,
+    { shippingSlot: slot._id },
+    { new: true }
+  );
+
+  if (!order) throw new Error("Order not found");
+  return order;
+};
+
+// Update shipping status of an order item
+const updateShippingStatusService = async (
+  orderId: string,
+  itemId: string,
+  status:
+    | "pending"
+    | "dispatched"
+    | "in_transit"
+    | "delivered"
+    | "cancelled"
+    | "returned"
+) => {
+  const order = await orderModel.findById(orderId);
+  if (!order) throw new Error("Order not found");
+
+  const item = order.items.find((i) => i._id.toString() === itemId);
+  if (!item) throw new Error("Order item not found");
+
+  item.status = status;
+  item.progress.push({
+    status,
+    note: `Status updated to ${status}`,
+    updatedAt: new Date(),
+  });
+
+  await order.save();
+  return order;
+};
+
+// Submit return requests for delivered items
+const requestReturnService = async (
+  orderId: string,
+  returnRequests: IReturnRequest[]
+) => {
+  const order = await orderModel.findById(orderId);
+  if (!order) throw new Error("Order not found");
+
+  const updatedItems: string[] = [];
+
+  for (const { itemId, reason } of returnRequests) {
+    const item = order.items.find((i) => i._id.toString() === itemId);
+
+    if (!item) throw new Error(`Item not found: ${itemId}`);
+    if (item.status !== "delivered")
+      throw new Error(`Only delivered items can be returned: ${itemId}`);
+    if (item.returnRequested)
+      throw new Error(`Return request already submitted: ${itemId}`);
+
+    item.returnRequested = true;
+    item.returnStatus = "pending";
+    item.returnReason = reason;
+    item.progress.push({
+      status: "return_requested",
+      note: reason,
+      updatedAt: new Date(),
+    });
+
+    updatedItems.push(itemId.toString());
+  }
+
+  await order.save();
+  return { message: "Return requests submitted", updatedItems };
+};
+
+// Handle admin return decisions
+const handleReturnRequestService = async (
+  orderId: string,
+  returnDecisions: IReturnDecision[]
+) => {
+  const order = await orderModel.findById(orderId);
+  if (!order) throw new Error("Order not found");
+
+  const updatedItems: string[] = [];
+
+  for (const { itemId, decision } of returnDecisions) {
+    const item = order.items.find((i) => i._id.toString() === itemId);
+    if (!item) throw new Error(`Item not found: ${itemId}`);
+    if (!item.returnRequested || item.returnStatus !== "pending")
+      throw new Error(`No active return request for item: ${itemId}`);
+
+    item.returnStatus = decision;
+    if (decision === "accepted") item.status = "returned";
+
+    item.progress.push({
+      status: `return_${decision}`,
+      note: `Admin ${decision} the return request`,
+      updatedAt: new Date(),
+    });
+
+    updatedItems.push(itemId.toString());
+  }
+
+  await order.save();
+  return {
+    message: `Return requests processed for ${updatedItems.length} item(s)`,
+    updatedItems,
+  };
+};
+
+// Get all orders by shipping slot
+const getOrdersByShippingSlotService = async (slotId: string) => {
+  const orders = await orderModel
+    .find({ shippingSlot: new mongoose.Types.ObjectId(slotId) })
+    .populate("user", "name email")
+    .populate("items.product", "name price")
+    .exec();
+
+  return orders;
+};
+
+const addItemToOrderService = async (orderId: string, newItem: IOrderItem) => {
+  const order = await orderModel.findById(orderId);
+  if (!order) throw new Error("Order not found");
+
+  const existingItem = order.items.find(
+    (i) =>
+      i.product.toString() === newItem.product.toString() &&
+      i.variant === newItem.variant
+  );
+
+  if (existingItem) {
+    existingItem.quantity += newItem.quantity;
+  } else {
+    order.items.push(newItem);
+  }
+
+  order.subtotal = order.items.reduce(
+    (sum, it) => sum + it.price * it.quantity,
+    0
+  );
+  order.grandTotal =
+    order.subtotal +
+    (order.additionalPayment || 0) -
+    (order.discount || 0) -
+    (order.creditAmount || 0);
+
+  await order.save();
+  return order;
+};
+
+// Update an item in an existing order
+const updateOrderItemService = async (
+  orderId: string,
+  itemId: string,
+  updatedData: Partial<IOrderItem>
+) => {
+  const order = await orderModel.findById(orderId);
+  if (!order) throw new Error("Order not found");
+
+  const item = order.items.find((i) => i._id.toString() === itemId);
+  if (!item) throw new Error("Item not found");
+
+  Object.assign(item, updatedData);
+
+  order.subtotal = order.items.reduce(
+    (sum, it) => sum + it.price * it.quantity,
+    0
+  );
+  order.grandTotal =
+    order.subtotal +
+    (order.additionalPayment || 0) -
+    (order.discount || 0) -
+    (order.creditAmount || 0);
+
+  await order.save();
+  return order;
+};
+
+// Delete an item from an existing order
+const deleteOrderItemService = async (orderId: string, itemId: string) => {
+  const order = await orderModel.findById(orderId);
+  if (!order) throw new Error("Order not found");
+
+  const itemIndex = order.items.findIndex((i) => i._id.toString() === itemId);
+  if (itemIndex === -1) throw new Error("Item not found");
+
+  order.items.splice(itemIndex, 1);
+
+  order.subtotal = order.items.reduce(
+    (sum, it) => sum + it.price * it.quantity,
+    0
+  );
+  order.grandTotal =
+    order.subtotal +
+    (order.additionalPayment || 0) -
+    (order.discount || 0) -
+    (order.creditAmount || 0);
+
+  await order.save();
+
+  const updatedOrder = await orderModel
+    .findById(orderId)
+    .populate("user", "name email")
+    .populate("items.product", "name price")
+    .populate("coupon", "code amount type")
+    .exec();
+
+  return updatedOrder;
 };
 
 export const orderServices = {
@@ -172,4 +409,12 @@ export const orderServices = {
   updateSingleOrderService,
   deleteSingleOrderService,
   deleteManyOrderService,
+  assignShippingSlotService,
+  updateShippingStatusService,
+  requestReturnService,
+  handleReturnRequestService,
+  getOrdersByShippingSlotService,
+  addItemToOrderService,
+  updateOrderItemService,
+  deleteOrderItemService,
 };

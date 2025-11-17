@@ -3,7 +3,7 @@ import { IShippingOrder } from "./shippingOrder.interface";
 
 const shippingOrderSchema = new Schema<IShippingOrder>(
   {
-    deliverMethod: {
+    shippingMethod: {
       type: String,
     },
     shippingSlot: {

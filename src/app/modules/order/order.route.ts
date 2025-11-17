@@ -15,4 +15,39 @@ router.delete("/order/:orderId/", orderControllers.deleteSingleOrderController);
 
 router.post("/order/bulk-delete/", orderControllers.deleteManyOrderController);
 
+router.post(
+  "/order/:orderId/items/",
+  orderControllers.addItemToOrderController
+);
+
+router.patch(
+  "/order/:orderId/items/:itemId/",
+  orderControllers.updateOrderItemController
+);
+
+router.delete(
+  "/order/:orderId/items/:itemI/d",
+  orderControllers.deleteOrderItemController
+);
+
+router.patch(
+  "/order/:orderId/shipping-slot/:slotId/",
+  orderControllers.assignShippingSlotController
+);
+
+router.patch(
+  "/order/:orderId/items/:itemId/shipping-status/",
+  orderControllers.updateShippingStatusController
+);
+
+router.post(
+  "/order/:orderId/items/return-request/",
+  orderControllers.requestReturnController
+);
+
+router.patch(
+  "/order/:orderId/items/return-decision/",
+  orderControllers.handleReturnRequestController
+);
+
 export const orderRoutes = router;

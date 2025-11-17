@@ -1,10 +1,40 @@
 import { Types } from "mongoose";
 
+export interface IReturnRequest {
+  itemId: string;
+  reason: string;
+}
+
+export interface IReturnDecision {
+  itemId: string;
+  decision: "accepted" | "rejected";
+}
+export interface IDeliveryProgress {
+  status: string;
+  note?: string;
+  updatedAt: Date;
+}
+
 export interface IOrderItem {
+  _id: Types.ObjectId;
   product: Types.ObjectId;
+  sku: string;
   quantity: number;
   price: number;
   variant?: string;
+  charge?: number;
+  status:
+    | "pending"
+    | "dispatched"
+    | "in_transit"
+    | "delivered"
+    | "cancelled"
+    | "returned";
+  returnRequested: boolean;
+  returnStatus: "none" | "pending" | "accepted" | "rejected";
+  returnReason?: string;
+  returnNote?: string;
+  progress: IDeliveryProgress[];
 }
 
 export interface IShippingAddress {
@@ -30,16 +60,26 @@ export interface IOrder {
   orderId: string;
   user: Types.ObjectId;
   items: IOrderItem[];
-  shippingMethod:string;
+  shippingMethod: string;
+  shippingSlot?: Types.ObjectId;
+  selectedSlot?: Types.ObjectId;
   shippingAddress: IShippingAddress;
   paymentInfo: IPaymentInfo;
   subtotal: number;
-  additionalPayment: number;
+  additionalPayment?: number;
   discount?: number;
   creditAmount?: number;
+  deliveryCharge?: number;
   grandTotal: number;
   coupon?: Types.ObjectId;
-  orderStatus: "pending" | "processing" | "shipped" | "delivered" | "cancelled" | "returned";
+  orderStatus:
+    | "pending"
+    | "processing"
+    | "shipped"
+    | "delivered"
+    | "cancelled"
+    | "returned";
+
   note?: string;
   status: boolean;
 }
