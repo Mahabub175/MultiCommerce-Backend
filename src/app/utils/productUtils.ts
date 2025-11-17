@@ -1,3 +1,4 @@
+import { orderModel } from "../modules/order/order.model";
 import { productModel } from "../modules/product/product.model";
 import { reserveOrderModel } from "../modules/reserveOrder/reserveOrder.model";
 import { formatResultImage } from "./formatResultImage";
@@ -94,6 +95,26 @@ cron.schedule("0 2 * * *", async () => {
         await restoreProductStock(item.sku, item.quantity);
       }
       await reserveOrderModel.findByIdAndDelete(order._id);
+    }
+  } catch (err) {}
+});
+
+cron.schedule("0 2 * * *", async () => {
+  try {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    const expiredOrders = await orderModel.find({
+      shippingMethod: "reserve_order",
+      createdAt: { $lte: threeDaysAgo },
+    });
+
+    for (const order of expiredOrders) {
+      for (const item of order.items) {
+        await restoreProductStock(item.sku, item.quantity);
+      }
+
+      await orderModel.findByIdAndDelete(order._id);
     }
   } catch (err) {}
 });
