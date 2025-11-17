@@ -4,9 +4,49 @@ import { orderModel } from "./order.model";
 import { IOrder } from "./order.interface";
 
 // Create a new order
-const createOrderService = async (orderData: IOrder) => {
-  const result = await orderModel.create(orderData);
-  return result;
+const createOrderService = async (payload: IOrder) => {
+  const { user, items, shippingMethod } = payload;
+  
+  if (shippingMethod === "add_to_my_existing_order") {
+    const existingOrder = await orderModel.findOne({
+      user,
+      orderStatus: { $in: ["pending", "processing"] },
+    }).sort({ createdAt: -1 });
+
+    if (!existingOrder) {
+      throw new Error("No existing order found to add items to.");
+    }
+    for (const newItem of items) {
+      const existingItem = existingOrder.items.find(
+        (i) =>
+          i.product.toString() === newItem.product.toString() &&
+          i.variant === newItem.variant
+      );
+
+      if (existingItem) {
+        existingItem.quantity += newItem.quantity;
+      } else {
+        existingOrder.items.push(newItem);
+      }
+    }
+    existingOrder.subtotal = existingOrder.items.reduce(
+      (sum, it) => sum + it.price * it.quantity,
+      0
+    );
+
+    existingOrder.grandTotal =
+      existingOrder.subtotal +
+      (existingOrder.additionalPayment || 0) -
+      (existingOrder.discount || 0) -
+      (existingOrder.creditAmount || 0);
+
+    await existingOrder.save();
+
+    return existingOrder;
+  }
+  
+  const newOrder = await orderModel.create(payload);
+  return newOrder;
 };
 
 // Get all orders (with optional pagination & search)
