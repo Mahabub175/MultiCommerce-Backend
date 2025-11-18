@@ -55,6 +55,7 @@ const orderItemSchema = new Schema<IOrderItem>({
   quantity: { type: Number, required: true, min: 1 },
   price: { type: Number, required: true },
   variant: { type: String },
+  weight: { type: Number },
   charge: { type: Number },
   status: {
     type: String,

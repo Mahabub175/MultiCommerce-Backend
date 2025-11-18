@@ -1,5 +1,16 @@
 import { Types } from "mongoose";
 
+export interface IUpdateOrderItemStatus {
+  itemId: string;
+  status:
+    | "pending"
+    | "dispatched"
+    | "in_transit"
+    | "delivered"
+    | "cancelled"
+    | "returned";
+}
+
 export interface IReturnRequest {
   itemId: string;
   reason: string;
@@ -20,6 +31,7 @@ export interface IOrderItem {
   product: Types.ObjectId;
   sku: string;
   quantity: number;
+  weight?: number;
   price: number;
   variant?: string;
   charge?: number;
