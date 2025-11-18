@@ -21,9 +21,9 @@ import { reviewRoutes } from "../modules/review/review.route";
 import { orderRoutes } from "../modules/order/order.route";
 import { managementRoleRoutes } from "../modules/managementRole/managementRole.route";
 import { customRoleRoutes } from "../modules/customRole/customRole.route";
-import { shippingSlotRoutes } from "../modules/shippingSlot/shippingSlot.route";
 import { reserveOrderRoutes } from "../modules/reserveOrder/reserveOrder.route";
 import { shippingOrderRoutes } from "../modules/shippingOrder/shippingOrder.route";
+import { courierRoutes } from "../modules/courier/courier.route";
 
 const router = Router();
 
@@ -49,7 +49,7 @@ const routes = [
   giftCardRoutes,
   reviewRoutes,
   orderRoutes,
-  shippingSlotRoutes,
+  courierRoutes,
   shippingOrderRoutes,
   reserveOrderRoutes,
 ];

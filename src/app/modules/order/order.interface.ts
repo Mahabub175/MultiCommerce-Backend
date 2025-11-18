@@ -73,7 +73,7 @@ export interface IOrder {
   user: Types.ObjectId;
   items: IOrderItem[];
   shippingMethod: string;
-  shippingSlot?: Types.ObjectId;
+  courier?: Types.ObjectId;
   selectedSlot?: Types.ObjectId;
   shippingAddress: IShippingAddress;
   paymentInfo: IPaymentInfo;

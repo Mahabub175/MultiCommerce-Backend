@@ -86,7 +86,7 @@ const orderSchema = new Schema<IOrder>(
     user: { type: Schema.Types.ObjectId, ref: "user", required: true },
     items: { type: [orderItemSchema], required: true, default: [] },
     shippingMethod: { type: String, required: true },
-    shippingSlot: { type: Schema.Types.ObjectId, ref: "shippingSlot" },
+    courier: { type: Schema.Types.ObjectId, ref: "courier" },
     selectedSlot: { type: Schema.Types.ObjectId },
     shippingAddress: { type: shippingAddressSchema, required: true },
     paymentInfo: { type: paymentInfoSchema, required: true },

@@ -1,16 +1,16 @@
 import mongoose from "mongoose";
-import { shippingSlotModel } from "./shippingSlot.model";
-import { IShippingSlot } from "./shippingSlot.interface";
+import { ICourier } from "./courier.interface";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import { formatResultImage } from "../../utils/formatResultImage";
 import { deleteFileSync } from "../../utils/deleteFilesFromStorage";
+import { courierModel } from "./courier.model";
 
-const createShippingSlotService = async (data: IShippingSlot) => {
-  const result = await shippingSlotModel.create(data);
+const createCourierService = async (data: ICourier) => {
+  const result = await courierModel.create(data);
   return result;
 };
 
-const getAllShippingSlotsService = async (
+const getAllCouriersService = async (
   page?: number,
   limit?: number,
   searchText?: string,
@@ -18,7 +18,7 @@ const getAllShippingSlotsService = async (
 ) => {
   let results;
   if (page || limit || searchText) {
-    const query = shippingSlotModel.find();
+    const query = courierModel.find();
     const result = await paginateAndSort(
       query,
       page,
@@ -27,28 +27,26 @@ const getAllShippingSlotsService = async (
       searchFields
     );
 
-    result.results = formatResultImage<IShippingSlot>(
+    result.results = formatResultImage<ICourier>(
       result.results,
       "attachment"
-    ) as IShippingSlot[];
+    ) as ICourier[];
     return result;
   } else {
-    results = await shippingSlotModel.find().sort({ createdAt: -1 }).exec();
+    results = await courierModel.find().sort({ createdAt: -1 }).exec();
     results = formatResultImage(results, "attachment");
     return { results };
   }
 };
 
-const getSingleShippingSlotService = async (slotId: string | number) => {
+const getSingleCourierService = async (slotId: string | number) => {
   const queryId =
     typeof slotId === "string" ? new mongoose.Types.ObjectId(slotId) : slotId;
 
-  const result = await shippingSlotModel.findById(queryId).exec();
+  const result = await courierModel.findById(queryId).exec();
   if (!result) throw new Error("Shipping slot not found");
   if (typeof result.attachment === "string") {
-    const formattedAttachment = formatResultImage<IShippingSlot>(
-      result.attachment
-    );
+    const formattedAttachment = formatResultImage<ICourier>(result.attachment);
     if (typeof formattedAttachment === "string") {
       result.attachment = formattedAttachment;
     }
@@ -56,24 +54,24 @@ const getSingleShippingSlotService = async (slotId: string | number) => {
   return result;
 };
 
-const updateShippingSlotService = async (
+const updateCourierService = async (
   slotId: string | number,
-  shippingData: Partial<IShippingSlot>
+  shippingData: Partial<ICourier>
 ) => {
   const queryId =
     typeof slotId === "string" ? new mongoose.Types.ObjectId(slotId) : slotId;
 
-  const existingShippingSlot = await shippingSlotModel.findById(queryId);
-  if (!existingShippingSlot) throw new Error("Shipping Slot not found");
+  const existingCourier = await courierModel.findById(queryId);
+  if (!existingCourier) throw new Error("Shipping Slot not found");
 
   if (
     shippingData.attachment &&
-    existingShippingSlot.attachment !== shippingData.attachment
+    existingCourier.attachment !== shippingData.attachment
   ) {
-    deleteFileSync(existingShippingSlot.attachment as string);
+    deleteFileSync(existingCourier.attachment as string);
   }
 
-  const result = await shippingSlotModel
+  const result = await courierModel
     .findByIdAndUpdate(
       queryId,
       { $set: shippingData },
@@ -85,23 +83,23 @@ const updateShippingSlotService = async (
   return result;
 };
 
-const deleteSingleShippingSlotService = async (slotId: string | number) => {
+const deleteSingleCourierService = async (slotId: string | number) => {
   const queryId =
     typeof slotId === "string" ? new mongoose.Types.ObjectId(slotId) : slotId;
 
-  const shippingSlot = await shippingSlotModel.findById(queryId);
-  if (!shippingSlot) throw new Error("Shipping Slot not found");
+  const courier = await courierModel.findById(queryId);
+  if (!courier) throw new Error("Shipping Slot not found");
 
-  if (shippingSlot.attachment) {
-    deleteFileSync(shippingSlot.attachment as string);
+  if (courier.attachment) {
+    deleteFileSync(courier.attachment as string);
   }
 
-  const result = await shippingSlotModel.findByIdAndDelete(queryId).exec();
+  const result = await courierModel.findByIdAndDelete(queryId).exec();
   if (!result) throw new Error("Shipping slot not found");
   return result;
 };
 
-const deleteManyShippingSlotService = async (slotIds: (string | number)[]) => {
+const deleteManyCourierService = async (slotIds: (string | number)[]) => {
   const queryIds = slotIds.map((id) => {
     if (typeof id === "string" && mongoose.Types.ObjectId.isValid(id)) {
       return new mongoose.Types.ObjectId(id);
@@ -112,7 +110,7 @@ const deleteManyShippingSlotService = async (slotIds: (string | number)[]) => {
     }
   });
 
-  const slots = await shippingSlotModel.find({ _id: { $in: queryIds } }).exec();
+  const slots = await courierModel.find({ _id: { $in: queryIds } }).exec();
 
   for (const slot of slots) {
     if (slot.attachment) {
@@ -120,18 +118,18 @@ const deleteManyShippingSlotService = async (slotIds: (string | number)[]) => {
     }
   }
 
-  const result = await shippingSlotModel
+  const result = await courierModel
     .deleteMany({ _id: { $in: queryIds } })
     .exec();
 
   return result;
 };
 
-export const shippingSlotServices = {
-  createShippingSlotService,
-  getAllShippingSlotsService,
-  getSingleShippingSlotService,
-  updateShippingSlotService,
-  deleteSingleShippingSlotService,
-  deleteManyShippingSlotService,
+export const courierServices = {
+  createCourierService,
+  getAllCouriersService,
+  getSingleCourierService,
+  updateCourierService,
+  deleteSingleCourierService,
+  deleteManyCourierService,
 };
