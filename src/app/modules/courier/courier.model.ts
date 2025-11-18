@@ -1,11 +1,11 @@
 import { Schema, model } from "mongoose";
-import { IShippingSlot } from "./shippingSlot.interface";
+import { ICourier } from "./courier.interface";
 
-const shippingSlotSchema = new Schema<IShippingSlot>(
+const courierSchema = new Schema<ICourier>(
   {
     courierName: { type: String, required: true, trim: true, unique: true },
     attachment: { type: String },
-    slots: [
+    shippingSlots: [
       {
         slotName: { type: String, required: true },
         startTime: { type: String, required: true },
@@ -23,7 +23,4 @@ const shippingSlotSchema = new Schema<IShippingSlot>(
   { timestamps: true }
 );
 
-export const shippingSlotModel = model<IShippingSlot>(
-  "shippingSlot",
-  shippingSlotSchema
-);
+export const courierModel = model<ICourier>("courier", courierSchema);

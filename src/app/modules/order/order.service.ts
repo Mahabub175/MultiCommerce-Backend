@@ -9,7 +9,7 @@ import {
   IUpdateOrderItemStatus,
 } from "./order.interface";
 import { couponModel } from "../coupon/coupon.model";
-import { shippingSlotModel } from "../shippingSlot/shippingSlot.model";
+import { courierModel } from "../courier/courier.model";
 import { productModel } from "../product/product.model";
 
 const calculateTotals = (order: any) => {
@@ -103,6 +103,7 @@ const getAllOrderService = async (
     const query = orderModel
       .find()
       .populate("user")
+      .populate("courier")
       .populate("items.product", "name slug price")
       .populate("coupon", "code amount type");
 
@@ -112,6 +113,7 @@ const getAllOrderService = async (
   const results = await orderModel
     .find()
     .populate("user")
+    .populate("courier")
     .populate("items.product", "name slug price")
     .populate("coupon", "code amount type")
     .sort({ createdAt: -1 });
@@ -128,6 +130,7 @@ const getSingleOrderService = async (orderId: string | number) => {
   const result = await orderModel
     .findById(queryId)
     .populate("user")
+    .populate("courier")
     .populate("items.product", "name slug price")
     .populate("coupon", "code amount type");
 
@@ -190,12 +193,12 @@ const deleteManyOrderService = async (orderIds: (string | number)[]) => {
 
 // Assign shipping slot to order
 const assignShippingSlotService = async (orderId: string, slotId: string) => {
-  const slot = await shippingSlotModel.findById(slotId);
+  const slot = await courierModel.findById(slotId);
   if (!slot) throw new Error("Invalid shipping slot");
 
   const order = await orderModel.findByIdAndUpdate(
     orderId,
-    { shippingSlot: slot._id },
+    { courier: slot._id },
     { new: true }
   );
 
@@ -302,7 +305,7 @@ const handleReturnRequestService = async (
 // Get all orders by shipping slot
 const getOrdersByShippingSlotService = async (slotId: string) => {
   const orders = await orderModel
-    .find({ shippingSlot: new mongoose.Types.ObjectId(slotId) })
+    .find({ courier: new mongoose.Types.ObjectId(slotId) })
     .populate("user", "name email")
     .populate("items.product", "name price")
     .exec();

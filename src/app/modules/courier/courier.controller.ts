@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { shippingSlotServices } from "./shippingSlot.service";
+import { courierServices } from "./courier.service";
 
-const createShippingSlotController = async (
+const createCourierController = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -14,12 +14,10 @@ const createShippingSlotController = async (
       attachment: filePath,
     };
 
-    const result = await shippingSlotServices.createShippingSlotService(
-      formData
-    );
+    const result = await courierServices.createCourierService(formData);
     res.status(200).json({
       success: true,
-      message: "Shipping Slot Created Successfully!",
+      message: "Courier Created Successfully!",
       data: result,
     });
   } catch (error: any) {
@@ -27,7 +25,7 @@ const createShippingSlotController = async (
   }
 };
 
-const getAllShippingSlotsController = async (
+const getAllCouriersController = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -38,7 +36,7 @@ const getAllShippingSlotsController = async (
     const pageSize = limit ? parseInt(limit as string, 100) : undefined;
     const searchText = req.query.searchText as string | undefined;
     const searchFields = ["slotName", "status"];
-    const result = await shippingSlotServices.getAllShippingSlotsService(
+    const result = await courierServices.getAllCouriersService(
       pageNumber,
       pageSize,
       searchText,
@@ -46,7 +44,7 @@ const getAllShippingSlotsController = async (
     );
     res.status(200).json({
       success: true,
-      message: "Shipping Slots Fetched Successfully!",
+      message: "Couriers Fetched Successfully!",
       data: result,
     });
   } catch (error: any) {
@@ -54,19 +52,17 @@ const getAllShippingSlotsController = async (
   }
 };
 
-const getSingleShippingSlotController = async (
+const getSingleCourierController = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { slotId } = req.params;
-    const result = await shippingSlotServices.getSingleShippingSlotService(
-      slotId
-    );
+    const result = await courierServices.getSingleCourierService(slotId);
     res.status(200).json({
       success: true,
-      message: "Shipping Slot Fetched Successfully!",
+      message: "Courier Fetched Successfully!",
       data: result,
     });
   } catch (error: any) {
@@ -74,7 +70,7 @@ const getSingleShippingSlotController = async (
   }
 };
 
-const updateShippingSlotController = async (
+const updateCourierController = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -90,13 +86,10 @@ const updateShippingSlotController = async (
       attachment: filePath,
     };
 
-    const result = await shippingSlotServices.updateShippingSlotService(
-      slotId,
-      formData
-    );
+    const result = await courierServices.updateCourierService(slotId, formData);
     res.status(200).json({
       success: true,
-      message: "Shipping Slot Updated Successfully!",
+      message: "Courier Updated Successfully!",
       data: result,
     });
   } catch (error: any) {
@@ -104,17 +97,17 @@ const updateShippingSlotController = async (
   }
 };
 
-const deleteSingleShippingSlotController = async (
+const deleteSingleCourierController = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { slotId } = req.params;
-    await shippingSlotServices.deleteSingleShippingSlotService(slotId);
+    await courierServices.deleteSingleCourierService(slotId);
     res.status(200).json({
       success: true,
-      message: "Shipping Slot Deleted Successfully!",
+      message: "Courier Deleted Successfully!",
       data: null,
     });
   } catch (error: any) {
@@ -122,7 +115,7 @@ const deleteSingleShippingSlotController = async (
   }
 };
 
-const deleteManyShippingSlotsController = async (
+const deleteManyCouriersController = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -136,12 +129,10 @@ const deleteManyShippingSlotsController = async (
         data: null,
       });
     }
-    const result = await shippingSlotServices.deleteManyShippingSlotService(
-      slotIds
-    );
+    const result = await courierServices.deleteManyCourierService(slotIds);
     res.status(200).json({
       success: true,
-      message: `Bulk Shipping Slot Delete Successful! Deleted ${result.deletedCount} slots.`,
+      message: `Bulk Courier Delete Successful! Deleted ${result.deletedCount} slots.`,
       data: null,
     });
   } catch (error: any) {
@@ -149,11 +140,11 @@ const deleteManyShippingSlotsController = async (
   }
 };
 
-export const shippingSlotControllers = {
-  createShippingSlotController,
-  getAllShippingSlotsController,
-  getSingleShippingSlotController,
-  updateShippingSlotController,
-  deleteSingleShippingSlotController,
-  deleteManyShippingSlotsController,
+export const courierControllers = {
+  createCourierController,
+  getAllCouriersController,
+  getSingleCourierController,
+  updateCourierController,
+  deleteSingleCourierController,
+  deleteManyCouriersController,
 };

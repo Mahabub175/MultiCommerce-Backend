@@ -10,11 +10,11 @@ export interface IReturnDecision {
   decision: "accepted" | "rejected";
 }
 
-export interface IShippingSlot extends Document {
+export interface ICourier extends Document {
   courierName: string;
   attachment: string;
   status: boolean;
-  slots: {
+  shippingSlots: {
     _id?: string;
     slotName: string;
     startTime: string;

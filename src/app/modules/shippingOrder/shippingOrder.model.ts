@@ -8,7 +8,7 @@ const shippingOrderSchema = new Schema<IShippingOrder>(
     },
     shippingSlot: {
       type: Schema.Types.ObjectId,
-      ref: "shippingSlot",
+      ref: "courier",
     },
     selectedSlot: {
       type: Schema.Types.ObjectId,

@@ -2,20 +2,17 @@ import mongoose from "mongoose";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import { IShippingOrder } from "./shippingOrder.interface";
 import { shippingOrderModel } from "./shippingOrder.model";
-import {
-  IReturnDecision,
-  IReturnRequest,
-} from "../shippingSlot/shippingSlot.interface";
+import { IReturnDecision, IReturnRequest } from "../courier/courier.interface";
 import { orderModel } from "../order/order.model";
-import { shippingSlotModel } from "../shippingSlot/shippingSlot.model";
+import { courierModel } from "../courier/courier.model";
 
 const createShippingOrderService = async (data: IShippingOrder) => {
   const { shippingSlot, selectedSlot } = data;
 
-  const courier = await shippingSlotModel.findById(shippingSlot);
+  const courier = await courierModel.findById(shippingSlot);
   if (!courier) throw new Error("Invalid courier / shippingSlot");
 
-  const slotExists = courier.slots.some(
+  const slotExists = courier.shippingSlots.some(
     (slot: any) => slot._id.toString() === selectedSlot.toString()
   );
 
@@ -34,7 +31,7 @@ const getAllShippingOrdersService = async (
 ) => {
   const query = shippingOrderModel
     .find()
-    .populate("shippingSlot")
+    .populate("courier")
     .populate({
       path: "deliveryList.order",
       populate: { path: "user", select: "-password" },
@@ -86,7 +83,7 @@ const getSingleShippingOrderService = async (
 
   const result = await shippingOrderModel
     .findById(queryId)
-    .populate("shippingSlot")
+    .populate("courier")
     .populate({
       path: "deliveryList.order",
       populate: { path: "user", select: "-password" },
@@ -122,10 +119,10 @@ const updateSingleShippingOrderService = async (
   const courierId = data.shippingSlot || existing.shippingSlot;
   const slotId = data.selectedSlot || existing.selectedSlot;
 
-  const courier = await shippingSlotModel.findById(courierId);
-  if (!courier) throw new Error("Invalid shippingSlot / courier");
+  const courier = await courierModel.findById(courierId);
+  if (!courier) throw new Error("Invalid courier / shippingSlot");
 
-  const slotExists = courier.slots.some(
+  const slotExists = courier.shippingSlots.some(
     (slot: any) => slot._id.toString() === slotId.toString()
   );
   if (!slotExists)
@@ -142,7 +139,7 @@ const updateSingleShippingOrderService = async (
   if (!result) throw new Error("Shipping order not found");
 
   const updatedResult = result.toObject();
-  updatedResult.selectedSlotDetails = courier.slots.find(
+  updatedResult.selectedSlotDetails = courier.shippingSlots.find(
     (slot: any) => slot._id.toString() === updatedResult.selectedSlot.toString()
   );
 
@@ -280,7 +277,7 @@ const deleteManyShippingOrderService = async (
 };
 
 const assignShippingSlotService = async (orderId: string, slotId: string) => {
-  const slot = await shippingSlotModel.findById(slotId);
+  const slot = await courierModel.findById(slotId);
   if (!slot) throw new Error("Invalid shipping slot");
 
   const result = await shippingOrderModel.findByIdAndUpdate(
