@@ -47,7 +47,7 @@ const createOrderService = async (payload: IOrder) => {
     }
 
     const existingOrder = await orderModel.findOne({
-      _id: orderId,
+      orderId,
       user,
     });
 
