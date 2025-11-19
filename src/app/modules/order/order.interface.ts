@@ -81,6 +81,7 @@ export interface IOrder {
   additionalPayment?: number;
   discount?: number;
   creditAmount?: number;
+  taxAmount?: number;
   deliveryCharge?: number;
   grandTotal: number;
   coupon?: Types.ObjectId;

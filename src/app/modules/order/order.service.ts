@@ -20,13 +20,16 @@ const calculateTotals = (order: any) => {
 
   order.grandTotal =
     order.subtotal +
+    (order.taxAmount || 0) +
     (order.additionalPayment || 0) -
     (order.discount || 0) -
     (order.creditAmount || 0);
+
+  return order;
 };
 
 const createOrderService = async (payload: IOrder) => {
-  const { user, items, shippingMethod, coupon } = payload;
+  const { user, items, shippingMethod, coupon, orderId } = payload;
 
   if (coupon) {
     const couponDoc = await couponModel.findById(coupon);
@@ -39,15 +42,17 @@ const createOrderService = async (payload: IOrder) => {
   }
 
   if (shippingMethod === "add_to_my_existing_order") {
-    const existingOrder = await orderModel
-      .findOne({
-        user,
-        orderStatus: { $in: ["pending", "processing"] },
-      })
-      .sort({ createdAt: -1 });
+    if (!orderId) {
+      throw new Error("orderId is required to add items to an existing order");
+    }
+
+    const existingOrder = await orderModel.findOne({
+      _id: orderId,
+      user,
+    });
 
     if (!existingOrder) {
-      throw new Error("No existing order found to add items to.");
+      throw new Error("No existing order found with this orderId");
     }
 
     for (const newItem of items) {
@@ -66,6 +71,7 @@ const createOrderService = async (payload: IOrder) => {
 
     calculateTotals(existingOrder);
     await existingOrder.save();
+
     return existingOrder;
   }
 
@@ -335,6 +341,7 @@ const addItemToOrderService = async (orderId: string, newItem: IOrderItem) => {
   );
   order.grandTotal =
     order.subtotal +
+    (order.taxAmount || 0) +
     (order.additionalPayment || 0) -
     (order.discount || 0) -
     (order.creditAmount || 0);
@@ -363,6 +370,7 @@ const updateOrderItemService = async (
   );
   order.grandTotal =
     order.subtotal +
+    (order.taxAmount || 0) +
     (order.additionalPayment || 0) -
     (order.discount || 0) -
     (order.creditAmount || 0);
@@ -385,8 +393,10 @@ const deleteOrderItemService = async (orderId: string, itemId: string) => {
     (sum, it) => sum + it.price * it.quantity,
     0
   );
+
   order.grandTotal =
     order.subtotal +
+    (order.taxAmount || 0) +
     (order.additionalPayment || 0) -
     (order.discount || 0) -
     (order.creditAmount || 0);
