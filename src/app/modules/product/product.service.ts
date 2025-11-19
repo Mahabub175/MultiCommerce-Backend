@@ -388,6 +388,7 @@ const getSingleProductBySlugService = async (
     result.globalRoleDiscounts = [];
     result.productRoleDiscounts = [];
     result.categoryRoleDiscounts = [];
+    result.categoryDiscounts = [];
   }
 
   const cleanedResult = postProcessProduct(result, isCustomRole);
