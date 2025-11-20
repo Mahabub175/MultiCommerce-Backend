@@ -4,6 +4,7 @@ import {
   IOrder,
   IOrderItem,
   IPaymentInfo,
+  IReturnDetails,
   IShippingAddress,
 } from "./order.interface";
 
@@ -69,14 +70,32 @@ const orderItemSchema = new Schema<IOrderItem>({
     ],
     default: "pending",
   },
-  returnRequested: { type: Boolean, default: false },
-  returnStatus: {
-    type: String,
-    enum: ["none", "pending", "accepted", "rejected"],
-    default: "none",
+  returnDetails: {
+    quantity: { type: Number, default: 0 },
+    itemId: { type: String, trim: true, default: "" },
+    note: { type: String, default: "" },
+    shippingAddress: {
+      firstName: { type: String, default: "" },
+      lastName: { type: String, default: "" },
+      email: { type: String, default: "" },
+      label: { type: String, default: "" },
+      phoneNumber: { type: String, default: "" },
+      country: { type: String, default: "" },
+      city: { type: String, default: "" },
+      zipCode: { type: String, default: "" },
+      streetAddress: { type: String, default: "" },
+      addressSummary: { type: String, default: "" },
+    },
+    freeShippingLabel: { type: Boolean, default: false },
+    trackingNumber: { type: String, trim: true, default: "" },
+    status: {
+      type: String,
+      enum: ["none", "pending", "accepted", "rejected"],
+      default: "none",
+    },
+    reason: { type: String, default: "" },
+    requestedAt: { type: Date, default: null },
   },
-  returnReason: { type: String, default: "" },
-  returnNote: { type: String, default: "" },
   progress: { type: [deliveryProgressSchema], default: [] },
 });
 
