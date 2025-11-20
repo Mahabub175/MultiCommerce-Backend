@@ -4,20 +4,114 @@ import { reserveOrderModel } from "../modules/reserveOrder/reserveOrder.model";
 import { formatResultImage } from "./formatResultImage";
 import cron from "node-cron";
 
+const resolvePriceDetails = (product: any) => {
+  const basePrice = product.regularPrice;
+  if (!basePrice) {
+    return {
+      basePrice: null,
+      finalPrice: null,
+      discount: null,
+    };
+  }
+
+  const calculateDiscount = (type: string, value: number) => {
+    if (!value || value <= 0) return null;
+    if (type === "fixed") return basePrice - value;
+    if (type === "percentage") return basePrice - (basePrice * value) / 100;
+    return null;
+  };
+
+  if (
+    product.salePrice &&
+    product.salePrice > 0 &&
+    product.salePrice < basePrice
+  ) {
+    return {
+      basePrice,
+      finalPrice: product.salePrice,
+      discount: {
+        from: "sale",
+        type: "fixed",
+        discountValue: basePrice - product.salePrice,
+        discountedPrice: product.salePrice,
+      },
+    };
+  }
+
+  const pickRoleDiscount = (list: any[]) => {
+    if (!Array.isArray(list)) return null;
+
+    const valid = list
+      .map((d) => {
+        const discounted = calculateDiscount(d.discountType, d.discountValue);
+        if (!discounted || discounted >= basePrice) return null;
+        return { ...d, discountedPrice: discounted };
+      })
+      .filter(Boolean);
+
+    return valid.length > 0 ? valid[0] : null;
+  };
+
+  const productRole = pickRoleDiscount(product.productRoleDiscounts);
+  if (productRole) {
+    return {
+      basePrice,
+      finalPrice: productRole.discountedPrice,
+      discount: {
+        from: "productRole",
+        type: productRole.discountType,
+        discountValue: productRole.discountValue,
+        discountedPrice: productRole.discountedPrice,
+      },
+    };
+  }
+
+  const categoryRole = pickRoleDiscount(product.categoryRoleDiscounts);
+  if (categoryRole) {
+    return {
+      basePrice,
+      finalPrice: categoryRole.discountedPrice,
+      discount: {
+        from: "categoryRole",
+        type: categoryRole.discountType,
+        discountValue: categoryRole.discountValue,
+        discountedPrice: categoryRole.discountedPrice,
+      },
+    };
+  }
+
+  const globalRole = pickRoleDiscount(product.globalRoleDiscounts);
+  if (globalRole) {
+    return {
+      basePrice,
+      finalPrice: globalRole.discountedPrice,
+      discount: {
+        from: "globalRole",
+        type: globalRole.discountType,
+        discountValue: globalRole.discountValue,
+        discountedPrice: globalRole.discountedPrice,
+      },
+    };
+  }
+
+  return {
+    basePrice,
+    finalPrice: basePrice,
+    discount: null,
+  };
+};
+
 export const postProcessProduct = (product: any, isCustomRole: boolean) => {
   if (isCustomRole) {
     const cleanAndUniqueDiscounts = (discounts: any[]) => {
       if (!Array.isArray(discounts)) return discounts;
-
       const valid = discounts.filter((d) => d?.role);
-
       const unique = valid.filter(
         (d, i, arr) =>
           arr.findIndex(
             (t) => t?.role?._id?.toString?.() === d?.role?._id?.toString?.()
           ) === i
       );
-
       return unique;
     };
 
@@ -55,6 +149,15 @@ export const postProcessProduct = (product: any, isCustomRole: boolean) => {
       }
       return variant;
     });
+  }
+
+  product.priceDetails = resolvePriceDetails(product);
+
+  if (isCustomRole) {
+    delete product.globalRoleDiscounts;
+    delete product.productRoleDiscounts;
+    delete product.categoryRoleDiscounts;
+    delete product.categoryDiscounts;
   }
 
   return product;
