@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { paginateAndSort } from "../../utils/paginateAndSort";
 import { formatResultImage } from "../../utils/formatResultImage";
 import { userModel } from "./user.model";
-import { IShippingAddress, IUser } from "./user.interface";
+import { IShippingAddress, IUser, IUserAccess } from "./user.interface";
 import path from "path";
 import fs from "fs";
 import { managementRoleModel } from "../managementRole/managementRole.model";
@@ -422,6 +422,61 @@ const deleteManyUsersService = async (userIds: (string | number)[]) => {
   return result;
 };
 
+const addUserAccessService = async (
+  userId: string,
+  accessList: { path: string; permissions: string[] }[]
+) => {
+  const user = await userModel.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  accessList.forEach((item) => {
+    const existingAccess = user.access.find((a) => a.path === item.path);
+
+    if (existingAccess) {
+      existingAccess.permissions = Array.from(
+        new Set([...existingAccess.permissions, ...item.permissions])
+      );
+    } else {
+      user.access.push({
+        path: item.path,
+        permissions: item.permissions,
+      });
+    }
+  });
+
+  await user.save();
+  return user;
+};
+
+const removeUserAccessService = async (
+  userId: string,
+  accessList: { path: string; permissions?: string[] }[]
+) => {
+  const user = await userModel.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  accessList.forEach((item) => {
+    const existingAccess = user.access.find((a) => a.path === item.path);
+    if (!existingAccess) return;
+
+    if (!item.permissions || item.permissions.length === 0) {
+      user.access = user.access.filter((a) => a.path !== item.path);
+      return;
+    }
+
+    existingAccess.permissions = existingAccess.permissions.filter(
+      (p) => !item.permissions!.includes(p)
+    );
+
+    if (existingAccess.permissions.length === 0) {
+      user.access = user.access.filter((a) => a.path !== item.path);
+    }
+  });
+
+  await user.save();
+  return user;
+};
+
 export const userServices = {
   createUserService,
   getAllUserService,
@@ -431,4 +486,6 @@ export const userServices = {
   deleteAddressService,
   deleteSingleUserService,
   deleteManyUsersService,
+  addUserAccessService,
+  removeUserAccessService,
 };

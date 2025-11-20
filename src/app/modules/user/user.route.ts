@@ -28,6 +28,16 @@ router.patch(
   userControllers.saveAddressController
 );
 
+router.patch(
+  "/user/:userId/access/add/",
+  userControllers.addUserAccessController
+);
+
+router.patch(
+  "/user/:userId/access/remove/",
+  userControllers.removeUserAccessController
+);
+
 router.delete(
   "/user/:userId/shipping-address/:addressId/",
   userControllers.deleteAddressController

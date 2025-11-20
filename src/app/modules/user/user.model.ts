@@ -21,6 +21,14 @@ const shippingAddressSchema = new Schema<IShippingAddress>({
   isDefault: { type: Boolean, default: false },
 });
 
+const accessSchema = new Schema(
+  {
+    path: { type: String, required: true },
+    permissions: { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
 const userSchema = new Schema<IUser>(
   {
     userName: { type: String, unique: true, trim: true },
@@ -70,6 +78,10 @@ const userSchema = new Schema<IUser>(
       default: function () {
         return this.phoneNumber;
       },
+    },
+    access: {
+      type: [accessSchema],
+      default: [],
     },
     previousPasswords: [previousPasswordSchema],
     status: { type: Boolean, default: true },
