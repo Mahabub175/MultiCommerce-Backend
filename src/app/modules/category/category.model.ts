@@ -74,6 +74,10 @@ const categorySchema = new Schema<ICategory>(
       type: Boolean,
       default: true,
     },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
     status: {
       type: Boolean,
       default: true,

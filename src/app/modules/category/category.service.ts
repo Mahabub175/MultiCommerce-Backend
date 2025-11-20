@@ -206,7 +206,7 @@ const getNestedCategoriesService = async () => {
   const allCategories = await categoryModel
     .find()
     .select(
-      "_id name slug level parentCategory children megaMenuStatus sortingOrder isNewItem status"
+      "_id name slug level parentCategory children megaMenuStatus sortingOrder isNewItem status isFeatured"
     )
     .lean();
 
@@ -284,6 +284,7 @@ const getNestedCategoriesService = async () => {
       level: cat.level,
       megaMenuStatus: cat.megaMenuStatus ?? false,
       isNewItem: cat.isNewItem ?? true,
+      isFeatured: cat.isFeatured ?? true,
       status: cat.status ?? true,
       sortingOrder: cat.sortingOrder ?? 1,
       hasSubmenu,
@@ -586,6 +587,23 @@ export const deleteManyCategoriesService = async (
   return await categoryModel.deleteMany({ _id: { $in: queryIds } }).exec();
 };
 
+const updateCategoryFeaturedService = async (
+  categoryId: string,
+  isFeatured: boolean
+) => {
+  const updatedCategory = await categoryModel.findByIdAndUpdate(
+    categoryId,
+    { isFeatured },
+    { new: true }
+  );
+
+  if (!updatedCategory) {
+    throw new Error("Category not found");
+  }
+
+  return updatedCategory;
+};
+
 export const categoryServices = {
   createCategoryService,
   getAllCategoryService,
@@ -595,4 +613,5 @@ export const categoryServices = {
   updateCategoryOrderService,
   deleteSingleCategoryService,
   deleteManyCategoriesService,
+  updateCategoryFeaturedService,
 };

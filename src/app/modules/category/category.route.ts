@@ -33,6 +33,11 @@ router.patch(
   categoryControllers.updateCategoryOrderController
 );
 
+router.patch(
+  "/category/:categoryId/featured/update/",
+  categoryControllers.updateCategoryFeatured
+);
+
 router.delete(
   "/category/:categoryId/",
   categoryControllers.deleteSingleCategoryController
