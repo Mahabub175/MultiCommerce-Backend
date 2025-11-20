@@ -31,7 +31,7 @@ const userSchema = new Schema<IUser>(
     profileImage: String,
     credit: {
       type: Number,
-      min: 0,
+      default: 0,
       set: (v: number) => parseInt(v.toString(), 10),
     },
     limit: Number,

@@ -208,6 +208,37 @@ const deleteManyCategoriesController = async (
   }
 };
 
+const updateCategoryFeatured = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { categoryId } = req.params;
+    const { isFeatured } = req.body;
+
+    if (typeof isFeatured !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "isFeatured must be a boolean value",
+      });
+    }
+
+    const category = await categoryServices.updateCategoryFeaturedService(
+      categoryId,
+      isFeatured
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+      data: category,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
 export const categoryControllers = {
   createCategoryController,
   getAllCategoryController,
@@ -217,4 +248,5 @@ export const categoryControllers = {
   updateCategoryOrderController,
   deleteSingleCategoryController,
   deleteManyCategoriesController,
+  updateCategoryFeatured,
 };
