@@ -198,6 +198,65 @@ const deleteManyUsersController = async (
   }
 };
 
+const addUserAccessController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.params.userId;
+    const accessList = req.body;
+
+    if (!Array.isArray(accessList)) {
+      return res.status(400).json({
+        success: false,
+        message: "Request body must be an array of access objects",
+      });
+    }
+
+    const result = await userServices.addUserAccessService(userId, accessList);
+
+    res.status(200).json({
+      success: true,
+      message: "Access permissions added successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const removeUserAccessController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.params.userId;
+    const accessList = req.body;
+
+    if (!Array.isArray(accessList)) {
+      return res.status(400).json({
+        success: false,
+        message: "Request body must be an array of access objects",
+      });
+    }
+
+    const result = await userServices.removeUserAccessService(
+      userId,
+      accessList
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Access permissions removed successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
 export const userControllers = {
   createUserController,
   getAllUserController,
@@ -207,4 +266,6 @@ export const userControllers = {
   deleteAddressController,
   deleteSingleUserController,
   deleteManyUsersController,
+  addUserAccessController,
+  removeUserAccessController,
 };

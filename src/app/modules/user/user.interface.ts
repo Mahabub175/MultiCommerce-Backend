@@ -5,6 +5,11 @@ export interface IPreviousPasswords {
   createdAt: Date;
 }
 
+export interface IUserAccess {
+  path: string;
+  permissions: string[];
+}
+
 export interface IShippingAddress {
   city: string;
   firstName: string;
@@ -49,5 +54,6 @@ export interface IUser {
   zipCode2: string;
   shippingAddresses: IShippingAddress[];
   previousPasswords: IPreviousPasswords[];
+  access: IUserAccess[];
   status: boolean;
 }
