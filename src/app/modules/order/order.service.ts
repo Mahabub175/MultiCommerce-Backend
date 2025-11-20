@@ -5,6 +5,7 @@ import {
   IOrder,
   IOrderItem,
   IReturnDecision,
+  IReturnDetails,
   IReturnRequest,
   IUpdateOrderItemStatus,
 } from "./order.interface";
@@ -220,23 +221,30 @@ const updateShippingStatusService = async (
   const order = await orderModel.findById(orderId);
   if (!order) throw new Error("Order not found");
 
-  const updatedItems: string[] = [];
+  const updatedItems: {
+    itemId: string;
+    oldStatus: string;
+    newStatus: string;
+  }[] = [];
 
-  for (const { itemId, status } of updates) {
-    const item = order.items.find((i) => i._id.toString() === itemId);
-    if (!item) continue;
+  updates.forEach(({ itemId, status }) => {
+    const item = order.items.find((i) => i.product.toString() === itemId);
+    if (!item) throw new Error(`Item not found: ${itemId}`);
 
+    const oldStatus = item.status;
     item.status = status;
     item.progress.push({
       status,
-      note: `Status updated to ${status}`,
+      note: `Status updated from '${oldStatus}' to '${status}'`,
       updatedAt: new Date(),
     });
 
-    updatedItems.push(itemId);
-  }
+    updatedItems.push({ itemId, oldStatus, newStatus: status });
+  });
 
   await order.save();
+
+  return updatedItems;
 };
 
 // Submit return requests for delivered items
@@ -248,29 +256,50 @@ const requestReturnService = async (
   if (!order) throw new Error("Order not found");
 
   const updatedItems: string[] = [];
-  for (const { itemId, reason } of returnRequests) {
-    const item = order.items.find((i) => i._id.toString() === itemId);
 
+  for (const req of returnRequests) {
+    const { itemId, quantity, reason, note, shippingAddress } = req;
+
+    const item = order.items.find((i) => i.product.toString() === itemId);
     if (!item) throw new Error(`Item not found: ${itemId}`);
-    if (item.status !== "delivered")
-      throw new Error(`Only delivered items can be returned: ${itemId}`);
-    if (item.returnRequested)
-      throw new Error(`Return request already submitted: ${itemId}`);
 
-    item.returnRequested = true;
-    item.returnStatus = "pending";
-    item.returnReason = reason;
+    if (item.status === "returned") {
+      throw new Error(`Item already returned: ${itemId}`);
+    }
+    if (item.status !== "delivered") {
+      throw new Error(`Only delivered items can be returned: ${itemId}`);
+    }
+
+    if (item.returnDetails?.status !== "none") {
+      throw new Error(`Return request already submitted: ${itemId}`);
+    }
+
+    item.returnDetails = {
+      quantity,
+      itemId,
+      reason,
+      note: note || "",
+      shippingAddress,
+      freeShippingLabel: false,
+      trackingNumber: "",
+      status: "pending",
+      requestedAt: new Date(),
+    } as IReturnDetails;
+
     item.progress.push({
       status: "return_requested",
       note: reason,
       updatedAt: new Date(),
     });
 
-    updatedItems.push(itemId.toString());
+    updatedItems.push(itemId);
   }
 
   await order.save();
-  return { message: "Return requests submitted", updatedItems };
+  return {
+    message: "Return request submitted successfully",
+    updatedItems,
+  };
 };
 
 // Handle admin return decisions
@@ -280,17 +309,30 @@ const handleReturnRequestService = async (
 ) => {
   const order = await orderModel.findById(orderId);
   if (!order) throw new Error("Order not found");
-
   const updatedItems: string[] = [];
 
-  for (const { itemId, decision } of returnDecisions) {
-    const item = order.items.find((i) => i._id.toString() === itemId);
-    if (!item) throw new Error(`Item not found: ${itemId}`);
-    if (!item.returnRequested || item.returnStatus !== "pending")
-      throw new Error(`No active return request for item: ${itemId}`);
+  for (const req of returnDecisions) {
+    const { itemId, decision, trackingNumber, freeShippingLabel } = req;
 
-    item.returnStatus = decision;
-    if (decision === "accepted") item.status = "returned";
+    const item = order.items.find((i) => i.product.toString() === itemId);
+    if (!item) throw new Error(`Item not found: ${itemId}`);
+
+    if (item.status === "returned") {
+      throw new Error(`Item already returned: ${itemId}`);
+    }
+
+    if (!item.returnDetails || item.returnDetails.status !== "pending") {
+      throw new Error(`No active return request: ${itemId}`);
+    }
+
+    item.returnDetails.status = decision;
+    if (trackingNumber) item.returnDetails.trackingNumber = trackingNumber;
+    if (freeShippingLabel !== undefined)
+      item.returnDetails.freeShippingLabel = freeShippingLabel;
+
+    if (decision === "accepted") {
+      item.status = "returned";
+    }
 
     item.progress.push({
       status: `return_${decision}`,
@@ -298,12 +340,13 @@ const handleReturnRequestService = async (
       updatedAt: new Date(),
     });
 
-    updatedItems.push(itemId.toString());
+    updatedItems.push(itemId);
   }
 
   await order.save();
+
   return {
-    message: `Return requests processed for ${updatedItems.length} item(s)`,
+    message: "Return request decisions processed",
     updatedItems,
   };
 };

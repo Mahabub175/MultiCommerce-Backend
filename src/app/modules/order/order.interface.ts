@@ -12,18 +12,38 @@ export interface IUpdateOrderItemStatus {
 }
 
 export interface IReturnRequest {
+  quantity: number;
   itemId: string;
+  note: string;
+  shippingAddress: IShippingAddress;
+  freeShippingLabel: boolean;
+  trackingNumber: string;
+  status: "none" | "pending" | "accepted" | "rejected";
   reason: string;
 }
 
 export interface IReturnDecision {
   itemId: string;
   decision: "accepted" | "rejected";
+  trackingNumber: string;
+  freeShippingLabel: boolean;
 }
 export interface IDeliveryProgress {
   status: string;
   note?: string;
   updatedAt: Date;
+}
+
+export interface IReturnDetails {
+  quantity: number;
+  itemId: string;
+  note: string;
+  shippingAddress: IShippingAddress;
+  freeShippingLabel: boolean;
+  trackingNumber: string;
+  status: "none" | "pending" | "accepted" | "rejected";
+  reason: string;
+  requestedAt: Date;
 }
 
 export interface IOrderItem {
@@ -42,10 +62,7 @@ export interface IOrderItem {
     | "delivered"
     | "cancelled"
     | "returned";
-  returnRequested: boolean;
-  returnStatus: "none" | "pending" | "accepted" | "rejected";
-  returnReason?: string;
-  returnNote?: string;
+  returnDetails: IReturnDetails;
   progress: IDeliveryProgress[];
 }
 
