@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post("/order/", orderControllers.createOrderController);
 
-router.get("/order/", orderControllers.getAllOrderController);
+router.get("/order/", authMiddleware, orderControllers.getAllOrderController);
 
 router.get("/order/:orderId/", orderControllers.getSingleOrderController);
 
@@ -51,5 +51,11 @@ router.patch(
 );
 
 router.get("/order/user/:userId/", orderControllers.getOrdersByUserController);
+
+router.get(
+  "/order/returned-order/get/products/",
+  authMiddleware,
+  orderControllers.getReturnedProductsController
+);
 
 export const orderRoutes = router;
