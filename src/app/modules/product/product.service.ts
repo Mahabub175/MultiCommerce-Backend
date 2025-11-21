@@ -21,6 +21,10 @@ import { customRoleModel } from "../customRole/customRole.model";
 import { postProcessProduct } from "../../utils/productUtils";
 
 const createProductService = async (productData: IProduct) => {
+
+  productData.isVariant =
+    productData.isVariant === "true" || productData.isVariant === true;
+
   const slug = productData.slug
     ? productData.slug
     : generateSlug(productData.name);
@@ -47,17 +51,14 @@ const createProductService = async (productData: IProduct) => {
     }
   }
 
-productData.isVariant =
-  productData.isVariant === "true" || productData.isVariant === true;
+  if (productData.isVariant) {
+    if (
+      !Array.isArray(productData.variants) ||
+      productData.variants.length === 0
+    ) {
+      throw new Error("Variants must be provided for a variant product");
+    }
 
-if (productData.isVariant) {
-  if (
-    !Array.isArray(productData.variants) ||
-    productData.variants.length === 0
-  ) {
-    throw new Error("Variants must be provided for a variant product");
-  }
-}
     for (const variant of productData.variants) {
       if ((variant.regularPrice || 0) <= 0) {
         throw new Error(
@@ -120,6 +121,7 @@ if (productData.isVariant) {
 
   return newProduct;
 };
+
 
 const createProductByFileService = async (filePath?: any) => {
   const products = (await parseExcel(filePath)) as any[];
