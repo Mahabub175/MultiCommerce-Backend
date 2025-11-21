@@ -121,30 +121,32 @@ const createOrderService = async (payload: IOrder) => {
 };
 
 const getAllOrderService = async (
+  currentUser: any,
   page?: number,
   limit?: number,
   searchText?: string,
   searchFields?: string[]
 ) => {
-  if (page || limit || searchText) {
-    const query = orderModel
-      .find()
-      .populate("user")
-      .populate("courier")
-      .populate("items.product", "name slug price")
-      .populate("coupon", "code amount type");
+  const isCustomRole = currentUser?.roleModel === "customRole";
 
-    return await paginateAndSort(query, page, limit, searchText, searchFields);
+  const filter: any = {};
+
+  if (isCustomRole) {
+    filter.user = currentUser.userId;
   }
 
-  const results = await orderModel
-    .find()
+  let query = orderModel
+    .find(filter)
     .populate("user")
     .populate("courier")
     .populate("items.product", "name slug price")
-    .populate("coupon", "code amount type")
-    .sort({ createdAt: -1 });
+    .populate("coupon", "code amount type");
 
+  if (page || limit || searchText) {
+    return await paginateAndSort(query, page, limit, searchText, searchFields);
+  }
+
+  const results = await query.sort({ createdAt: -1 });
   return { results };
 };
 
@@ -476,6 +478,85 @@ const deleteOrderItemService = async (orderId: string, itemId: string) => {
   return updatedOrder;
 };
 
+
+const getOrdersByUserService = async (userId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error("Invalid user id");
+  }
+
+  const user = await userModel.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const orders = await orderModel
+    .find({ user: userId })
+    .populate("user", "firstName lastName email phoneNumber")
+    .populate("coupon")
+    .populate("courier")
+    .sort({ createdAt: -1 });
+
+  return orders;
+};
+
+const getReturnedProductsService = async (currentUser: any) => {
+  const isCustom = currentUser?.roleModel === "customRole";
+
+  const baseFilter: any = {
+    "items.returnDetails.status": { $ne: "none" },
+  };
+
+  if (isCustom) {
+    baseFilter.user = currentUser.userId;
+  }
+
+  const orders = await orderModel
+    .find(baseFilter)
+    .populate("user", "firstName lastName email phoneNumber")
+    .populate("courier")
+    .populate("items.product", "name slug price")
+    .populate("coupon", "code amount type")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const returnedItems: any[] = [];
+
+  for (const order of orders) {
+    const matched = order.items.filter(
+      (item: any) =>
+        item.returnDetails?.status && item.returnDetails.status !== "none"
+    );
+    matched.forEach((item: any) => {
+      returnedItems.push({
+        _id: item._id,
+        orderId: order.orderId,
+        orderDate: order.createdAt,
+        user: order.user,
+        product: {
+          _id: item.product._id,
+          name: item.product.name,
+          slug: item.product.slug,
+          price: item.product.price,
+          sku: item.sku,
+        },
+        orderQuantity: item.quantity,
+        price: item.price,
+        returnDetails: {
+          returnStatus: item.returnDetails?.status,
+          returnQuantity: item.returnDetails?.quantity || item.quantity,
+          returnReason: item.returnDetails?.reason || "",
+          returnNote: item.returnDetails?.note || "",
+          status: item.status,
+        },
+        progress: item.progress,
+      });
+    });
+  }
+
+  return returnedItems;
+};
+
+
 export const orderServices = {
   createOrderService,
   getAllOrderService,
@@ -491,4 +572,6 @@ export const orderServices = {
   addItemToOrderService,
   updateOrderItemService,
   deleteOrderItemService,
+  getOrdersByUserService,
+  getReturnedProductsService
 };

@@ -31,7 +31,15 @@ const getAllOrderController = async (
     const pageSize = limit ? parseInt(limit as string, 100) : undefined;
     const searchFields = ["orderId", "status", "paymentMethod"];
 
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
     const result = await orderServices.getAllOrderService(
+      req.user,
       pageNumber,
       pageSize,
       searchText as string,
@@ -47,6 +55,7 @@ const getAllOrderController = async (
     next(error);
   }
 };
+
 
 const getSingleOrderController = async (
   req: Request,
@@ -295,6 +304,54 @@ const handleReturnRequestController = async (
   }
 };
 
+const getOrdersByUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.params;
+
+    const orders = await orderServices.getOrdersByUserService(userId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Orders by Users fetched successfully",
+      data: orders,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getReturnedProductsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+    
+    const orders = await orderServices.getReturnedProductsService(
+      req.user as any
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Returned products fetched successfully",
+      data: orders,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const orderControllers = {
   createOrderController,
   getAllOrderController,
@@ -309,4 +366,6 @@ export const orderControllers = {
   updateShippingStatusController,
   requestReturnController,
   handleReturnRequestController,
+  getOrdersByUserController,
+  getReturnedProductsController
 };

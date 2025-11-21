@@ -64,6 +64,8 @@ export interface IOrderItem {
     | "returned";
   returnDetails: IReturnDetails;
   progress: IDeliveryProgress[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface IShippingAddress {
@@ -112,4 +114,6 @@ export interface IOrder {
 
   note?: string;
   status: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
