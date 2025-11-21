@@ -280,7 +280,8 @@ const requestReturnService = async (
   const updatedItems: string[] = [];
 
   for (const req of returnRequests) {
-    const { itemId, quantity, reason, note, shippingAddress } = req;
+    const { itemId, quantity, reason, note, shippingAddress, shippingMethod } =
+      req;
 
     const item = order.items.find((i) => i.product.toString() === itemId);
     if (!item) throw new Error(`Item not found: ${itemId}`);
@@ -302,6 +303,7 @@ const requestReturnService = async (
       reason,
       note: note || "",
       shippingAddress,
+      shippingMethod,
       freeShippingLabel: false,
       trackingNumber: "",
       status: "pending",
@@ -478,7 +480,6 @@ const deleteOrderItemService = async (orderId: string, itemId: string) => {
   return updatedOrder;
 };
 
-
 const getOrdersByUserService = async (userId: string) => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     throw new Error("Invalid user id");
@@ -541,6 +542,7 @@ const getReturnedProductsService = async (currentUser: any) => {
         },
         orderQuantity: item.quantity,
         price: item.price,
+        shippingMethod: item.shippingMethod,
         returnDetails: {
           returnStatus: item.returnDetails?.status,
           returnQuantity: item.returnDetails?.quantity || item.quantity,
@@ -555,7 +557,6 @@ const getReturnedProductsService = async (currentUser: any) => {
 
   return returnedItems;
 };
-
 
 export const orderServices = {
   createOrderService,
@@ -573,5 +574,5 @@ export const orderServices = {
   updateOrderItemService,
   deleteOrderItemService,
   getOrdersByUserService,
-  getReturnedProductsService
+  getReturnedProductsService,
 };
