@@ -47,13 +47,17 @@ const createProductService = async (productData: IProduct) => {
     }
   }
 
-  if (productData.isVariant) {
-    if (
-      !Array.isArray(productData.variants) ||
-      productData.variants.length === 0
-    ) {
-      throw new Error("Variants must be provided for a variant product");
-    }
+productData.isVariant =
+  productData.isVariant === "true" || productData.isVariant === true;
+
+if (productData.isVariant) {
+  if (
+    !Array.isArray(productData.variants) ||
+    productData.variants.length === 0
+  ) {
+    throw new Error("Variants must be provided for a variant product");
+  }
+}
     for (const variant of productData.variants) {
       if ((variant.regularPrice || 0) <= 0) {
         throw new Error(

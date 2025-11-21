@@ -16,6 +16,7 @@ export interface IReturnRequest {
   itemId: string;
   note: string;
   shippingAddress: IShippingAddress;
+  shippingMethod: string;
   freeShippingLabel: boolean;
   trackingNumber: string;
   status: "none" | "pending" | "accepted" | "rejected";
