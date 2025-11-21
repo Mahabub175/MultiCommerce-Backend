@@ -50,4 +50,6 @@ router.patch(
   orderControllers.handleReturnRequestController
 );
 
+router.get("/order/user/:userId/", orderControllers.getOrdersByUserController);
+
 export const orderRoutes = router;
