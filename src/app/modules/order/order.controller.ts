@@ -31,6 +31,13 @@ const getAllOrderController = async (
     const pageSize = limit ? parseInt(limit as string, 100) : undefined;
     const searchFields = ["orderId", "status", "paymentMethod"];
 
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
     const result = await orderServices.getAllOrderService(
       req.user,
       pageNumber,
@@ -323,6 +330,14 @@ const getReturnedProductsController = async (
   next: NextFunction
 ) => {
   try {
+
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+    
     const orders = await orderServices.getReturnedProductsService(
       req.user as any
     );
