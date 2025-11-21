@@ -32,6 +32,7 @@ const getAllOrderController = async (
     const searchFields = ["orderId", "status", "paymentMethod"];
 
     const result = await orderServices.getAllOrderService(
+      req.user,
       pageNumber,
       pageSize,
       searchText as string,
@@ -47,6 +48,7 @@ const getAllOrderController = async (
     next(error);
   }
 };
+
 
 const getSingleOrderController = async (
   req: Request,
@@ -315,6 +317,26 @@ const getOrdersByUserController = async (
   }
 };
 
+const getReturnedProductsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const orders = await orderServices.getReturnedProductsService(
+      req.user as any
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Returned products fetched successfully",
+      data: orders,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const orderControllers = {
   createOrderController,
   getAllOrderController,
@@ -329,5 +351,6 @@ export const orderControllers = {
   updateShippingStatusController,
   requestReturnController,
   handleReturnRequestController,
-  getOrdersByUserController
+  getOrdersByUserController,
+  getReturnedProductsController
 };
