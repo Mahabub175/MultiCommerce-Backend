@@ -74,6 +74,7 @@ const orderItemSchema = new Schema<IOrderItem>({
     quantity: { type: Number, default: 0 },
     itemId: { type: String, trim: true, default: "" },
     note: { type: String, default: "" },
+    shippingMethod: { type: String, default: "" },
     shippingAddress: {
       firstName: { type: String, default: "" },
       lastName: { type: String, default: "" },
