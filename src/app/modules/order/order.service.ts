@@ -476,6 +476,28 @@ const deleteOrderItemService = async (orderId: string, itemId: string) => {
   return updatedOrder;
 };
 
+
+const getOrdersByUserService = async (userId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error("Invalid user id");
+  }
+
+  const user = await userModel.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const orders = await orderModel
+    .find({ user: userId })
+    .populate("user", "firstName lastName email phoneNumber")
+    .populate("coupon")
+    .populate("courier")
+    .sort({ createdAt: -1 });
+
+  return orders;
+};
+
+
 export const orderServices = {
   createOrderService,
   getAllOrderService,
@@ -491,4 +513,5 @@ export const orderServices = {
   addItemToOrderService,
   updateOrderItemService,
   deleteOrderItemService,
+  getOrdersByUserService
 };
