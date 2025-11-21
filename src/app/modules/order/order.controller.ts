@@ -295,6 +295,26 @@ const handleReturnRequestController = async (
   }
 };
 
+const getOrdersByUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.params;
+
+    const orders = await orderServices.getOrdersByUserService(userId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Orders by Users fetched successfully",
+      data: orders,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const orderControllers = {
   createOrderController,
   getAllOrderController,
@@ -309,4 +329,5 @@ export const orderControllers = {
   updateShippingStatusController,
   requestReturnController,
   handleReturnRequestController,
+  getOrdersByUserController
 };
