@@ -12,6 +12,7 @@ import {
 import { couponModel } from "../coupon/coupon.model";
 import { courierModel } from "../courier/courier.model";
 import { productModel } from "../product/product.model";
+import { userModel } from "../user/user.model";
 
 const calculateTotals = (order: any) => {
   order.subtotal = order.items.reduce(
@@ -30,7 +31,26 @@ const calculateTotals = (order: any) => {
 };
 
 const createOrderService = async (payload: IOrder) => {
-  const { user, items, shippingMethod, coupon, orderId } = payload;
+  const { user, items, shippingMethod, coupon, orderId, creditAmount } =
+    payload;
+
+  const userDoc = await userModel.findById(user);
+  if (!userDoc) throw new Error("User not found");
+
+  if (creditAmount && creditAmount > 0) {
+    if ((userDoc.credit || 0) < creditAmount) {
+      throw new Error("User does not have enough credit!");
+    }
+
+    if ((userDoc.limit || 0) > creditAmount) {
+      throw new Error(
+        `Credit amount must be at least ${userDoc.limit} to be applied!`
+      );
+    }
+
+    userDoc.credit -= creditAmount;
+    await userDoc.save();
+  }
 
   if (coupon) {
     const couponDoc = await couponModel.findById(coupon);
