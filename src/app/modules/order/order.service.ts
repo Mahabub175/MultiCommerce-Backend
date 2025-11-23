@@ -139,8 +139,8 @@ const getAllOrderService = async (
     .find(filter)
     .populate("user")
     .populate("courier")
-    .populate("items.product", "name slug price")
-    .populate("coupon", "code amount type");
+    .populate("items.product")
+    .populate("coupon");
 
   if (page || limit || searchText) {
     return await paginateAndSort(query, page, limit, searchText, searchFields);
@@ -160,8 +160,8 @@ const getSingleOrderService = async (orderId: string | number) => {
     .findById(queryId)
     .populate("user")
     .populate("courier")
-    .populate("items.product", "name slug price")
-    .populate("coupon", "code amount type");
+    .populate("items.product")
+    .populate("coupon");
 
   if (!result) {
     throw new Error("Order not found");
@@ -379,8 +379,8 @@ const handleReturnRequestService = async (
 const getOrdersByShippingSlotService = async (slotId: string) => {
   const orders = await orderModel
     .find({ courier: new mongoose.Types.ObjectId(slotId) })
-    .populate("user", "name email")
-    .populate("items.product", "name price")
+    .populate("user")
+    .populate("items.product")
     .exec();
 
   return orders;
@@ -472,9 +472,9 @@ const deleteOrderItemService = async (orderId: string, itemId: string) => {
 
   const updatedOrder = await orderModel
     .findById(orderId)
-    .populate("user", "name email")
-    .populate("items.product", "name price")
-    .populate("coupon", "code amount type")
+    .populate("user")
+    .populate("items.product")
+    .populate("coupon")
     .exec();
 
   return updatedOrder;
@@ -492,7 +492,7 @@ const getOrdersByUserService = async (userId: string) => {
 
   const orders = await orderModel
     .find({ user: userId })
-    .populate("user", "firstName lastName email phoneNumber")
+    .populate("user")
     .populate("coupon")
     .populate("courier")
     .sort({ createdAt: -1 });
@@ -513,10 +513,10 @@ const getReturnedProductsService = async (currentUser: any) => {
 
   const orders = await orderModel
     .find(baseFilter)
-    .populate("user", "firstName lastName email phoneNumber")
+    .populate("user")
     .populate("courier")
-    .populate("items.product", "name slug price")
-    .populate("coupon", "code amount type")
+    .populate("items.product")
+    .populate("coupon")
     .sort({ createdAt: -1 })
     .lean();
 
