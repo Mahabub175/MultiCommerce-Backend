@@ -591,12 +591,15 @@ const updateCategoryFeaturedService = async (
   categoryId: string,
   isFeatured: boolean
 ) => {
-  const updatedCategory = await categoryModel.findByIdAndUpdate(
-    categoryId,
-    { isFeatured },
-    { new: true }
-  );
-
+  
+const updatedCategory = await categoryModel
+    .findByIdAndUpdate(
+      categoryId,
+      { isFeatured },
+      { new: true }
+    )
+    .select("_id name slug");
+  
   if (!updatedCategory) {
     throw new Error("Category not found");
   }
