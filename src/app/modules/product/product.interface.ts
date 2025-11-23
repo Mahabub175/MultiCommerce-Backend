@@ -80,7 +80,7 @@ export interface IProduct extends Document {
   salePrice?: number;
   totalSold: number;
   stock: number;
-  isVariant: boolean;
+  isVariant: boolean | "true" | "false";
   variants: IVariant[];
   tags: string[];
   ratings: {
