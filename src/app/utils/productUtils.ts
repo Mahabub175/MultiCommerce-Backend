@@ -22,22 +22,23 @@ const resolvePriceDetails = (product: any) => {
   };
 
   if (
-    product.salePrice &&
-    product.salePrice > 0 &&
-    product.salePrice < basePrice
-  ) {
-    return {
-      basePrice,
-      finalPrice: product.salePrice,
-      discount: {
-        from: "sale",
-        type: "fixed",
-        discountValue: basePrice - product.salePrice,
-        discountedPrice: product.salePrice,
-      },
-    };
-  }
-
+  product.salePrice !== undefined &&
+  product.salePrice !== null &&
+  Number(product.salePrice) > 0 &&
+  Number(product.salePrice) < basePrice
+) {
+  return {
+    basePrice,
+    finalPrice: product.salePrice,
+    discount: {
+      from: "sale",
+      type: "fixed",
+      discountValue: basePrice - product.salePrice,
+      discountedPrice: product.salePrice,
+    },
+  };
+}
+  
   const pickRoleDiscount = (list: any[]) => {
     if (!Array.isArray(list)) return null;
 
