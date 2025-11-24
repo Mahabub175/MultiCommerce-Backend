@@ -134,6 +134,12 @@ productSchema.pre("save", function (next) {
     );
   }
 
+  if (this.salePrice && this.salePrice > 0) {
+    this.isOnSale = true;
+  } else {
+    this.isOnSale = false;
+  }
+
   const basePrice: number = product.regularPrice;
 
   const calculateDiscountedPrice = (
@@ -190,6 +196,21 @@ productSchema.pre("save", function (next) {
     product.salePrice = undefined;
   }
 
+  next();
+});
+
+productSchema.pre("findOneAndUpdate", function (next) {
+  const update = this.getUpdate() as any;
+
+  if (update.salePrice !== undefined) {
+    if (update.salePrice > 0) {
+      update.isOnSale = true;
+    } else {
+      update.isOnSale = false;
+    }
+  }
+
+  this.setUpdate(update);
   next();
 });
 

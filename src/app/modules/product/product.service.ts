@@ -21,7 +21,6 @@ import { customRoleModel } from "../customRole/customRole.model";
 import { postProcessProduct } from "../../utils/productUtils";
 
 const createProductService = async (productData: IProduct) => {
-
   productData.isVariant =
     productData.isVariant === "true" || productData.isVariant === true;
 
@@ -122,7 +121,6 @@ const createProductService = async (productData: IProduct) => {
   return newProduct;
 };
 
-
 const createProductByFileService = async (filePath?: any) => {
   const products = (await parseExcel(filePath)) as any[];
 
@@ -193,13 +191,81 @@ const getAllProductService = async (
   page?: number,
   limit?: number,
   searchText?: string,
-  searchFields?: string[]
+  searchFields?: string[],
+  filters?: {
+    category?: string;
+    priceRange?: { min?: number; max?: number };
+    variant?: Record<string, any>;
+    isOnSale?: boolean;
+    isVariant?: boolean;
+  }
 ) => {
   const isManagementRole = currentUser?.roleModel === "managementRole";
   const isCustomRole = currentUser?.roleModel === "customRole";
 
+  const queryConditions: any = {};
+
+  const { category, priceRange, variant = {}, isOnSale } = filters || {};
+
+  if (category) queryConditions.category = category;
+  if (typeof isOnSale === "boolean") queryConditions.isOnSale = isOnSale;
+
+  if (priceRange) {
+    const { min, max } = priceRange;
+    queryConditions.$or = [
+      ...(min || max
+        ? [
+            {
+              salePrice: {
+                ...(min ? { $gte: min } : {}),
+                ...(max ? { $lte: max } : {}),
+              },
+            },
+          ]
+        : []),
+      ...(min || max
+        ? [
+            {
+              regularPrice: {
+                ...(min ? { $gte: min } : {}),
+                ...(max ? { $lte: max } : {}),
+              },
+            },
+          ]
+        : []),
+      ...(min || max
+        ? [
+            {
+              "variants.salePrice": {
+                ...(min ? { $gte: min } : {}),
+                ...(max ? { $lte: max } : {}),
+              },
+            },
+            {
+              "variants.regularPrice": {
+                ...(min ? { $gte: min } : {}),
+                ...(max ? { $lte: max } : {}),
+              },
+            },
+          ]
+        : []),
+    ];
+  }
+
+  if (Object.keys(variant).length > 0) {
+    const variantConditions = Object.entries(variant).map(([key, value]) => ({
+      attributeCombination: {
+        $elemMatch: {
+          attributeName: key.charAt(0).toUpperCase() + key.slice(1),
+          optionName: value,
+        },
+      },
+    }));
+    queryConditions.variants = { $elemMatch: { $and: variantConditions } };
+  }
+
   const query = productModel
-    .find()
+    .find(queryConditions)
     .populate({
       path: "category",
       select:

@@ -30,7 +30,7 @@ const createProductController = async (
         const variant = parsedVariants[index];
 
         const variantImages = files
-          .filter((file) =>
+          ?.filter((file) =>
             file.fieldname.startsWith(`variants[${index}][images]`)
           )
           .map((file) => file.path);
@@ -44,10 +44,10 @@ const createProductController = async (
 
     const productData = {
       ...req.body,
-      ...(images.length && { images }),
+      ...(images?.length && { images }),
       ...(mainImage && { mainImage }),
       ...(video && { video }),
-      ...(variants.length && { variants }),
+      ...(variants?.length && { variants }),
     };
 
     const result = await productServices.createProductService(productData);
@@ -90,19 +90,37 @@ const getAllProductController = async (
   try {
     const { page, limit } = req.query;
 
-    const pageNumber = page ? parseInt(page as string, 1) : undefined;
-    const pageSize = limit ? parseInt(limit as string, 100) : undefined;
+    const pageNumber = page ? parseInt(page as string, 10) : undefined;
+    const pageSize = limit ? parseInt(limit as string, 10) : undefined;
 
     const searchText = req.query.searchText as string | undefined;
+    const searchFields = ["name", "slug", "sku", "description"];
 
-    const searchFields = ["name"];
+    const filters = {
+      category: req.query.category as string,
+      isOnSale: req.query.isOnSale ? req.query.isOnSale === "true" : undefined,
+      isVariant: req.query.isVariant
+        ? req.query.isVariant === "true"
+        : undefined,
+      priceRange:
+        req.query.min || req.query.max
+          ? {
+              min: req.query.min ? Number(req.query.min) : undefined,
+              max: req.query.max ? Number(req.query.max) : undefined,
+            }
+          : undefined,
+      variant: req.query.variant
+        ? JSON.parse(req.query.variant as string)
+        : undefined,
+    };
 
     const result = await productServices.getAllProductService(
       req.user as any,
       pageNumber,
       pageSize,
       searchText,
-      searchFields
+      searchFields,
+      filters
     );
 
     res.status(200).json({
