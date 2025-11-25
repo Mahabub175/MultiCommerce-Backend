@@ -11,6 +11,7 @@ import {
 } from "../../utils/applyDiscountToCategoryProducts";
 import { customRoleModel } from "../customRole/customRole.model";
 import { deleteFileSync } from "../../utils/deleteFilesFromStorage";
+import { productModel } from "../product/product.model";
 
 // Create a category
 const createCategoryService = async (categoryData: ICategory) => {
@@ -612,8 +613,20 @@ const updatedCategory = await categoryModel
     .find({ isFeatured: true })
     .select("_id name slug isFeatured status");
 
-  return categories;
+  const result = [];
+
+  for (const cat of categories) {
+    const count = await productModel.countDocuments({ category: cat._id });
+
+    result.push({
+      ...cat.toObject(),
+      productsCount: count,
+    });
+  }
+
+  return result;
 };
+
 
 export const categoryServices = {
   createCategoryService,
