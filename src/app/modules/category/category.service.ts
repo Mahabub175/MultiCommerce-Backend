@@ -598,13 +598,21 @@ const updatedCategory = await categoryModel
       { isFeatured },
       { new: true }
     )
-    .select("_id name slug");
+    .select("_id name slug isFeatured");
   
   if (!updatedCategory) {
     throw new Error("Category not found");
   }
 
   return updatedCategory;
+};
+
+ const getFeaturedCategoriesService = async () => {
+  const categories = await categoryModel
+    .find({ isFeatured: true })
+    .select("_id name slug isFeatured status");
+
+  return categories;
 };
 
 export const categoryServices = {
@@ -617,4 +625,5 @@ export const categoryServices = {
   deleteSingleCategoryService,
   deleteManyCategoriesService,
   updateCategoryFeaturedService,
+  getFeaturedCategoriesService
 };
