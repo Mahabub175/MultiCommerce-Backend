@@ -239,6 +239,22 @@ const updateCategoryFeatured = async (
   }
 };
 
+const getFeaturedCategoriesController = async (req: Request,
+  res: Response,
+  next: NextFunction) => {
+  try {
+    const result = await categoryServices.getFeaturedCategoriesService();
+
+    res.status(200).json({
+      success: true,
+      message: "Featured categories fetched successfully!",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const categoryControllers = {
   createCategoryController,
   getAllCategoryController,
@@ -249,4 +265,5 @@ export const categoryControllers = {
   deleteSingleCategoryController,
   deleteManyCategoriesController,
   updateCategoryFeatured,
+  getFeaturedCategoriesController
 };
