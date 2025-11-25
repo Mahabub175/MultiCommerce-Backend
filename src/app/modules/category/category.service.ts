@@ -609,22 +609,19 @@ const updatedCategory = await categoryModel
 };
 
  const getFeaturedCategoriesService = async () => {
-  const categories = await categoryModel
+  let categories = await categoryModel
     .find({ isFeatured: true })
-    .select("_id name slug isFeatured status");
-
-  const result = [];
-
+    .select("_id name slug isFeatured status attachment")
+    .lean();
+   
   for (const cat of categories) {
     const count = await productModel.countDocuments({ category: cat._id });
-
-    result.push({
-      ...cat.toObject(),
-      productsCount: count,
-    });
+    cat.productsCount = count;
   }
 
-  return result;
+  categories = formatResultImage(categories, "attachment");
+
+  return categories;
 };
 
 
