@@ -22,6 +22,8 @@ router.get(
   categoryControllers.getNestedCategoriesController
 );
 
+router.get("/cateogry/featured/get/all/", categoryControllers.getFeaturedCategoriesController);
+
 router.patch(
   "/category/:categoryId/",
   uploadService.single("attachment"),
