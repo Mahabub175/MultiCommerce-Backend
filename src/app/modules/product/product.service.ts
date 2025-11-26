@@ -11,9 +11,7 @@ import { parseExcel } from "../../utils/parseExcel";
 import { postProcessProduct } from "../../utils/productUtils";
 import { categoryModel } from "../category/category.model";
 import { customRoleModel } from "../customRole/customRole.model";
-import {
-  IProduct
-} from "./product.interface";
+import { IProduct } from "./product.interface";
 import { productModel } from "./product.model";
 
 const createProductService = async (productData: IProduct) => {
@@ -361,6 +359,94 @@ const getAllProductService = async (
   return await executeQuery();
 };
 
+const getSingleProductService = async (
+  currentUser: any,
+  productId: string | number
+) => {
+  const queryId =
+    typeof productId === "string"
+      ? new mongoose.Types.ObjectId(productId)
+      : productId;
+
+  const isManagementRole = currentUser?.roleModel === "managementRole";
+  const isCustomRole = currentUser?.roleModel === "customRole";
+
+  const query = productModel
+    .findById(queryId)
+    .populate({
+      path: "category",
+      select:
+        "-roleDiscounts -parentCategory -categories -subCategories -subSubCategories -children",
+    })
+    .populate("brand")
+    .populate("reviews.user");
+
+  if (isManagementRole) {
+    query
+      .populate("globalRoleDiscounts.role")
+      .populate("productRoleDiscounts.role")
+      .populate("categoryRoleDiscounts.role");
+  } else if (isCustomRole) {
+    query
+      .populate({
+        path: "globalRoleDiscounts.role",
+        match: { name: currentUser.role },
+      })
+      .populate({
+        path: "productRoleDiscounts.role",
+        match: { name: currentUser.role },
+      })
+      .populate({
+        path: "categoryRoleDiscounts.role",
+        match: { name: currentUser.role },
+      });
+  }
+
+  const result = await query.lean().exec();
+  if (!result) throw new Error("Product not found");
+
+  if (!currentUser) {
+    result.globalRoleDiscounts = [];
+    result.productRoleDiscounts = [];
+    result.categoryRoleDiscounts = [];
+  }
+
+  const cleanedResult = postProcessProduct(result, isCustomRole);
+
+  return cleanedResult;
+};
+const getSingleProductBySkuService = async (sku: string | number) => {
+  const result = await productModel
+    .findOne({ $or: [{ sku }, { "variants.sku": sku }] })
+    .select("name _id variants sku")
+    .exec();
+
+  if (!result) {
+    throw new Error("Product not found");
+  }
+
+  if (!result.variants) {
+    throw new Error("Variants not found for the product");
+  }
+
+  let matchingVariant = null;
+
+  if (result.sku === sku) {
+    if (result.variants.length > 0) {
+      matchingVariant = result.variants[0];
+    }
+  } else {
+    matchingVariant = result.variants.find((variant) => variant.sku === sku);
+  }
+
+  return {
+    productId: result._id,
+    productName: result.name,
+    sku: matchingVariant?.sku ?? result.sku,
+    variant: matchingVariant || null,
+  };
+};
+
 const getSingleProductBySlugService = async (
   currentUser: any,
   productSlug: string
@@ -597,9 +683,7 @@ export const deleteSingleProductService = async (
   return result;
 };
 
-export const deleteManyProductsService = async (
-  productIds: (string | number)[]
-) => {
+const deleteManyProductsService = async (productIds: (string | number)[]) => {
   const queryIds = productIds.map((id) => {
     if (typeof id === "string" && mongoose.Types.ObjectId.isValid(id)) {
       return new mongoose.Types.ObjectId(id);
