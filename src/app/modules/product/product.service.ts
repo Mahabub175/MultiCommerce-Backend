@@ -1,24 +1,20 @@
 import mongoose from "mongoose";
-import { paginateAndSort } from "../../utils/paginateAndSort";
-import { formatResultImage } from "../../utils/formatResultImage";
-import {
-  ICategoryDiscount,
-  ICategoryRoleDiscount,
-  IGlobalRoleDiscount,
-  IProduct,
-  IProductRoleDiscount,
-} from "./product.interface";
-import { productModel } from "./product.model";
-import { generateSlug } from "../../utils/generateSlug";
-import { parseExcel } from "../../utils/parseExcel";
 import config from "../../config";
+import { deleteFileSync } from "../../utils/deleteFilesFromStorage";
 import {
   findOrCreateBrand,
   findOrCreateCategory,
 } from "../../utils/findOrCreateItems";
-import { deleteFileSync } from "../../utils/deleteFilesFromStorage";
-import { customRoleModel } from "../customRole/customRole.model";
+import { generateSlug } from "../../utils/generateSlug";
+import { paginateAndSort } from "../../utils/paginateAndSort";
+import { parseExcel } from "../../utils/parseExcel";
 import { postProcessProduct } from "../../utils/productUtils";
+import { categoryModel } from "../category/category.model";
+import { customRoleModel } from "../customRole/customRole.model";
+import {
+  IProduct
+} from "./product.interface";
+import { productModel } from "./product.model";
 
 const createProductService = async (productData: IProduct) => {
   productData.isVariant =
@@ -198,6 +194,7 @@ const getAllProductService = async (
     variant?: Record<string, any>;
     isOnSale?: boolean;
     isVariant?: boolean;
+    product?: string;
   }
 ) => {
   const isManagementRole = currentUser?.roleModel === "managementRole";
@@ -207,8 +204,45 @@ const getAllProductService = async (
 
   const { category, priceRange, variant = {}, isOnSale } = filters || {};
 
-  if (category) queryConditions.category = category;
+  if (category) {
+    const categoryText = category.trim();
+
+    const matchingCategories = await categoryModel.find(
+      {
+        $or: [
+          { name: { $regex: categoryText, $options: "i" } },
+          { slug: { $regex: categoryText, $options: "i" } },
+        ],
+      },
+      { _id: 1 }
+    );
+
+    const categoryIds = matchingCategories.map((c) => c._id);
+
+    if (categoryIds.length > 0) {
+      queryConditions.category = { $in: categoryIds };
+    } else {
+      queryConditions.category = { $in: [] };
+    }
+  }
   if (typeof isOnSale === "boolean") queryConditions.isOnSale = isOnSale;
+
+  if (filters?.product) {
+    const p = filters.product.trim();
+
+    const matchingCategories = await categoryModel.find(
+      { name: { $regex: p, $options: "i" } },
+      { _id: 1 }
+    );
+    const categoryIds = matchingCategories.map((c) => c._id);
+
+    queryConditions.$or = [
+      ...(queryConditions.$or || []),
+      { productName: { $regex: p, $options: "i" } },
+      { slug: { $regex: p, $options: "i" } },
+      ...(categoryIds.length ? [{ category: { $in: categoryIds } }] : []),
+    ];
+  }
 
   if (priceRange) {
     const { min, max } = priceRange;
@@ -325,94 +359,6 @@ const getAllProductService = async (
   };
 
   return await executeQuery();
-};
-
-const getSingleProductService = async (
-  currentUser: any,
-  productId: string | number
-) => {
-  const queryId =
-    typeof productId === "string"
-      ? new mongoose.Types.ObjectId(productId)
-      : productId;
-
-  const isManagementRole = currentUser?.roleModel === "managementRole";
-  const isCustomRole = currentUser?.roleModel === "customRole";
-
-  const query = productModel
-    .findById(queryId)
-    .populate({
-      path: "category",
-      select:
-        "-roleDiscounts -parentCategory -categories -subCategories -subSubCategories -children",
-    })
-    .populate("brand")
-    .populate("reviews.user");
-
-  if (isManagementRole) {
-    query
-      .populate("globalRoleDiscounts.role")
-      .populate("productRoleDiscounts.role")
-      .populate("categoryRoleDiscounts.role");
-  } else if (isCustomRole) {
-    query
-      .populate({
-        path: "globalRoleDiscounts.role",
-        match: { name: currentUser.role },
-      })
-      .populate({
-        path: "productRoleDiscounts.role",
-        match: { name: currentUser.role },
-      })
-      .populate({
-        path: "categoryRoleDiscounts.role",
-        match: { name: currentUser.role },
-      });
-  }
-
-  const result = await query.lean().exec();
-  if (!result) throw new Error("Product not found");
-
-  if (!currentUser) {
-    result.globalRoleDiscounts = [];
-    result.productRoleDiscounts = [];
-    result.categoryRoleDiscounts = [];
-  }
-
-  const cleanedResult = postProcessProduct(result, isCustomRole);
-
-  return cleanedResult;
-};
-const getSingleProductBySkuService = async (sku: string | number) => {
-  const result = await productModel
-    .findOne({ $or: [{ sku }, { "variants.sku": sku }] })
-    .select("name _id variants sku")
-    .exec();
-
-  if (!result) {
-    throw new Error("Product not found");
-  }
-
-  if (!result.variants) {
-    throw new Error("Variants not found for the product");
-  }
-
-  let matchingVariant = null;
-
-  if (result.sku === sku) {
-    if (result.variants.length > 0) {
-      matchingVariant = result.variants[0];
-    }
-  } else {
-    matchingVariant = result.variants.find((variant) => variant.sku === sku);
-  }
-
-  return {
-    productId: result._id,
-    productName: result.name,
-    sku: matchingVariant?.sku ?? result.sku,
-    variant: matchingVariant || null,
-  };
 };
 
 const getSingleProductBySlugService = async (
