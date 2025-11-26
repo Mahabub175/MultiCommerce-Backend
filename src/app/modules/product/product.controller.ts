@@ -98,6 +98,7 @@ const getAllProductController = async (
 
     const filters = {
       category: req.query.category as string,
+      product: req.query.product as string,
       isOnSale: req.query.isOnSale ? req.query.isOnSale === "true" : undefined,
       isVariant: req.query.isVariant
         ? req.query.isVariant === "true"
