@@ -10,6 +10,11 @@ router.get("/order/", authMiddleware, orderControllers.getAllOrderController);
 
 router.get("/order/:orderId/", orderControllers.getSingleOrderController);
 
+router.get(
+  "/order/invoice/:orderId/",
+  orderControllers.generateInvoiceController
+);
+
 router.patch("/order/:orderId/", orderControllers.updateSingleOrderController);
 
 router.delete("/order/:orderId/", orderControllers.deleteSingleOrderController);

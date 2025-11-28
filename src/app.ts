@@ -40,6 +40,11 @@ if (!fs.existsSync(uploadsPath)) {
 }
 
 // API routes
+app.use(
+  "/invoices",
+  express.static(path.join(__dirname, "../public/invoices"))
+);
+
 app.use("/uploads", express.static(uploadsPath));
 
 app.use("/api/v1", router);

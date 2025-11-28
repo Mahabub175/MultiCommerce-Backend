@@ -56,7 +56,6 @@ const getAllOrderController = async (
   }
 };
 
-
 const getSingleOrderController = async (
   req: Request,
   res: Response,
@@ -330,14 +329,13 @@ const getReturnedProductsController = async (
   next: NextFunction
 ) => {
   try {
-
     if (!req.user) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized",
       });
     }
-    
+
     const orders = await orderServices.getReturnedProductsService(
       req.user as any
     );
@@ -349,6 +347,26 @@ const getReturnedProductsController = async (
     });
   } catch (err) {
     next(err);
+  }
+};
+
+const generateInvoiceController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { orderId } = req.params;
+
+    const result = await orderServices.createInvoiceService(orderId);
+
+    return res.json({
+      success: true,
+      message: "Invoice generated",
+      result,
+    });
+  } catch (error: any) {
+    next(error);
   }
 };
 
@@ -367,5 +385,6 @@ export const orderControllers = {
   requestReturnController,
   handleReturnRequestController,
   getOrdersByUserController,
-  getReturnedProductsController
+  getReturnedProductsController,
+  generateInvoiceController,
 };

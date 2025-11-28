@@ -13,6 +13,11 @@ import { couponModel } from "../coupon/coupon.model";
 import { courierModel } from "../courier/courier.model";
 import { productModel } from "../product/product.model";
 import { userModel } from "../user/user.model";
+import path from "path";
+import fs from "fs";
+import config from "../../config";
+import { invoiceTemplate } from "../../utils/invoiceTemplate";
+import htmlPdf from "html-pdf-node";
 
 const calculateTotals = (order: any) => {
   order.subtotal = order.items.reduce(
@@ -558,6 +563,36 @@ const getReturnedProductsService = async (currentUser: any) => {
   return returnedItems;
 };
 
+const createInvoiceService = async (orderId: string) => {
+  const order = await orderModel
+    .findById(orderId)
+    .populate("user")
+    .populate("items.product");
+
+  if (!order) throw new Error("Order not found");
+
+  const invoiceDir = path.join(__dirname, "../../../../public/invoices");
+  if (!fs.existsSync(invoiceDir)) fs.mkdirSync(invoiceDir, { recursive: true });
+
+  const filePath = path.join(invoiceDir, `${order.orderId}.pdf`);
+
+  const html = invoiceTemplate({
+    ...order.toObject(),
+    createdAt: new Date(order.createdAt).toLocaleDateString(),
+  });
+
+  const options = { format: "A4", printBackground: true };
+
+  const file = { content: html };
+
+  const pdfBuffer: any = await htmlPdf.generatePdf(file, options);
+  fs.writeFileSync(filePath, pdfBuffer);
+
+  return {
+    url: `${config.base_url}/invoices/${order.orderId}.pdf`,
+  };
+};
+
 export const orderServices = {
   createOrderService,
   getAllOrderService,
@@ -575,4 +610,5 @@ export const orderServices = {
   deleteOrderItemService,
   getOrdersByUserService,
   getReturnedProductsService,
+  createInvoiceService,
 };
