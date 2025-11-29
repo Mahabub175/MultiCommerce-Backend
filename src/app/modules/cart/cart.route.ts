@@ -1,16 +1,22 @@
 import express from "express";
 import { cartControllers } from "./cart.controller";
+import { authMiddleware } from "../../middlewares/authMiddleware";
 
 const router = express.Router();
 
 router.post("/cart/", cartControllers.createCartController);
 
-router.get("/cart/", cartControllers.getAllCartController);
+router.get("/cart/", authMiddleware, cartControllers.getAllCartController);
 
-router.get("/cart/:cartId/", cartControllers.getSingleCartController);
+router.get(
+  "/cart/:cartId/",
+  authMiddleware,
+  cartControllers.getSingleCartController
+);
 
 router.get(
   "/cart/user/:userId/",
+  authMiddleware,
   cartControllers.getSingleCartByUserController
 );
 

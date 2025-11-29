@@ -4,7 +4,7 @@ import { reserveOrderModel } from "../modules/reserveOrder/reserveOrder.model";
 import { formatResultImage } from "./formatResultImage";
 import cron from "node-cron";
 
-const resolvePriceDetails = (product: any) => {
+export const resolvePriceDetails = (product: any) => {
   const basePrice = product.regularPrice;
   if (!basePrice) {
     return {
@@ -18,18 +18,17 @@ const resolvePriceDetails = (product: any) => {
     from: string,
     type: string,
     discountValue: number,
-    finalPrice: number
+    discountedPrice: number
   ) => {
-    const discountAmount = basePrice - finalPrice;
+    const discountAmount = basePrice - discountedPrice;
     const discountPercent = Math.round((discountAmount / basePrice) * 100);
-
     return {
       from,
       type,
       discountValue,
-      finalPrice,
       discountAmount,
       discountPercent,
+      discountedPrice,
     };
   };
 
@@ -136,7 +135,9 @@ const resolvePriceDetails = (product: any) => {
   };
 };
 
-export const postProcessProduct = (product: any, isCustomRole: boolean) => {
+export const postProcessProduct = (product: any, isCustomRole?: boolean) => {
+  const plainProduct = product.toObject ? product.toObject() : { ...product };
+
   if (isCustomRole) {
     const cleanAndUniqueDiscounts = (discounts: any[]) => {
       if (!Array.isArray(discounts)) return discounts;
@@ -150,33 +151,35 @@ export const postProcessProduct = (product: any, isCustomRole: boolean) => {
       return unique;
     };
 
-    product.globalRoleDiscounts = cleanAndUniqueDiscounts(
-      product.globalRoleDiscounts
+    plainProduct.globalRoleDiscounts = cleanAndUniqueDiscounts(
+      plainProduct.globalRoleDiscounts
     );
-    product.productRoleDiscounts = cleanAndUniqueDiscounts(
-      product.productRoleDiscounts
+    plainProduct.productRoleDiscounts = cleanAndUniqueDiscounts(
+      plainProduct.productRoleDiscounts
     );
-    product.categoryRoleDiscounts = cleanAndUniqueDiscounts(
-      product.categoryRoleDiscounts
+    plainProduct.categoryRoleDiscounts = cleanAndUniqueDiscounts(
+      plainProduct.categoryRoleDiscounts
     );
   }
 
-  if (typeof product.mainImage === "string") {
-    product.mainImage = formatResultImage(product.mainImage) as string;
+  if (typeof plainProduct.mainImage === "string") {
+    plainProduct.mainImage = formatResultImage(
+      plainProduct.mainImage
+    ) as string;
   }
 
-  if (typeof product.video === "string") {
-    product.video = formatResultImage(product.video) as string;
+  if (typeof plainProduct.video === "string") {
+    plainProduct.video = formatResultImage(plainProduct.video) as string;
   }
 
-  if (Array.isArray(product.images)) {
-    product.images = product.images.map((img: string) =>
+  if (Array.isArray(plainProduct.images)) {
+    plainProduct.images = plainProduct.images.map((img: string) =>
       typeof img === "string" ? (formatResultImage(img) as string) : img
     );
   }
 
-  if (Array.isArray(product.variants)) {
-    product.variants = product.variants.map((variant: any) => {
+  if (Array.isArray(plainProduct.variants)) {
+    plainProduct.variants = plainProduct.variants.map((variant: any) => {
       if (Array.isArray(variant.images)) {
         variant.images = variant.images.map((img: string) =>
           typeof img === "string" ? (formatResultImage(img) as string) : img
@@ -186,16 +189,16 @@ export const postProcessProduct = (product: any, isCustomRole: boolean) => {
     });
   }
 
-  product.priceDetails = resolvePriceDetails(product);
+  plainProduct.priceDetails = resolvePriceDetails(plainProduct);
 
   if (isCustomRole) {
-    delete product.globalRoleDiscounts;
-    delete product.productRoleDiscounts;
-    delete product.categoryRoleDiscounts;
-    delete product.categoryDiscounts;
+    delete plainProduct.globalRoleDiscounts;
+    delete plainProduct.productRoleDiscounts;
+    delete plainProduct.categoryRoleDiscounts;
+    delete plainProduct.categoryDiscounts;
   }
 
-  return product;
+  return plainProduct;
 };
 
 export const restoreProductStock = async (sku: string, quantity = 1) => {

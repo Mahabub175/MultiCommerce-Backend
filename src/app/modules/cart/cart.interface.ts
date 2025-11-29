@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 
 export interface ICartProduct {
-  product: Types.ObjectId;
+  product: Types.ObjectId | any;
   sku: string;
   quantity: number;
   weight?: number;

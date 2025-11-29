@@ -191,6 +191,7 @@ const getAllProductService = async (
     priceRange?: { min?: number; max?: number };
     variant?: Record<string, any>;
     isOnSale?: boolean;
+    isFeatured?: boolean;
     isVariant?: boolean;
     product?: string;
   }
@@ -200,7 +201,13 @@ const getAllProductService = async (
 
   const queryConditions: any = {};
 
-  const { category, priceRange, variant = {}, isOnSale } = filters || {};
+  const {
+    category,
+    priceRange,
+    variant = {},
+    isOnSale,
+    isFeatured,
+  } = filters || {};
 
   if (category) {
     const categoryText = category.trim();
@@ -224,6 +231,7 @@ const getAllProductService = async (
     }
   }
   if (typeof isOnSale === "boolean") queryConditions.isOnSale = isOnSale;
+  if (typeof isFeatured === "boolean") queryConditions.isFeatured = isFeatured;
 
   if (filters?.product) {
     const p = filters.product.trim();

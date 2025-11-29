@@ -5,6 +5,7 @@ import { ICart, ICartProduct } from "./cart.interface";
 import { validateReferences } from "../../utils/validateReferences";
 import { userModel } from "../user/user.model";
 import { productModel } from "../product/product.model";
+import { postProcessProduct } from "../../utils/productUtils";
 
 // Create or update cart
 const createCartService = async (cartData: ICart) => {
@@ -52,14 +53,42 @@ const createCartService = async (cartData: ICart) => {
 };
 
 const getAllCartService = async (
+  currentUser?: any,
   page?: number,
   limit?: number,
   searchText?: string,
   searchFields?: string[]
 ) => {
-  let results;
+  const isCustomRole = currentUser?.roleModel === "customRole";
+  const isManagementRole = currentUser?.roleModel === "managementRole";
 
-  const query = cartModel.find().populate("products.product").populate("user");
+  const query = cartModel.find().populate("user");
+
+  const productPopulate: any = [
+    {
+      path: "category",
+      select:
+        "-roleDiscounts -parentCategory -categories -subCategories -subSubCategories -children",
+    },
+    { path: "brand" },
+    { path: "reviews.user" },
+  ];
+
+  if (isCustomRole) {
+    productPopulate.push(
+      { path: "globalRoleDiscounts.role", match: { name: currentUser.role } },
+      { path: "productRoleDiscounts.role", match: { name: currentUser.role } },
+      { path: "categoryRoleDiscounts.role", match: { name: currentUser.role } }
+    );
+  } else if (isManagementRole) {
+    productPopulate.push(
+      { path: "globalRoleDiscounts.role" },
+      { path: "productRoleDiscounts.role" },
+      { path: "categoryRoleDiscounts.role" }
+    );
+  }
+
+  query.populate({ path: "products.product", populate: productPopulate });
 
   if (page || limit || searchText) {
     const result = await paginateAndSort(
@@ -69,65 +98,155 @@ const getAllCartService = async (
       searchText,
       searchFields
     );
+
+    if (Array.isArray(result.results)) {
+      result.results = result.results.map((cart: any) => {
+        if (Array.isArray(cart.products)) {
+          cart.products = cart.products.map((p: any) => {
+            if (p.product) {
+              p.product = postProcessProduct(p.product, isCustomRole);
+            }
+            return p;
+          });
+        }
+        return cart;
+      });
+    }
+
     return result;
   }
 
-  results = await query.sort({ createdAt: -1 }).exec();
+  let results = await query.sort({ createdAt: -1 }).lean().exec();
+
+  results = results.map((cart: any) => {
+    if (Array.isArray(cart.products)) {
+      cart.products = cart.products.map((p: any) => {
+        if (p.product) {
+          p.product = postProcessProduct(p.product, isCustomRole);
+        }
+        return p;
+      });
+    }
+    return cart;
+  });
+
   return { results };
 };
 
 // Get single cart by ID
-const getSingleCartService = async (cartId: string | number) => {
+const getSingleCartService = async (
+  cartId: string | number,
+  currentUser?: any
+) => {
+  const isCustomRole = currentUser?.roleModel === "customRole";
+  const isManagementRole = currentUser?.roleModel === "managementRole";
+
   const queryId =
     typeof cartId === "string" ? new mongoose.Types.ObjectId(cartId) : cartId;
 
+  const productPopulate: any = [
+    {
+      path: "category",
+      select:
+        "-roleDiscounts -parentCategory -categories -subCategories -subSubCategories -children",
+    },
+    { path: "brand" },
+    { path: "reviews.user" },
+  ];
+
+  if (isCustomRole) {
+    productPopulate.push(
+      { path: "globalRoleDiscounts.role", match: { name: currentUser.role } },
+      { path: "productRoleDiscounts.role", match: { name: currentUser.role } },
+      { path: "categoryRoleDiscounts.role", match: { name: currentUser.role } }
+    );
+  } else if (isManagementRole) {
+    productPopulate.push(
+      { path: "globalRoleDiscounts.role" },
+      { path: "productRoleDiscounts.role" },
+      { path: "categoryRoleDiscounts.role" }
+    );
+  }
+
   const result = await cartModel
     .findById(queryId)
-    .populate("products.product")
+    .populate({ path: "products.product", populate: productPopulate })
     .populate("user")
     .exec();
 
   if (!result) throw new Error("Cart not found");
+
+  if (Array.isArray(result.products)) {
+    result.products = result.products.map((p: any) => {
+      if (p.product) {
+        p.product = postProcessProduct(p.product, isCustomRole);
+      }
+      return p;
+    });
+  }
+
   return result;
 };
 
 // Get cart by user or deviceId
-const getSingleCartByUserService = async (userId: string) => {
+const getSingleCartByUserService = async (
+  userId: string,
+  currentUser?: any
+) => {
+  const isCustomRole = currentUser?.roleModel === "customRole";
+  const isManagementRole = currentUser?.roleModel === "managementRole";
+
   const query = mongoose.Types.ObjectId.isValid(userId)
     ? { $or: [{ user: userId }, { deviceId: userId }] }
     : { deviceId: userId };
 
-  const result = await cartModel
-    .findOne(query)
-    .populate("products.product")
+  const productPopulate: any = [
+    {
+      path: "category",
+      select:
+        "-roleDiscounts -parentCategory -categories -subCategories -subSubCategories -children",
+    },
+    { path: "brand" },
+    { path: "reviews.user" },
+  ];
+
+  if (isCustomRole) {
+    productPopulate.push(
+      { path: "globalRoleDiscounts.role", match: { name: currentUser.role } },
+      { path: "productRoleDiscounts.role", match: { name: currentUser.role } },
+      { path: "categoryRoleDiscounts.role", match: { name: currentUser.role } }
+    );
+  } else if (isManagementRole) {
+    productPopulate.push(
+      { path: "globalRoleDiscounts.role" },
+      { path: "productRoleDiscounts.role" },
+      { path: "categoryRoleDiscounts.role" }
+    );
+  }
+
+  const carts = await cartModel
+    .find(query)
+    .populate({ path: "products.product", populate: productPopulate })
     .populate("user")
+    .sort({ createdAt: -1 })
     .exec();
 
-  if (!result) return [];
+  if (!carts || carts.length === 0) return [];
 
-  const cartDetails = result.products.map((item: any) => {
-    const product = item.product as any;
-    const matchingVariant = product?.variants?.find(
-      (variant: any) => variant.sku === item.sku
-    );
-
-    return {
-      _id: result._id,
-      user: result.user,
-      productId: product?._id,
-      slug: product?.slug,
-      productName: product?.name,
-      sku: item.sku,
-      price: item.price,
-      image: matchingVariant?.image ?? product?.mainImage,
-      quantity: item.quantity,
-      weight: item.weight,
-      totalPrice: item.price * item.quantity,
-      variant: matchingVariant || null,
-    };
+  // Apply postProcessProduct to each product in every cart
+  const processedCarts = carts.map((cart: any) => {
+    if (Array.isArray(cart.products)) {
+      cart.products = cart.products.map((p: any) => {
+        if (p.product) {
+          p.product = postProcessProduct(p.product, isCustomRole);
+        }
+        return p;
+      });
+    }
+    return cart;
   });
 
-  return cartDetails;
+  return processedCarts;
 };
 
 // Update a product inside cart

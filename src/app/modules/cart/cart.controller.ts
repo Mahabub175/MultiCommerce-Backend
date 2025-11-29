@@ -25,7 +25,7 @@ const createCartController = async (
 
     res.status(200).json({
       success: true,
-      message: "Cart created or updated successfully.",
+      message: "Cart created successfully.",
       data: result,
     });
   } catch (error: any) {
@@ -47,6 +47,7 @@ const getAllCartController = async (
     const searchFields = ["products.price", "products.quantity"];
 
     const result = await cartServices.getAllCartService(
+      req.user as any,
       pageNumber,
       pageSize,
       searchText as string | undefined,
@@ -71,7 +72,10 @@ const getSingleCartController = async (
 ) => {
   try {
     const { cartId } = req.params;
-    const result = await cartServices.getSingleCartService(cartId);
+    const result = await cartServices.getSingleCartService(
+      cartId,
+      req.user as any
+    );
 
     res.status(200).json({
       success: true,
@@ -91,7 +95,10 @@ const getSingleCartByUserController = async (
 ) => {
   try {
     const { userId } = req.params;
-    const result = await cartServices.getSingleCartByUserService(userId);
+    const result = await cartServices.getSingleCartByUserService(
+      userId,
+      req.user as any
+    );
 
     res.status(200).json({
       success: true,
