@@ -233,7 +233,6 @@ const getSingleCartByUserService = async (
 
   if (!carts || carts.length === 0) return [];
 
-  // Apply postProcessProduct to each product in every cart
   const processedCarts = carts.map((cart: any) => {
     if (Array.isArray(cart.products)) {
       cart.products = cart.products.map((p: any) => {
