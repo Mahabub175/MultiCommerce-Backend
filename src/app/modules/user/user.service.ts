@@ -25,7 +25,7 @@ const getAllUserService = async (
   let results;
 
   if (!currentUser) {
-    const query = userModel.find().select("-password role roleModel");
+    const query = userModel.find().populate("role");
     const results = await query.sort({ createdAt: -1 }).exec();
 
     return {
@@ -33,7 +33,7 @@ const getAllUserService = async (
     };
   }
 
-  const query = userModel.find().select("-password").populate("role");
+  const query = userModel.find().populate("role");
   const isSuperAdmin =
     currentUser.roleModel === "managementRole" &&
     currentUser.role === "super_admin";

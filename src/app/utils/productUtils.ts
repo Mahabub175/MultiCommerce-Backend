@@ -14,39 +14,73 @@ const resolvePriceDetails = (product: any) => {
     };
   }
 
+  const buildDiscountInfo = (
+    from: string,
+    type: string,
+    discountValue: number,
+    finalPrice: number
+  ) => {
+    const discountAmount = basePrice - finalPrice;
+    const discountPercent = Math.round((discountAmount / basePrice) * 100);
+
+    return {
+      from,
+      type,
+      discountValue,
+      finalPrice,
+      discountAmount,
+      discountPercent,
+    };
+  };
+
   const calculateDiscount = (type: string, value: number) => {
     if (!value || value <= 0) return null;
-    if (type === "fixed") return basePrice - value;
-    if (type === "percentage") return basePrice - (basePrice * value) / 100;
+
+    if (type === "fixed") {
+      if (value >= basePrice) return null;
+      return value;
+    }
+
+    if (type === "percentage") {
+      const discounted = basePrice - (basePrice * value) / 100;
+      if (discounted >= basePrice || discounted <= 0) return null;
+      return discounted;
+    }
+
     return null;
   };
 
   if (
-  product.salePrice !== undefined &&
-  product.salePrice !== null &&
-  Number(product.salePrice) > 0 &&
-  Number(product.salePrice) < basePrice
-) {
-  return {
-    basePrice,
-    finalPrice: product.salePrice,
-    discount: {
-      from: "sale",
-      type: "fixed",
-      discountValue: basePrice - product.salePrice,
-      discountedPrice: product.salePrice,
-    },
-  };
-}
-  
+    product.salePrice !== undefined &&
+    product.salePrice !== null &&
+    Number(product.salePrice) > 0 &&
+    Number(product.salePrice) < basePrice
+  ) {
+    const salePrice = Number(product.salePrice);
+    return {
+      basePrice,
+      finalPrice: salePrice,
+      discount: buildDiscountInfo(
+        "sale",
+        "fixed",
+        basePrice - salePrice,
+        salePrice
+      ),
+    };
+  }
+
   const pickRoleDiscount = (list: any[]) => {
     if (!Array.isArray(list)) return null;
 
     const valid = list
       .map((d) => {
-        const discounted = calculateDiscount(d.discountType, d.discountValue);
-        if (!discounted || discounted >= basePrice) return null;
-        return { ...d, discountedPrice: discounted };
+        const discountedPrice = calculateDiscount(
+          d.discountType,
+          d.discountValue
+        );
+        if (!discountedPrice || discountedPrice >= basePrice) return null;
+
+        return { ...d, discountedPrice };
       })
       .filter(Boolean);
 
@@ -58,12 +92,12 @@ const resolvePriceDetails = (product: any) => {
     return {
       basePrice,
       finalPrice: productRole.discountedPrice,
-      discount: {
-        from: "productRole",
-        type: productRole.discountType,
-        discountValue: productRole.discountValue,
-        discountedPrice: productRole.discountedPrice,
-      },
+      discount: buildDiscountInfo(
+        "productRole",
+        productRole.discountType,
+        productRole.discountValue,
+        productRole.discountedPrice
+      ),
     };
   }
 
@@ -72,12 +106,12 @@ const resolvePriceDetails = (product: any) => {
     return {
       basePrice,
       finalPrice: categoryRole.discountedPrice,
-      discount: {
-        from: "categoryRole",
-        type: categoryRole.discountType,
-        discountValue: categoryRole.discountValue,
-        discountedPrice: categoryRole.discountedPrice,
-      },
+      discount: buildDiscountInfo(
+        "categoryRole",
+        categoryRole.discountType,
+        categoryRole.discountValue,
+        categoryRole.discountedPrice
+      ),
     };
   }
 
@@ -86,12 +120,12 @@ const resolvePriceDetails = (product: any) => {
     return {
       basePrice,
       finalPrice: globalRole.discountedPrice,
-      discount: {
-        from: "globalRole",
-        type: globalRole.discountType,
-        discountValue: globalRole.discountValue,
-        discountedPrice: globalRole.discountedPrice,
-      },
+      discount: buildDiscountInfo(
+        "globalRole",
+        globalRole.discountType,
+        globalRole.discountValue,
+        globalRole.discountedPrice
+      ),
     };
   }
 
