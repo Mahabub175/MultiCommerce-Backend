@@ -592,15 +592,10 @@ const updateCategoryFeaturedService = async (
   categoryId: string,
   isFeatured: boolean
 ) => {
-  
-const updatedCategory = await categoryModel
-    .findByIdAndUpdate(
-      categoryId,
-      { isFeatured },
-      { new: true }
-    )
+  const updatedCategory = await categoryModel
+    .findByIdAndUpdate(categoryId, { isFeatured }, { new: true })
     .select("_id name slug isFeatured");
-  
+
   if (!updatedCategory) {
     throw new Error("Category not found");
   }
@@ -608,22 +603,27 @@ const updatedCategory = await categoryModel
   return updatedCategory;
 };
 
- const getFeaturedCategoriesService = async () => {
+const getFeaturedCategoriesService = async () => {
   let categories = await categoryModel
     .find({ isFeatured: true })
     .select("_id name slug isFeatured status attachment")
     .lean();
-   
+
   for (const cat of categories) {
     const count = await productModel.countDocuments({ category: cat._id });
     cat.productsCount = count;
   }
 
-  categories = formatResultImage(categories, "attachment");
+  const formatted = formatResultImage(categories, "attachment");
+
+  if (typeof formatted === "string") {
+    throw new Error("formatResultImage returned a string instead of array");
+  }
+
+  categories = formatted;
 
   return categories;
 };
-
 
 export const categoryServices = {
   createCategoryService,
@@ -635,5 +635,5 @@ export const categoryServices = {
   deleteSingleCategoryService,
   deleteManyCategoriesService,
   updateCategoryFeaturedService,
-  getFeaturedCategoriesService
+  getFeaturedCategoriesService,
 };

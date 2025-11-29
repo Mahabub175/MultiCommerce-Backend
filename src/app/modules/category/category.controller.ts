@@ -111,11 +111,15 @@ const updateSingleCategoryController = async (
     const { categoryId } = req.params;
     const data = req.body;
     const filePath = req.file ? req.file.path : undefined;
-    const slug = data.slug ? data.slug : generateSlug(data.name);
+    let slug = data.slug ?? null;
+
+    if (!slug && data.name) {
+      slug = generateSlug(data.name);
+    }
 
     const categoryData = {
       ...data,
-      slug,
+      ...(slug && { slug }),
       attachment: filePath,
     };
 
@@ -239,9 +243,11 @@ const updateCategoryFeatured = async (
   }
 };
 
-const getFeaturedCategoriesController = async (req: Request,
+const getFeaturedCategoriesController = async (
+  req: Request,
   res: Response,
-  next: NextFunction) => {
+  next: NextFunction
+) => {
   try {
     const result = await categoryServices.getFeaturedCategoriesService();
 
@@ -265,5 +271,5 @@ export const categoryControllers = {
   deleteSingleCategoryController,
   deleteManyCategoriesController,
   updateCategoryFeatured,
-  getFeaturedCategoriesController
+  getFeaturedCategoriesController,
 };

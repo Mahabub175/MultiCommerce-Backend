@@ -22,6 +22,7 @@ export interface ICategory {
   minimumQuantity: number;
   discountType: "fixed" | "percentage";
   discountValue: number;
+  productsCount: number;
   attachment?: string;
   megaMenuStatus?: boolean;
   sortingOrder: number;
