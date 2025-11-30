@@ -5,7 +5,7 @@ import { ICart, ICartProduct } from "./cart.interface";
 import { validateReferences } from "../../utils/validateReferences";
 import { userModel } from "../user/user.model";
 import { productModel } from "../product/product.model";
-import { postProcessProduct } from "../../utils/productUtils";
+import { postProcessProduct, processCart } from "../../utils/productUtils";
 
 // Create or update cart
 const createCartService = async (cartData: ICart) => {
@@ -100,17 +100,9 @@ const getAllCartService = async (
     );
 
     if (Array.isArray(result.results)) {
-      result.results = result.results.map((cart: any) => {
-        if (Array.isArray(cart.products)) {
-          cart.products = cart.products.map((p: any) => {
-            if (p.product) {
-              p.product = postProcessProduct(p.product, isCustomRole);
-            }
-            return p;
-          });
-        }
-        return cart;
-      });
+      result.results = result.results.map((cart: any) =>
+        processCart(cart, isCustomRole)
+      );
     }
 
     return result;
@@ -118,17 +110,7 @@ const getAllCartService = async (
 
   let results = await query.sort({ createdAt: -1 }).lean().exec();
 
-  results = results.map((cart: any) => {
-    if (Array.isArray(cart.products)) {
-      cart.products = cart.products.map((p: any) => {
-        if (p.product) {
-          p.product = postProcessProduct(p.product, isCustomRole);
-        }
-        return p;
-      });
-    }
-    return cart;
-  });
+  results = results.map((cart: any) => processCart(cart, isCustomRole));
 
   return { results };
 };
@@ -172,20 +154,14 @@ const getSingleCartService = async (
     .findById(queryId)
     .populate({ path: "products.product", populate: productPopulate })
     .populate("user")
+    .lean()
     .exec();
 
   if (!result) throw new Error("Cart not found");
 
-  if (Array.isArray(result.products)) {
-    result.products = result.products.map((p: any) => {
-      if (p.product) {
-        p.product = postProcessProduct(p.product, isCustomRole);
-      }
-      return p;
-    });
-  }
+  const processedResult = processCart(result, isCustomRole);
 
-  return result;
+  return processedResult;
 };
 
 // Get cart by user or deviceId
@@ -229,21 +205,14 @@ const getSingleCartByUserService = async (
     .populate({ path: "products.product", populate: productPopulate })
     .populate("user")
     .sort({ createdAt: -1 })
+    .lean()
     .exec();
 
   if (!carts || carts.length === 0) return [];
 
-  const processedCarts = carts.map((cart: any) => {
-    if (Array.isArray(cart.products)) {
-      cart.products = cart.products.map((p: any) => {
-        if (p.product) {
-          p.product = postProcessProduct(p.product, isCustomRole);
-        }
-        return p;
-      });
-    }
-    return cart;
-  });
+  const processedCarts = carts.map((cart: any) =>
+    processCart(cart, isCustomRole)
+  );
 
   return processedCarts;
 };

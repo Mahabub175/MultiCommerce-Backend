@@ -259,3 +259,54 @@ cron.schedule("0 2 * * *", async () => {
     }
   } catch (err) {}
 });
+
+export const processCart = (cart: any, isCustomRole: boolean) => {
+  if (!cart || !Array.isArray(cart.products)) return cart;
+
+  cart.products = cart.products.map((p: any) => {
+    if (p.product) {
+      const processed = postProcessProduct(p.product, isCustomRole);
+      const { priceDetails, ...rest } = processed;
+
+      p.product = rest;
+      p.priceDetails = priceDetails;
+    }
+    return p;
+  });
+
+  let totalBase = 0;
+  let totalFinal = 0;
+  let totalDiscountAmount = 0;
+
+  cart.products.forEach((p: any) => {
+    const qty = p.quantity || 1;
+
+    const base = p.priceDetails?.basePrice ? p.priceDetails.basePrice * qty : 0;
+    const final = p.priceDetails?.finalPrice
+      ? p.priceDetails.finalPrice * qty
+      : 0;
+    const discount = p.priceDetails?.discount?.discountValue
+      ? p.priceDetails.discount.discountValue * qty
+      : 0;
+
+    totalBase += base;
+    totalFinal += final;
+    totalDiscountAmount += discount;
+  });
+
+  cart.totalAmount = totalFinal;
+  cart.totalQuantity = cart.products.reduce(
+    (sum: number, p: any) => sum + (p.quantity || 0),
+    0
+  );
+  cart.totalWeight = cart.products.reduce(
+    (sum: number, p: any) => sum + (p.weight || 0),
+    0
+  );
+
+  cart.totalDiscountAmount = totalDiscountAmount;
+  cart.totalDiscountPercent =
+    totalBase > 0 ? Math.round((totalDiscountAmount / totalBase) * 100) : 0;
+
+  return cart;
+};
