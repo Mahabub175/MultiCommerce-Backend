@@ -109,11 +109,16 @@ userSchema.pre("save", async function (next) {
   }
 
   if (!user.role) {
-    const defaultRole = await customRoleModel.findOne({ name: "user" });
-    if (defaultRole) {
-      user.role = defaultRole._id;
-      user.roleModel = "customRole";
+    let defaultRole = await customRoleModel.findOne({ name: "user" });
+
+    if (!defaultRole) {
+      defaultRole = await customRoleModel.create({
+        name: "user",
+      });
     }
+
+    user.role = defaultRole._id;
+    user.roleModel = "customRole";
   }
   if (
     (!user.shippingAddresses || user.shippingAddresses.length === 0) &&
