@@ -141,13 +141,18 @@ const loginUserService = async (userData: any) => {
 
   const expirationTime = Math.floor(Date.now() / 1000 + 7 * 24 * 60 * 60);
 
+  const roleData = user.role
+    ? { _id: (user.role as any)._id, name: (user.role as any).name }
+    : null;
+
   const jwtPayload = {
     userId: user._id,
     phoneNumber: user.phoneNumber,
     roleModel: user.roleModel,
-    role: (user.role as any).name,
+    role: user.role ? (user.role as any).name : null,
     exp: expirationTime,
   };
+
   const token = jwt.sign(jwtPayload, config.jwt_access_secret as string);
 
   return {
@@ -157,10 +162,7 @@ const loginUserService = async (userData: any) => {
       lastName: user.lastName,
       email: user.email,
       phoneNumber: user.phoneNumber,
-      role: {
-        _id: (user.role as any)._id,
-        name: (user.role as any).name,
-      },
+      role: roleData,
     },
     token,
   };
