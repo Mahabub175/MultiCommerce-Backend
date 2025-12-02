@@ -4,7 +4,6 @@ import {
   IOrder,
   IOrderItem,
   IPaymentInfo,
-  IReturnDetails,
   IShippingAddress,
 } from "./order.interface";
 

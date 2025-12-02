@@ -13,6 +13,9 @@ import { categoryModel } from "../category/category.model";
 import { customRoleModel } from "../customRole/customRole.model";
 import { IProduct } from "./product.interface";
 import { productModel } from "./product.model";
+import { cascadeCleanup } from "../../utils/cascadeCleanup";
+import { cartModel } from "../cart/cart.model";
+import { orderModel } from "../order/order.model";
 
 const createProductService = async (productData: IProduct) => {
   productData.isVariant =
@@ -634,77 +637,22 @@ const updateSingleProductService = async (
   return result;
 };
 
-export const deleteSingleProductService = async (
-  productId: string | number
-) => {
-  const queryId =
-    typeof productId === "string"
-      ? new mongoose.Types.ObjectId(productId)
-      : productId;
+const deleteSingleProductService = async (productId: string | number) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  const product = await productModel.findById(queryId).exec();
+  try {
+    const queryId =
+      typeof productId === "string"
+        ? new mongoose.Types.ObjectId(productId)
+        : productId;
 
-  if (!product) {
-    throw new Error("Product not found");
-  }
+    const product = await productModel.findById(queryId).exec();
 
-  if (product.mainImage) {
-    deleteFileSync(product.mainImage);
-  }
-
-  if (product.video) {
-    deleteFileSync(product.video);
-  }
-
-  if (product.images && product.images.length > 0) {
-    for (const image of product.images) {
-      deleteFileSync(image);
+    if (!product) {
+      throw new Error("Product not found");
     }
-  }
 
-  if (product.variants && product.variants.length > 0) {
-    for (const variant of product.variants) {
-      if (variant.images && variant.images.length > 0) {
-        for (const image of variant.images) {
-          deleteFileSync(image);
-        }
-      }
-    }
-  }
-
-  if (product.reviews && product.reviews.length > 0) {
-    for (const review of product.reviews) {
-      if (review.attachment && review.attachment.length > 0) {
-        for (const attachment of review.attachment) {
-          deleteFileSync(attachment);
-        }
-      }
-    }
-  }
-
-  const result = await productModel.findByIdAndDelete(queryId).exec();
-
-  if (!result) {
-    throw new Error("Product delete failed");
-  }
-
-  return result;
-};
-
-const deleteManyProductsService = async (productIds: (string | number)[]) => {
-  const queryIds = productIds.map((id) => {
-    if (typeof id === "string" && mongoose.Types.ObjectId.isValid(id)) {
-      return new mongoose.Types.ObjectId(id);
-    } else if (typeof id === "number") {
-      return id;
-    } else {
-      throw new Error(`Invalid ID format: ${id}`);
-    }
-  });
-
-  const products = await productModel.find({ _id: { $in: queryIds } }).exec();
-
-  for (const product of products) {
     if (product.mainImage) {
       deleteFileSync(product.mainImage);
     }
@@ -738,13 +686,96 @@ const deleteManyProductsService = async (productIds: (string | number)[]) => {
         }
       }
     }
+
+    await cascadeCleanup(session, queryId, [
+      { model: cartModel, fields: ["products.product"] },
+      { model: orderModel, fields: ["items.product"] },
+    ]);
+
+    const result = await productModel.findByIdAndDelete(queryId).exec();
+
+    if (!result) {
+      throw new Error("Product delete failed");
+    }
+
+    return result;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
+};
 
-  const result = await productModel
-    .deleteMany({ _id: { $in: queryIds } })
-    .exec();
+const deleteManyProductsService = async (productIds: (string | number)[]) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  return result;
+  try {
+    const queryIds = productIds.map((id) => {
+      if (typeof id === "string" && mongoose.Types.ObjectId.isValid(id)) {
+        return new mongoose.Types.ObjectId(id);
+      } else if (typeof id === "number") {
+        return id;
+      } else {
+        throw new Error(`Invalid ID format: ${id}`);
+      }
+    });
+
+    const products = await productModel.find({ _id: { $in: queryIds } }).exec();
+
+    for (const product of products) {
+      if (product.mainImage) {
+        deleteFileSync(product.mainImage);
+      }
+
+      if (product.video) {
+        deleteFileSync(product.video);
+      }
+
+      if (product.images && product.images.length > 0) {
+        for (const image of product.images) {
+          deleteFileSync(image);
+        }
+      }
+
+      if (product.variants && product.variants.length > 0) {
+        for (const variant of product.variants) {
+          if (variant.images && variant.images.length > 0) {
+            for (const image of variant.images) {
+              deleteFileSync(image);
+            }
+          }
+        }
+      }
+
+      if (product.reviews && product.reviews.length > 0) {
+        for (const review of product.reviews) {
+          if (review.attachment && review.attachment.length > 0) {
+            for (const attachment of review.attachment) {
+              deleteFileSync(attachment);
+            }
+          }
+        }
+      }
+    }
+
+    for (const productId of queryIds) {
+      await cascadeCleanup(session, productId, [
+        { model: cartModel, fields: ["products.product"] },
+        { model: orderModel, fields: ["items.product"] },
+      ]);
+    }
+
+    const result = await productModel
+      .deleteMany({ _id: { $in: queryIds } })
+      .exec();
+
+    return result;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 };
 
 export const productServices = {
