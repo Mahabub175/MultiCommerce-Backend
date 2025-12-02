@@ -13,6 +13,7 @@ const allowedOrigins: string[] = [
   "http://localhost:3000",
   "http://localhost:5173",
   "https://cellfashion.vercel.app",
+  "https://www.cellfashionusa.xyz"
 ];
 
 const corsOptions = {
