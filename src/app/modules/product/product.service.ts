@@ -213,43 +213,38 @@ const getAllProductService = async (
   } = filters || {};
 
   if (category) {
-    const categoryText = category.trim();
-
-    const matchingCategories = await categoryModel.find(
-      {
-        $or: [
-          { name: { $regex: categoryText, $options: "i" } },
-          { slug: { $regex: categoryText, $options: "i" } },
-        ],
-      },
-      { _id: 1 }
-    );
-
-    const categoryIds = matchingCategories.map((c) => c._id);
-
-    if (categoryIds.length > 0) {
-      queryConditions.category = { $in: categoryIds };
+    if (mongoose.Types.ObjectId.isValid(category)) {
+      queryConditions.category = { $in: [category] };
     } else {
-      queryConditions.category = { $in: [] };
+      const matchingCategories = await categoryModel.find(
+        { $text: { $search: category.trim() } },
+        { _id: 1 }
+      );
+      const categoryIds = matchingCategories.map((c) => c._id);
+      queryConditions.category = categoryIds.length
+        ? { $in: categoryIds }
+        : { $in: [] };
     }
   }
+
   if (typeof isOnSale === "boolean") queryConditions.isOnSale = isOnSale;
   if (typeof isFeatured === "boolean") queryConditions.isFeatured = isFeatured;
 
   if (filters?.product) {
     const p = filters.product.trim();
-
     const matchingCategories = await categoryModel.find(
-      { name: { $regex: p, $options: "i" } },
+      { $text: { $search: p } },
       { _id: 1 }
     );
-    const categoryIds = matchingCategories.map((c) => c._id);
+    const productCategoryIds = matchingCategories.map((c) => c._id);
 
     queryConditions.$or = [
       ...(queryConditions.$or || []),
-      { productName: { $regex: p, $options: "i" } },
-      { slug: { $regex: p, $options: "i" } },
-      ...(categoryIds.length ? [{ category: { $in: categoryIds } }] : []),
+      { name: { $regex: p, $options: "i" } },
+      { slug: p },
+      ...(productCategoryIds.length
+        ? [{ category: { $in: productCategoryIds } }]
+        : []),
     ];
   }
 

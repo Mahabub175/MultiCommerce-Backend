@@ -89,7 +89,9 @@ const productSchema = new Schema<IProduct>(
     mainImage: { type: String },
     video: { type: String },
     brand: { type: Schema.Types.ObjectId, ref: "brand" },
-    category: { type: Schema.Types.ObjectId, ref: "category", required: true },
+    category: [
+      { type: Schema.Types.ObjectId, ref: "category", required: true },
+    ],
     productModel: { type: String },
     images: { type: [String] },
     weight: { type: Number },
