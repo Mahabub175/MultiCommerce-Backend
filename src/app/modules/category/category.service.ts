@@ -309,6 +309,8 @@ const getNestedCategoriesService = async () => {
     (cat) => !childIds.has(cat._id.toString())
   );
 
+  rootCategories.sort((a, b) => (a.sortingOrder ?? 0) - (b.sortingOrder ?? 0));
+
   const nested: any[] = [];
   rootCategories.forEach((root) => {
     const tree = buildTree(root);
