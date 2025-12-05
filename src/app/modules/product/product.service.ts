@@ -213,18 +213,23 @@ const getAllProductService = async (
   } = filters || {};
 
   if (category) {
-    if (mongoose.Types.ObjectId.isValid(category)) {
-      queryConditions.category = { $in: [category] };
-    } else {
-      const matchingCategories = await categoryModel.find(
-        { $text: { $search: category.trim() } },
-        { _id: 1 }
-      );
-      const categoryIds = matchingCategories.map((c) => c._id);
-      queryConditions.category = categoryIds.length
-        ? { $in: categoryIds }
-        : { $in: [] };
-    }
+  let categoryId = null;
+
+  if (mongoose.Types.ObjectId.isValid(category)) {
+    categoryId = category;
+  } else {
+    const found = await categoryModel
+      .findOne({ slug: category.trim() })
+      .select("_id");
+
+    categoryId = found ? found._id : null;
+  }
+
+  if (categoryId) {
+    queryConditions.category = { $in: [categoryId] };
+  } else {
+    queryConditions.category = { $in: [] };
+  }
   }
 
   if (typeof isOnSale === "boolean") queryConditions.isOnSale = isOnSale;
