@@ -1,12 +1,12 @@
-import mongoose from "mongoose";
-import { paginateAndSort } from "../../utils/paginateAndSort";
-import { formatResultImage } from "../../utils/formatResultImage";
-import { userModel } from "./user.model";
-import { IShippingAddress, IUser, IUserAccess } from "./user.interface";
-import path from "path";
 import fs from "fs";
-import { managementRoleModel } from "../managementRole/managementRole.model";
+import mongoose from "mongoose";
+import path from "path";
+import { formatResultImage } from "../../utils/formatResultImage";
+import { paginateAndSort } from "../../utils/paginateAndSort";
 import { customRoleModel } from "../customRole/customRole.model";
+import { managementRoleModel } from "../managementRole/managementRole.model";
+import { IUser } from "./user.interface";
+import { userModel } from "./user.model";
 
 //Create a User into database
 const createUserService = async (userData: IUser, filePath?: string) => {

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { userServices } from "./user.service";
 import { hashPassword } from "../../utils/passwordUtils";
 import { IUser } from "./user.interface";
+import { authServices } from "../auth/auth.service";
 
 const createUserController = async (
   req: Request,
@@ -20,12 +21,22 @@ const createUserController = async (
       attachment: filePath,
     };
 
-    const result = await userServices.createUserService(formData);
+    const createdUser = await userServices.createUserService(formData);
+
+    const loginPayload = {
+      id: createdUser.email || createdUser.phoneNumber || createdUser.userName,
+      password: data.password,
+    };
+
+    const loginResult = await authServices.loginUserService(loginPayload);
 
     res.status(200).json({
       success: true,
-      message: "User Created Successfully",
-      data: result,
+      message: "User Created & Logged In Successfully",
+      data: {
+        login: loginResult,
+        user: createdUser,
+      },
     });
   } catch (error: any) {
     next(error);
