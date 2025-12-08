@@ -55,7 +55,8 @@ const createProductController = async (
       });
     }
 
-    const barcodeText = `${name}-${sku}`.replace(/\s+/g, "").toUpperCase();
+    const safeName = name.substring(0, 10);
+    const barcodeText = `${safeName}-${sku}`.replace(/\s+/g, "").toUpperCase();
     const barcodeBuffer = await generateBarcode(barcodeText);
 
     const uploadDir = path.join(process.cwd(), "uploads");

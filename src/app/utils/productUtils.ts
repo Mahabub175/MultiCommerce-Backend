@@ -321,8 +321,9 @@ export const generateBarcode = async (text: string) => {
   return bwipjs.toBuffer({
     bcid: "code128",
     text,
-    scale: 3,
-    height: 10,
+    scale: 2,
+    height: 8,
+    width: 200,
     includetext: true,
   });
 };
