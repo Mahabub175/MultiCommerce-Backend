@@ -1,6 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { productServices } from "./product.service";
 import { deleteFileFromStorage } from "../../utils/deleteFilesFromStorage";
+import { generateBarcode } from "../../utils/productUtils";
+import fs from "fs";
+import path from "path";
 
 const createProductController = async (
   req: Request,
@@ -42,12 +45,40 @@ const createProductController = async (
       }
     }
 
+    const name = req.body.name;
+    const sku = req.body.sku;
+
+    if (!name || !sku) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and SKU are required for barcode generation",
+      });
+    }
+
+    const barcodeText = `${name}-${sku}`.replace(/\s+/g, "").toUpperCase();
+    const barcodeBuffer = await generateBarcode(barcodeText);
+
+    const uploadDir = path.join(process.cwd(), "uploads");
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const barcodeFileName = `${sku}-${Date.now()}-barcode.png`;
+    const barcodePath = path.join(uploadDir, barcodeFileName);
+
+    fs.writeFileSync(barcodePath, barcodeBuffer);
+
+    const publicBarcodePath = `uploads/${barcodeFileName}`;
+
     const productData = {
       ...req.body,
       ...(images?.length && { images }),
       ...(mainImage && { mainImage }),
       ...(video && { video }),
       ...(variants?.length && { variants }),
+      barcodeImage: publicBarcodePath,
+      barcode: barcodeText,
     };
 
     const result = await productServices.createProductService(productData);

@@ -87,6 +87,8 @@ const productSchema = new Schema<IProduct>(
     sku: { type: String, required: true, unique: true, trim: true },
     description: { type: String },
     mainImage: { type: String },
+    barcode: { type: String },
+    barcodeImage: { type: String },
     video: { type: String },
     brand: { type: Schema.Types.ObjectId, ref: "brand" },
     category: [

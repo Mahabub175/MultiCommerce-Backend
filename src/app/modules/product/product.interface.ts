@@ -73,6 +73,8 @@ export interface IProduct extends Document {
   productModel: string;
   purchasePoint: number;
   mainImage: string;
+  barcode: string;
+  barcodeImage: string;
   images: string[];
   video: string;
   buyingPrice: number;

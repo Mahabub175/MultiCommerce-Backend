@@ -3,6 +3,7 @@ import { productModel } from "../modules/product/product.model";
 import { reserveOrderModel } from "../modules/reserveOrder/reserveOrder.model";
 import { formatResultImage } from "./formatResultImage";
 import cron from "node-cron";
+import bwipjs from "bwip-js";
 
 export const resolvePriceDetails = (product: any) => {
   const basePrice = product.regularPrice;
@@ -167,6 +168,11 @@ export const postProcessProduct = (product: any, isCustomRole?: boolean) => {
       plainProduct.mainImage
     ) as string;
   }
+  if (typeof plainProduct.barcodeImage === "string") {
+    plainProduct.barcodeImage = formatResultImage(
+      plainProduct.barcodeImage
+    ) as string;
+  }
 
   if (typeof plainProduct.video === "string") {
     plainProduct.video = formatResultImage(plainProduct.video) as string;
@@ -309,4 +315,14 @@ export const processCart = (cart: any, isCustomRole: boolean) => {
     totalBase > 0 ? Math.round((totalDiscountAmount / totalBase) * 100) : 0;
 
   return cart;
+};
+
+export const generateBarcode = async (text: string) => {
+  return bwipjs.toBuffer({
+    bcid: "code128",
+    text,
+    scale: 3,
+    height: 10,
+    includetext: true,
+  });
 };
