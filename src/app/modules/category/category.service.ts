@@ -324,7 +324,7 @@ const getNestedCategoriesService = async () => {
 };
 
 // Update single category
-export const updateSingleCategoryService = async (
+const updateSingleCategoryService = async (
   categoryId: string | number,
   categoryData: ICategory
 ) => {
