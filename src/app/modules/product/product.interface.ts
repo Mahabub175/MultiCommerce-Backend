@@ -67,7 +67,7 @@ export interface IProduct extends Document {
   sku: string;
   description: string;
   brand: Types.ObjectId;
-  category: Types.ObjectId[];
+  category: Types.ObjectId[] | string[];
   unit: string;
   weight: number;
   length?: number;

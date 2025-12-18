@@ -57,34 +57,28 @@ export const createCustomRoleService = async (
   return newCustomRole;
 };
 
-// Get all customRole with optional pagination
+// Get all customRole
 const getAllCustomRoleService = async (
   page?: number,
   limit?: number,
   searchText?: string,
+  filter?: string,
   searchFields?: string[]
 ) => {
-  let results;
+  const hasUserInSearch =
+    typeof filter === "string" && filter.toLowerCase().includes("user");
+
+  const filterQuery = hasUserInSearch ? {} : { name: { $ne: "user" } };
+
+  const query = customRoleModel.find(filterQuery).sort({ createdAt: -1 });
 
   if (page || limit || searchText) {
-    const query = customRoleModel.find();
-
-    const result = await paginateAndSort(
-      query,
-      page,
-      limit,
-      searchText,
-      searchFields
-    );
-
-    return result;
-  } else {
-    results = await customRoleModel.find().sort({ createdAt: -1 }).exec();
-
-    return {
-      results,
-    };
+    return paginateAndSort(query, page, limit, searchText, searchFields);
   }
+
+  return {
+    results: await query.exec(),
+  };
 };
 
 //Get single customRole

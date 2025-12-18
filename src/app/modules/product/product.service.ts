@@ -99,6 +99,62 @@ const createProductService = async (productData: IProduct) => {
     (discount) => !existingGlobalRoleIds.has(discount.role.toString())
   );
 
+  const inputCategories = productData.category
+    ? Array.isArray(productData.category)
+      ? productData.category
+      : [productData.category]
+    : [];
+
+  if (inputCategories.length) {
+    const allCategories = await categoryModel
+      .find()
+      .select("_id parentCategory children status")
+      .lean();
+
+    const categoryMap = new Map<string, any>();
+    allCategories.forEach((c) => categoryMap.set(c._id.toString(), c));
+
+    const findImmediateParents = (childId: string): string[] => {
+      const parents: string[] = [];
+
+      const child = categoryMap.get(childId);
+      if (!child) return parents;
+
+      if (child.parentCategory) {
+        parents.push(child.parentCategory.toString());
+      }
+
+      allCategories.forEach((cat) => {
+        if (cat.children?.some((c: any) => c.toString() === childId)) {
+          parents.push(cat._id.toString());
+        }
+      });
+
+      return parents;
+    };
+
+    const resolvedCategories = new Set<string>();
+    const stack = inputCategories.map(String);
+
+    while (stack.length) {
+      const currentId = stack.pop()!;
+      if (resolvedCategories.has(currentId)) continue;
+
+      const current = categoryMap.get(currentId);
+      if (!current || current.status === false) continue;
+
+      resolvedCategories.add(currentId);
+
+      const parents = findImmediateParents(currentId);
+      parents.forEach((pid) => {
+        if (!resolvedCategories.has(pid)) {
+          stack.push(pid);
+        }
+      });
+    }
+
+    productData.category = Array.from(resolvedCategories);
+  }
   const dataToSave: any = {
     ...productData,
     slug,
