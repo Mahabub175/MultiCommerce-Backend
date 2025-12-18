@@ -37,6 +37,7 @@ const getAllCustomRoleController = async (
     const pageSize = limit ? parseInt(limit as string, 100) : undefined;
 
     const searchText = req.query.searchText as string | undefined;
+    const filter = req.query.filter as string | undefined;
 
     const searchFields = ["name"];
 
@@ -44,6 +45,7 @@ const getAllCustomRoleController = async (
       pageNumber,
       pageSize,
       searchText,
+      filter,
       searchFields
     );
 
