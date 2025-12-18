@@ -70,6 +70,9 @@ export interface IProduct extends Document {
   category: Types.ObjectId[];
   unit: string;
   weight: number;
+  length?: number;
+  width?: number;
+  height?: number;
   productModel: string;
   purchasePoint: number;
   mainImage: string;
