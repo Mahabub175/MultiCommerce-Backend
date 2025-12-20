@@ -24,6 +24,7 @@ import { customRoleRoutes } from "../modules/customRole/customRole.route";
 import { reserveOrderRoutes } from "../modules/reserveOrder/reserveOrder.route";
 import { shippingOrderRoutes } from "../modules/shippingOrder/shippingOrder.route";
 import { courierRoutes } from "../modules/courier/courier.route";
+import { shippingAreaRoutes } from "../modules/shippingArea/shippingArea.route";
 
 const router = Router();
 
@@ -50,6 +51,7 @@ const routes = [
   reviewRoutes,
   orderRoutes,
   courierRoutes,
+  shippingAreaRoutes,
   shippingOrderRoutes,
   reserveOrderRoutes,
 ];

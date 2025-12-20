@@ -4,6 +4,11 @@ import { paginateAndSort } from "../../utils/paginateAndSort";
 import { formatResultImage } from "../../utils/formatResultImage";
 import { deleteFileSync } from "../../utils/deleteFilesFromStorage";
 import { courierModel } from "./courier.model";
+import {
+  calculateShippingCost,
+  IShippingCalculationInput,
+} from "../../utils/shippingCostCalculator";
+import { productModel } from "../product/product.model";
 
 const createCourierService = async (data: ICourier) => {
   const result = await courierModel.create(data);
@@ -125,6 +130,70 @@ const deleteManyCourierService = async (slotIds: (string | number)[]) => {
   return result;
 };
 
+const calculateShippingCostService = async (payload: {
+  courierId: string;
+  slotId: string;
+  items: Array<{
+    productId?: string;
+    weight?: number;
+    length?: number;
+    width?: number;
+    height?: number;
+    quantity: number;
+  }>;
+  shippingAddress: {
+    city?: string;
+    zipCode?: string;
+    country?: string;
+  };
+}) => {
+  const { courierId, slotId, items, shippingAddress } = payload;
+
+  // Get courier with the slot
+  const courier = await courierModel.findById(courierId).exec();
+  if (!courier) {
+    throw new Error("Courier not found");
+  }
+
+  // Prepare items with product dimensions if productId is provided
+  const preparedItems = await Promise.all(
+    items.map(async (item) => {
+      // If productId is provided, fetch product to get dimensions
+      if (item.productId) {
+        const product = await productModel.findById(item.productId).exec();
+        if (product) {
+          return {
+            weight: item.weight || product.weight || 0,
+            length: item.length || product.length || 0,
+            width: item.width || product.width || 0,
+            height: item.height || product.height || 0,
+            quantity: item.quantity,
+          };
+        }
+      }
+      // Otherwise use provided values
+      return {
+        weight: item.weight || 0,
+        length: item.length || 0,
+        width: item.width || 0,
+        height: item.height || 0,
+        quantity: item.quantity,
+      };
+    })
+  );
+
+  // Calculate shipping cost
+  const calculationInput: IShippingCalculationInput = {
+    slotId,
+    courier,
+    items: preparedItems,
+    shippingAddress,
+  };
+
+  const result = await calculateShippingCost(calculationInput);
+  return result;
+};
+
 export const courierServices = {
   createCourierService,
   getAllCouriersService,
@@ -132,4 +201,5 @@ export const courierServices = {
   updateCourierService,
   deleteSingleCourierService,
   deleteManyCourierService,
+  calculateShippingCostService,
 };

@@ -16,6 +16,13 @@ const courierSchema = new Schema<ICourier>(
         perKmPrice: { type: Number },
         estimatedDeliveryTime: { type: Number },
         status: { type: Boolean, default: true },
+        // New fields for dynamic pricing
+        weightMultiplier: { type: Number, default: 0 }, // Cost per unit weight
+        weightUnit: { type: String, enum: ["kg", "100g"], default: "kg" },
+        dimensionMultiplier: { type: Number, default: 0 }, // Cost per unit volume
+        dimensionUnit: { type: String, enum: ["cm3", "1000cm3"], default: "cm3" },
+        useDimensionalWeight: { type: Boolean, default: false },
+        dimensionalWeightDivisor: { type: Number, default: 5000 },
       },
     ],
     status: { type: Boolean, default: true },

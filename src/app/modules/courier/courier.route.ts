@@ -30,4 +30,9 @@ router.post(
   courierControllers.deleteManyCouriersController
 );
 
+router.post(
+  "/courier/calculate-shipping/",
+  courierControllers.calculateShippingCostController
+);
+
 export const courierRoutes = router;
