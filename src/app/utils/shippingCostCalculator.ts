@@ -156,7 +156,13 @@ export const calculateShippingCost = async (
   const areaPrice = areaBasePrice * areaMultiplier;
 
   // Calculate dimension cost (if dimension pricing is configured)
-  let dimensionCost = 0;
+  // NOTE: In standard DHL/Courier formulas, we do NOT charge separately for dimensions.
+  // We uses "Chargeable Weight" (Max of Actual vs Volumetric) in the weight cost instead.
+  // Keeping this variable as 0 for backward compatibility with the interface.
+  const dimensionCost = 0;
+
+  /*
+  // Legacy Logic for reference:
   if (slot.dimensionMultiplier && slot.dimensionMultiplier > 0) {
     if (slot.dimensionUnit === "1000cm3") {
       dimensionCost = (totalVolume / 1000) * slot.dimensionMultiplier;
@@ -164,6 +170,7 @@ export const calculateShippingCost = async (
       dimensionCost = totalVolume * slot.dimensionMultiplier;
     }
   }
+  */
 
   // Calculate weight cost (if weight pricing is configured)
   let weightCost = 0;
@@ -179,12 +186,9 @@ export const calculateShippingCost = async (
     }
   }
 
-  // Total cost = area cost (always) + dimension cost (if set) + weight cost (if set)
-  // If dimension pricing is set, it replaces area pricing for dimension-based calculation
-  // but area cost is still added as a base fee
-  const totalCost = dimensionCost > 0
-    ? areaPrice + dimensionCost + weightCost  // Area cost + dimension cost + weight cost
-    : areaPrice + weightCost;                  // Area cost + weight cost (no dimension pricing)
+  // Total cost = Area Cost + Chargeable Weight Cost
+  // We removed the separate "dimensionCost" addition to avoid double-charging.
+  const totalCost = areaPrice + weightCost;
 
   return {
     basePrice: areaBasePrice, // The base price used (from matched area or default)
