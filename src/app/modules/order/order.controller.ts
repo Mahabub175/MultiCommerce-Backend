@@ -350,25 +350,6 @@ const getReturnedProductsController = async (
   }
 };
 
-const generateInvoiceController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { orderId } = req.params;
-
-    const result = await orderServices.createInvoiceService(orderId);
-
-    return res.json({
-      success: true,
-      message: "Invoice generated",
-      result,
-    });
-  } catch (error: any) {
-    next(error);
-  }
-};
 
 export const orderControllers = {
   createOrderController,
@@ -386,5 +367,4 @@ export const orderControllers = {
   handleReturnRequestController,
   getOrdersByUserController,
   getReturnedProductsController,
-  generateInvoiceController,
 };
