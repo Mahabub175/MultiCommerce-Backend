@@ -174,21 +174,35 @@ export const calculateShippingCost = async (
 
   // Calculate weight cost (if weight pricing is configured)
   let weightCost = 0;
-  if (slot.weightMultiplier && slot.weightMultiplier > 0) {
-    const weightToUse = dimensionalWeight && dimensionalWeight > totalWeight
-      ? dimensionalWeight
-      : totalWeight;
 
-    if (slot.weightUnit === "100g") {
-      weightCost = (weightToUse * 10) * slot.weightMultiplier; // Convert kg to 100g
-    } else {
-      weightCost = weightToUse * slot.weightMultiplier; // Already in kg
+  // NEW LOGIC: Check if "Dimensional Pricing" is valid/active
+  const isDimensionalPricing = slot.useDimensionalPricing === true;
+
+  if (isDimensionalPricing) {
+    if (slot.weightMultiplier && slot.weightMultiplier > 0) {
+      const weightToUse = dimensionalWeight && dimensionalWeight > totalWeight
+        ? dimensionalWeight
+        : totalWeight;
+
+      if (slot.weightUnit === "100g") {
+        weightCost = (weightToUse * 10) * slot.weightMultiplier; // Convert kg to 100g
+      } else {
+        weightCost = weightToUse * slot.weightMultiplier; // Already in kg
+      }
     }
   }
 
-  // Total cost = Area Cost + Chargeable Weight Cost
-  // We removed the separate "dimensionCost" addition to avoid double-charging.
-  const totalCost = areaPrice + weightCost;
+  // Total Cost Logic
+  let totalCost = 0;
+
+  if (isDimensionalPricing) {
+    // dimensional mode: Area + Calculated Weight Cost
+    totalCost = areaPrice + weightCost;
+  } else {
+    // flat rate mode: Area + Base Slot Price
+    // We assume slot.basePrice is the flat rate entered by user
+    totalCost = areaPrice + (slot.basePrice || 0);
+  }
 
   return {
     basePrice: areaBasePrice, // The base price used (from matched area or default)

@@ -30,6 +30,7 @@ export interface ICourier extends Document {
     weightUnit?: "kg" | "100g"; // Unit for weight calculation
     dimensionMultiplier?: number; // Cost per cubic cm or per 1000 cubic cm
     dimensionUnit?: "cm3" | "1000cm3"; // Unit for dimension calculation
+    useDimensionalPricing?: boolean; // Toggle for Base vs Dimensional Pricing
     useDimensionalWeight?: boolean; // Use dimensional weight (LxWxH/5000) if true
     dimensionalWeightDivisor?: number; // Divisor for dimensional weight (default: 5000)
   }[];
