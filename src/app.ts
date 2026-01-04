@@ -13,22 +13,26 @@ const allowedOrigins: string[] = [
   "http://localhost:3000",
   "http://localhost:5173",
   "https://cellfashion.vercel.app",
-  "https://www.cellfashionusa.xyz"
+  "https://www.cellfashionusa.xyz",
+  "https://cellfashionusa.xyz",
+  "https://www.cellfashionusa.cloud",
+  "https://cellfashionusa.cloud",
 ];
 
 const corsOptions = {
   origin: (origin: any, callback: any) => {
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, origin);
+      callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
     }
   },
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   credentials: true,
 };
 
+app.set("trust proxy", 1);
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
