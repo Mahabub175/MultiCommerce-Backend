@@ -5,48 +5,48 @@ import { categoryControllers } from "./category.controller";
 const router = express.Router();
 
 router.post(
-  "/category/",
+  "/category",
   uploadService.single("attachment"),
   categoryControllers.createCategoryController
 );
 
-router.get("/category/", categoryControllers.getAllCategoryController);
+router.get("/category", categoryControllers.getAllCategoryController);
 
 router.get(
-  "/category/:categoryId/",
+  "/category/:categoryId",
   categoryControllers.getSingleCategoryController
 );
 
 router.get(
-  "/category/nested/all/",
+  "/category/nested/all",
   categoryControllers.getNestedCategoriesController
 );
 
-router.get("/cateogry/featured/get/all/", categoryControllers.getFeaturedCategoriesController);
+router.get("/cateogry/featured/get/all", categoryControllers.getFeaturedCategoriesController);
 
 router.patch(
-  "/category/:categoryId/",
+  "/category/:categoryId",
   uploadService.single("attachment"),
   categoryControllers.updateSingleCategoryController
 );
 
 router.patch(
-  "/category/order/:categoryId/",
+  "/category/order/:categoryId",
   categoryControllers.updateCategoryOrderController
 );
 
 router.patch(
-  "/category/:categoryId/featured/update/",
+  "/category/:categoryId/featured/update",
   categoryControllers.updateCategoryFeatured
 );
 
 router.delete(
-  "/category/:categoryId/",
+  "/category/:categoryId",
   categoryControllers.deleteSingleCategoryController
 );
 
 router.post(
-  "/category/bulk-delete/",
+  "/category/bulk-delete",
   categoryControllers.deleteManyCategoriesController
 );
 

@@ -6,54 +6,54 @@ import { authMiddleware } from "../../middlewares/authMiddleware";
 const router = express.Router();
 
 router.post(
-  "/product/",
+  "/product",
   uploadService.any(),
   productControllers.createProductController
 );
 
 router.post(
-  "/upload-products/",
+  "/upload-products",
   uploadService.single("file"),
   productControllers.createProductByFileController
 );
 
 router.get(
-  "/product/",
+  "/product",
   authMiddleware,
   productControllers.getAllProductController
 );
 
 router.get(
-  "/product/:productId/",
+  "/product/:productId",
   authMiddleware,
   productControllers.getSingleProductController
 );
 
 router.get(
-  "/product/sku/:sku/",
+  "/product/sku/:sku",
   authMiddleware,
   productControllers.getSingleProductBySkuController
 );
 
 router.get(
-  "/product/slug/:productSlug/",
+  "/product/slug/:productSlug",
   authMiddleware,
   productControllers.getSingleProductBySlugController
 );
 
 router.patch(
-  "/product/:productId/",
+  "/product/:productId",
   uploadService.any(),
   productControllers.updateSingleProductController
 );
 
 router.delete(
-  "/product/:productId/",
+  "/product/:productId",
   productControllers.deleteSingleProductController
 );
 
 router.post(
-  "/product/bulk-delete/",
+  "/product/bulk-delete",
   productControllers.deleteManyProductsController
 );
 

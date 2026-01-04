@@ -20,20 +20,22 @@ const allowedOrigins: string[] = [
 ];
 
 const corsOptions = {
-  origin: (origin: any, callback: any) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: allowedOrigins,
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin"
+  ],
   credentials: true,
+  optionsSuccessStatus: 200,
 };
 
 app.set("trust proxy", 1);
 app.use(cors(corsOptions));
+// Handle preflight for all routes explicitly
 app.options("*", cors(corsOptions));
 
 app.use(express.json());
