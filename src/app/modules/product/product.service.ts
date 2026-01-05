@@ -25,15 +25,33 @@ const createProductService = async (productData: IProduct) => {
     ? productData.slug
     : generateSlug(productData.name);
 
+  productData.regularPrice = Number(productData.regularPrice) || 0;
+  if (productData.salePrice !== undefined && productData.salePrice !== null && (productData.salePrice as any) !== "") {
+    productData.salePrice = Number(productData.salePrice);
+  } else {
+    productData.salePrice = undefined;
+  }
+  if (productData.buyingPrice !== undefined && productData.buyingPrice !== null && (productData.buyingPrice as any) !== "") {
+    productData.buyingPrice = Number(productData.buyingPrice);
+  } else {
+    productData.buyingPrice = undefined;
+  }
+  productData.stock = Number(productData.stock) || 0;
+  productData.weight = Number(productData.weight) || 0;
+  productData.length = productData.length ? Number(productData.length) : undefined;
+  productData.width = productData.width ? Number(productData.width) : undefined;
+  productData.height = productData.height ? Number(productData.height) : undefined;
+  productData.purchasePoint = productData.purchasePoint ? Number(productData.purchasePoint) : 0;
+
   const totalStock =
     productData.isVariant && Array.isArray(productData.variants)
       ? productData.variants.reduce(
-          (sum, variant) => sum + (Number(variant.stock) || 0),
-          0
-        )
-      : productData.stock || 0;
+        (sum, variant) => sum + (Number(variant.stock) || 0),
+        0
+      )
+      : productData.stock;
 
-  const regularPrice = productData.regularPrice || 0;
+  const regularPrice = productData.regularPrice;
 
   if (regularPrice <= 0) {
     throw new Error("Regular price must be greater than 0");
@@ -56,14 +74,23 @@ const createProductService = async (productData: IProduct) => {
     }
 
     for (const variant of productData.variants) {
-      if ((variant.regularPrice || 0) <= 0) {
+      variant.regularPrice = Number(variant.regularPrice) || 0;
+      if (variant.salePrice !== undefined && variant.salePrice !== null && (variant.salePrice as any) !== "") {
+        variant.salePrice = Number(variant.salePrice);
+      } else {
+        variant.salePrice = undefined;
+      }
+      variant.buyingPrice = Number(variant.buyingPrice) || 0;
+      variant.stock = Number(variant.stock) || 0;
+
+      if (variant.regularPrice <= 0) {
         throw new Error(
           `Variant ${variant.sku} selling price must be greater than 0`
         );
       }
       if (
         variant.salePrice !== undefined &&
-        (variant.salePrice >= variant.regularPrice! || variant.salePrice < 0)
+        (variant.salePrice >= variant.regularPrice || variant.salePrice < 0)
       ) {
         throw new Error(
           `Variant ${variant.sku} offer price must be less than selling price and non-negative`
@@ -314,39 +341,39 @@ const getAllProductService = async (
     queryConditions.$or = [
       ...(min || max
         ? [
-            {
-              salePrice: {
-                ...(min ? { $gte: min } : {}),
-                ...(max ? { $lte: max } : {}),
-              },
+          {
+            salePrice: {
+              ...(min ? { $gte: min } : {}),
+              ...(max ? { $lte: max } : {}),
             },
-          ]
+          },
+        ]
         : []),
       ...(min || max
         ? [
-            {
-              regularPrice: {
-                ...(min ? { $gte: min } : {}),
-                ...(max ? { $lte: max } : {}),
-              },
+          {
+            regularPrice: {
+              ...(min ? { $gte: min } : {}),
+              ...(max ? { $lte: max } : {}),
             },
-          ]
+          },
+        ]
         : []),
       ...(min || max
         ? [
-            {
-              "variants.salePrice": {
-                ...(min ? { $gte: min } : {}),
-                ...(max ? { $lte: max } : {}),
-              },
+          {
+            "variants.salePrice": {
+              ...(min ? { $gte: min } : {}),
+              ...(max ? { $lte: max } : {}),
             },
-            {
-              "variants.regularPrice": {
-                ...(min ? { $gte: min } : {}),
-                ...(max ? { $lte: max } : {}),
-              },
+          },
+          {
+            "variants.regularPrice": {
+              ...(min ? { $gte: min } : {}),
+              ...(max ? { $lte: max } : {}),
             },
-          ]
+          },
+        ]
         : []),
     ];
   }
@@ -580,7 +607,25 @@ const updateSingleProductService = async (
     ? productData.slug
     : generateSlug(productData.name);
 
-  const regularPrice = productData.regularPrice || 0;
+  productData.regularPrice = Number(productData.regularPrice) || 0;
+  if (productData.salePrice !== undefined && productData.salePrice !== null && (productData.salePrice as any) !== "") {
+    productData.salePrice = Number(productData.salePrice);
+  } else {
+    productData.salePrice = undefined;
+  }
+  if (productData.buyingPrice !== undefined && productData.buyingPrice !== null && (productData.buyingPrice as any) !== "") {
+    productData.buyingPrice = Number(productData.buyingPrice);
+  } else {
+    productData.buyingPrice = undefined;
+  }
+  productData.stock = Number(productData.stock) || 0;
+  productData.weight = Number(productData.weight) || 0;
+  productData.length = productData.length ? Number(productData.length) : undefined;
+  productData.width = productData.width ? Number(productData.width) : undefined;
+  productData.height = productData.height ? Number(productData.height) : undefined;
+  productData.purchasePoint = productData.purchasePoint ? Number(productData.purchasePoint) : 0;
+
+  const regularPrice = productData.regularPrice;
   if (regularPrice <= 0) {
     throw new Error("Regular price must be greater than 0");
   }
@@ -604,14 +649,23 @@ const updateSingleProductService = async (
     }
 
     for (const variant of productData.variants) {
-      if ((variant.regularPrice || 0) <= 0) {
+      variant.regularPrice = Number(variant.regularPrice) || 0;
+      if (variant.salePrice !== undefined && variant.salePrice !== null && (variant.salePrice as any) !== "") {
+        variant.salePrice = Number(variant.salePrice);
+      } else {
+        variant.salePrice = undefined;
+      }
+      variant.buyingPrice = Number(variant.buyingPrice) || 0;
+      variant.stock = Number(variant.stock) || 0;
+
+      if (variant.regularPrice <= 0) {
         throw new Error(
           `Variant ${variant.sku} selling price must be greater than 0`
         );
       }
       if (
         variant.salePrice !== undefined &&
-        (variant.salePrice >= variant.regularPrice! || variant.salePrice < 0)
+        (variant.salePrice >= variant.regularPrice || variant.salePrice < 0)
       ) {
         throw new Error(
           `Variant ${variant.sku} offer price must be less than selling price and non-negative`

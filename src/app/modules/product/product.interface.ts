@@ -14,9 +14,9 @@ export interface IVariantAttributeCombination {
 export interface IVariant {
   sku: string;
   attributeCombination: IVariantAttributeCombination[];
-  buyingPrice: number;
+  buyingPrice?: number;
   regularPrice: number;
-  salePrice: number;
+  salePrice?: number;
   stock: number;
   images: string[];
 }
@@ -80,7 +80,7 @@ export interface IProduct extends Document {
   barcodeImage: string;
   images: string[];
   video: string;
-  buyingPrice: number;
+  buyingPrice?: number;
   regularPrice: number;
   salePrice?: number;
   totalSold: number;
